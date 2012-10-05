@@ -3,6 +3,20 @@
 The degraphmalizer is an Elastic Search plugin that can extract graph structure
 from your documents and use it to add computed attributes to your documents.
 
+Computed attributes? Yes, the graph knows "global" structure about your index
+and you can add some of this global structure to your documents. For instance
+you could add a "in-degree" attribute that would tell you how many incoming
+links there are to this document.
+
+You can also ask the graph questions like: give me all document that reference
+this document. Then from those documents you can extract some information and
+store this in a computed attribute. The /degraphmalized/ will keep this
+information up to date.
+
+(using MVCC / eventual consistency model)
+
+# An example
+
 A typical example probably makes this more clear:
 
 Suppose we have two parties, Alice and Bob. Alice has an index of authors and
