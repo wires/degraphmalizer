@@ -62,55 +62,58 @@ we can directly query.
 The degraphmalizer is configured through javascript. Here is an example
 configuration that would transform Alice and Bob's index as above:
 
-	conf/author.conf.js:
-	({
+`conf/author.conf.js`:
 
-	    // for each document of type author, extract subgraph relation
-		extract: function(doc, subgraph) {
+```javascript
+({
 
-			/* so subgraph is a tiny graph with one node corresponding
-			   to the raw document in ES, (so that is id AND version).
-			   the total graph is composed of all the subgraphs */
+	// for each document of type author, extract subgraph relation
+	extract: function(doc, subgraph) {
 
-			// so we add on edge for each book this author wrote
-			for(var c in (doc.books || [])) 
-				// this constructs an edge from us to 'c'
-				// if 'c' doesn't exist, a node is created for it.
-				subgraph.add_edge_to("wrote_book", c);
-		},
-		
-		// we now define some walks
-		walks: [
-			{
-				/* there are two options here: forward or backward
-				   forward follows edges from tail to head, and vv.
-				   
-				   In the future you can define your own walks here,
-				   using a DSL that automatically gives reverse walk */
-				 
-				direction: "forward",
+		/* so subgraph is a tiny graph with one node corresponding
+		   to the raw document in ES, (so that is id AND version).
+		   the total graph is composed of all the subgraphs */
 
-	            /* for each walk, we can define a number of properties
-			       that need to be computed based on the walk */
-				properties: {
-			        "books": {
-					
-						// this function is given a graph or tree
-						// of documents from which it should compute
-						// the property value
-						reduce: function(doc_tree)
-						{
-							// return a flat list of dicts with id and title keys
-						    return bfs_walk(doc_tree).map(function(book) {
-								id: book['id']
-								title: book['title']
-							})
-						}
+		// so we add on edge for each book this author wrote
+		for(var c in (doc.books || [])) 
+			// this constructs an edge from us to 'c'
+			// if 'c' doesn't exist, a node is created for it.
+			subgraph.add_edge_to("wrote_book", c);
+	},
+	
+	// we now define some walks
+	walks: [
+		{
+			/* there are two options here: forward or backward
+			   forward follows edges from tail to head, and vv.
+			   
+			   In the future you can define your own walks here,
+			   using a DSL that automatically gives reverse walk */
+			 
+			direction: "forward",
+
+			/* for each walk, we can define a number of properties
+			   that need to be computed based on the walk */
+			properties: {
+				"books": {
+				
+					// this function is given a graph or tree
+					// of documents from which it should compute
+					// the property value
+					reduce: function(doc_tree)
+					{
+						// return a flat list of dicts with id and title keys
+						return bfs_walk(doc_tree).map(function(book) {
+							id: book['id']
+							title: book['title']
+						})
 					}
 				}
-			}]
-		}
-	})
+			}
+		}]
+	}
+})
+```
 
 # The rule that marks documents as 'dirty'
 
@@ -162,7 +165,7 @@ tree from a node.
 
 # The ES plugin
 
-- Push configuration to /_degraphmalize/
+- Push configuration to `/_degraphmalize/`
 - Watch every "index" request
 - Perform degraphmalizing on one machine
 - Replicate the graph to some other machines
