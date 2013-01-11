@@ -6,9 +6,6 @@ import org.elasticsearch.plugins.AbstractPlugin;
 import java.util.ArrayList;
 import java.util.Collection;
 
-/**
- *
- */
 public class DegraphmalizerPlugin extends AbstractPlugin {
 
     @Override
@@ -28,5 +25,4 @@ public class DegraphmalizerPlugin extends AbstractPlugin {
         modules.add(DegraphmalizerModule.class);
         return modules;
     }
-
 }
