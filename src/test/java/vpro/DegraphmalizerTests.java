@@ -2,6 +2,7 @@ package vpro;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.network.NetworkUtils;
@@ -26,6 +27,8 @@ public class DegraphmalizerTests
 
     @BeforeClass
     public void setupServer() {
+
+
         node = nodeBuilder().local(true).settings(settingsBuilder()
                 .put("path.data", "target/data")
                 .put("cluster.name", "test-cluster-" + NetworkUtils.getLocalAddress())
@@ -57,11 +60,25 @@ public class DegraphmalizerTests
     @Test
     public void testHookOk() throws IOException
     {
-        node.client().index(indexRequest("test").type("person").source(
+        System.out.println("Before the business at hand");
+
+        IndexResponse response = node.client().index(indexRequest("test").type("person").source(
                 jsonBuilder().startObject().field("jelle", "was here").endObject())).actionGet();
+
+        String id = response.getId();
 
         node.client().admin().indices().refresh(refreshRequest()).actionGet();
 
+        node.client().index(indexRequest("test").type("person").source(
+                jsonBuilder().startObject().field("jelle", "was here").endObject())).actionGet();
+
+        node.client().delete(deleteRequest("test").type("person").id(id)).actionGet();
+
+        node.client().admin().indices().refresh(refreshRequest()).actionGet();
+
+        node.stop();
+
+        System.out.println("After the business at hand");
 
     }
 
