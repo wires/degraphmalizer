@@ -6,7 +6,9 @@ import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.network.NetworkUtils;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
+import org.elasticsearch.plugin.degraphmalizer.DegraphmalizerPlugin;
 import org.testng.annotations.*;
 
 import java.io.IOException;
@@ -31,7 +33,8 @@ public class DegraphmalizerTests
         node = nodeBuilder().local(true).settings(settingsBuilder()
                 .put("path.data", "target/data")
                 .put("cluster.name", "test-cluster-" + NetworkUtils.getLocalAddress())
-                .put("gateway.type", "none")).node();
+                .put("gateway.type", "none")
+                .put("plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerHost", "127.0.0.1")).node();
     }
 
     @AfterClass
@@ -77,5 +80,13 @@ public class DegraphmalizerTests
         node.client().delete(deleteRequest("test").type("person").id(id)).actionGet();
 
         node.client().admin().indices().refresh(refreshRequest()).actionGet();
+    }
+
+    @Test
+    public void testPluginSettings()
+    {
+        final Settings pluginSettings = node.settings().getComponentSettings(DegraphmalizerPlugin.class);
+        final String host = pluginSettings.get("DegraphmalizerPlugin.degraphmalizerHost");
+        assertThat(host, equalTo("127.0.0.1")); // As set in setupServer()
     }
 }

@@ -3,11 +3,6 @@ package org.elasticsearch.plugin.degraphmalizer;
 import org.elasticsearch.common.inject.*;
 import org.elasticsearch.common.inject.assistedinject.FactoryProvider;
 
-interface DegraphmalizerIndexListenerFactory
-{
-    DegraphmalizerIndexListener create(String indexName);
-}
-
 public class DegraphmalizerModule extends AbstractModule
 {
     @Override

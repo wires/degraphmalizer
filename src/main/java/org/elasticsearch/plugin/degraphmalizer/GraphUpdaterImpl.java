@@ -13,22 +13,32 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.settings.Settings;
 
 public class GraphUpdaterImpl implements GraphUpdater, Runnable
 {
-    // TODO: Make this configurable? (DGM-23)
-    private static final String URI_SCHEME = "http";
-    private static final String URI_HOST   = "localhost";
-    private static final int    URI_PORT   = 9200;
-    private static final long FAILURE_DELAY_IN_MILLIS = 10000;
-
     private final BlockingQueue<DelayedImpl<GraphChange>> queue = new DelayQueue<DelayedImpl<GraphChange>>();
     private final HttpClient httpClient = new DefaultHttpClient();
 
+    private final String uriScheme;
+    private final String uriHost;
+    private final int uriPort;
+    private final long delayOnFailureInMillis;
+
     private boolean shutdownInProgress = false;
 
-    public GraphUpdaterImpl()
+    @Inject
+    public GraphUpdaterImpl(Settings settings)
     {
+        final Settings pluginSettings = settings.getComponentSettings(DegraphmalizerPlugin.class);
+
+        // Please keep this in sync with the documentation in README.md
+        this.uriScheme = pluginSettings.get("DegraphmalizerPlugin.degraphmalizerScheme", "http");
+        this.uriHost = pluginSettings.get("DegraphmalizerPlugin.degraphmalizerHost", "localhost");
+        this.uriPort = pluginSettings.getAsInt("DegraphmalizerPlugin.degraphmalizerPort", 9821);
+        this.delayOnFailureInMillis = pluginSettings.getAsLong("DegraphmalizerPlugin.delayOnFailureInMillis", 10000l);
+
         new Thread(this).start();
     }
 
@@ -113,9 +123,9 @@ public class GraphUpdaterImpl implements GraphUpdater, Runnable
 
         try {
             return new URIBuilder()
-                    .setScheme(URI_SCHEME)
-                    .setHost(URI_HOST)
-                    .setPort(URI_PORT)
+                    .setScheme(uriScheme)
+                    .setHost(uriHost)
+                    .setPort(uriPort)
                     .setPath(path)
                     .build();
         } catch (URISyntaxException e) {
@@ -131,7 +141,7 @@ public class GraphUpdaterImpl implements GraphUpdater, Runnable
 
     private void retry(final GraphChange change)
     {
-        final DelayedImpl<GraphChange> delayedChange = new DelayedImpl<GraphChange>(change, FAILURE_DELAY_IN_MILLIS);
+        final DelayedImpl<GraphChange> delayedChange = new DelayedImpl<GraphChange>(change, delayOnFailureInMillis);
         queue.add(delayedChange);
     }
 }
