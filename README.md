@@ -188,7 +188,7 @@ tree from a node.
 
 You can configure the Degraphmalizer plugin using the following settings in `elasticsearch.yml`:
 
-- plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerScheme: URI scheme used to access the Degraphmalizer, either `http` or `https` (default: `http`)
-- plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerHost: Hostname used to access the Degraphmalizer (default: `localhost`)
-- plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerPort: Port used to access the Degraphmalizer (default: `9821`)
-- plugin.degraphmalizer.DegraphmalizerPlugin.delayOnFailureInMillis: Delay in milliseconds before retrying failed requests to the Degraphmalizer (default: `10000`)
+- `plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerScheme`: URI scheme used to access the Degraphmalizer, either `http` or `https` (default: `http`)
+- `plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerHost`: Hostname used to access the Degraphmalizer (default: `localhost`)
+- `plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerPort`: Port used to access the Degraphmalizer (default: `9821`)
+- `plugin.degraphmalizer.DegraphmalizerPlugin.delayOnFailureInMillis`: Delay in milliseconds before retrying failed requests to the Degraphmalizer (default: `10000`)
