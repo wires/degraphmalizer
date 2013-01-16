@@ -26,9 +26,8 @@ public class DegraphmalizerTests
     private Node node;
 
     @BeforeClass
-    public void setupServer() {
-
-
+    public void setupServer()
+    {
         node = nodeBuilder().local(true).settings(settingsBuilder()
                 .put("path.data", "target/data")
                 .put("cluster.name", "test-cluster-" + NetworkUtils.getLocalAddress())
@@ -36,12 +35,14 @@ public class DegraphmalizerTests
     }
 
     @AfterClass
-    public void closeServer() {
+    public void closeServer()
+    {
         node.close();
     }
 
     @BeforeMethod
-    public void createIndex() {
+    public void createIndex()
+    {
         logger.info("creating index [test]");
         node.client().admin().indices().create(createIndexRequest("test").settings(settingsBuilder().put("index.numberOfReplicas", 0))).actionGet();
         logger.info("Running Cluster Health");
@@ -52,16 +53,17 @@ public class DegraphmalizerTests
     }
 
     @AfterMethod
-    public void deleteIndex() {
+    public void deleteIndex()
+    {
         logger.info("deleting index [test]");
         node.client().admin().indices().delete(deleteIndexRequest("test")).actionGet();
+        logger.info("stopping ES");
+        node.stop();
     }
 
     @Test
     public void testHookOk() throws IOException
     {
-        System.out.println("Before the business at hand");
-
         IndexResponse response = node.client().index(indexRequest("test").type("person").source(
                 jsonBuilder().startObject().field("jelle", "was here").endObject())).actionGet();
 
@@ -75,11 +77,5 @@ public class DegraphmalizerTests
         node.client().delete(deleteRequest("test").type("person").id(id)).actionGet();
 
         node.client().admin().indices().refresh(refreshRequest()).actionGet();
-
-        node.stop();
-
-        System.out.println("After the business at hand");
-
     }
-
 }

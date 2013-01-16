@@ -13,13 +13,13 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
 {
     private Map<String, DegraphmalizerIndexListener> listeners = new HashMap<String, DegraphmalizerIndexListener>();
     private DegraphmalizerIndexListenerFactory degraphmalizerIndexListenerFactory;
-    private HttpRequestExecutor httpRequestExecutor;
+    private GraphUpdater graphUpdater;
 
     @Inject
-    public DegraphmalizerLifecycleListener(IndicesService indicesService, DegraphmalizerIndexListenerFactory degraphmalizerIndexListenerFactory, HttpRequestExecutor httpRequestExecutor)
+    public DegraphmalizerLifecycleListener(IndicesService indicesService, DegraphmalizerIndexListenerFactory degraphmalizerIndexListenerFactory, GraphUpdater graphUpdater)
     {
         this.degraphmalizerIndexListenerFactory = degraphmalizerIndexListenerFactory;
-        this.httpRequestExecutor = httpRequestExecutor;
+        this.graphUpdater = graphUpdater;
 
         indicesService.indicesLifecycle().addListener(this);
     }
@@ -27,7 +27,7 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
     @Override
     public void afterIndexShardStarted(IndexShard indexShard)
     {
-        if(indexShard.routingEntry().primary())
+        if (indexShard.routingEntry().primary())
         {
             String indexName = getIndexName(indexShard);
             DegraphmalizerIndexListener listener = degraphmalizerIndexListenerFactory.create(indexName);
@@ -39,7 +39,7 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
     @Override
     public void beforeIndexShardClosed(ShardId shardId, IndexShard indexShard, boolean delete)
     {
-        if(indexShard.routingEntry().primary())
+        if (indexShard.routingEntry().primary())
         {
             String indexName = getIndexName(indexShard);
             indexShard.indexingService().removeListener(listeners.get(indexName));
@@ -48,7 +48,7 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
 
         if (listeners.isEmpty())
         {
-            httpRequestExecutor.shutdown();
+            graphUpdater.shutdown();
         }
     }
 
