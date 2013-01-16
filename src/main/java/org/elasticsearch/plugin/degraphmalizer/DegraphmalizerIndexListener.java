@@ -1,7 +1,6 @@
 package org.elasticsearch.plugin.degraphmalizer;
 
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.inject.assistedinject.Assisted;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.indexing.IndexingOperationListener;
 
@@ -11,7 +10,7 @@ public class DegraphmalizerIndexListener extends IndexingOperationListener
     private String index;
 
     @Inject
-    public DegraphmalizerIndexListener(GraphUpdater graphUpdater, @Assisted String index)
+    public DegraphmalizerIndexListener(GraphUpdater graphUpdater, String index)
     {
         this.graphUpdater = graphUpdater;
         this.index = index;

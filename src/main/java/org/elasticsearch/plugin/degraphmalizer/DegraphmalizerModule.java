@@ -10,8 +10,5 @@ public class DegraphmalizerModule extends AbstractModule
     {
         bind(GraphUpdater.class).to(GraphUpdaterImpl.class).in(Singleton.class);
         bind(DegraphmalizerLifecycleListener.class).asEagerSingleton();
-
-        bind(DegraphmalizerIndexListenerFactory.class).toProvider(
-                FactoryProvider.newFactory(DegraphmalizerIndexListenerFactory.class, DegraphmalizerIndexListener.class));
     }
 }

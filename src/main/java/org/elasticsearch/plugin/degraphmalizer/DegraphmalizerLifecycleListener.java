@@ -12,13 +12,11 @@ import org.elasticsearch.indices.IndicesService;
 public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
 {
     private Map<String, DegraphmalizerIndexListener> listeners = new HashMap<String, DegraphmalizerIndexListener>();
-    private DegraphmalizerIndexListenerFactory degraphmalizerIndexListenerFactory;
     private GraphUpdater graphUpdater;
 
     @Inject
-    public DegraphmalizerLifecycleListener(IndicesService indicesService, DegraphmalizerIndexListenerFactory degraphmalizerIndexListenerFactory, GraphUpdater graphUpdater)
+    public DegraphmalizerLifecycleListener(IndicesService indicesService, GraphUpdater graphUpdater)
     {
-        this.degraphmalizerIndexListenerFactory = degraphmalizerIndexListenerFactory;
         this.graphUpdater = graphUpdater;
 
         indicesService.indicesLifecycle().addListener(this);
@@ -30,7 +28,7 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
         if (indexShard.routingEntry().primary())
         {
             String indexName = getIndexName(indexShard);
-            DegraphmalizerIndexListener listener = degraphmalizerIndexListenerFactory.create(indexName);
+            DegraphmalizerIndexListener listener = new DegraphmalizerIndexListener(graphUpdater, indexName);
             listeners.put(indexName, listener);
             indexShard.indexingService().addListener(listener);
         }

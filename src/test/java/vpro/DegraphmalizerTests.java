@@ -27,25 +27,15 @@ public class DegraphmalizerTests
 
     private Node node;
 
-    @BeforeClass
-    public void setupServer()
+    @BeforeMethod
+    public void createIndex()
     {
         node = nodeBuilder().local(true).settings(settingsBuilder()
                 .put("path.data", "target/data")
                 .put("cluster.name", "test-cluster-" + NetworkUtils.getLocalAddress())
                 .put("gateway.type", "none")
                 .put("plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerHost", "127.0.0.1")).node();
-    }
 
-    @AfterClass
-    public void closeServer()
-    {
-        node.close();
-    }
-
-    @BeforeMethod
-    public void createIndex()
-    {
         logger.info("creating index [test]");
         node.client().admin().indices().create(createIndexRequest("test").settings(settingsBuilder().put("index.numberOfReplicas", 0))).actionGet();
         logger.info("Running Cluster Health");
@@ -61,7 +51,7 @@ public class DegraphmalizerTests
         logger.info("deleting index [test]");
         node.client().admin().indices().delete(deleteIndexRequest("test")).actionGet();
         logger.info("stopping ES");
-        node.stop();
+        node.close();
     }
 
     @Test

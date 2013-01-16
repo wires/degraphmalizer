@@ -5,6 +5,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.DelayQueue;
+import java.util.logging.Logger;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -18,6 +19,8 @@ import org.elasticsearch.common.settings.Settings;
 
 public class GraphUpdaterImpl implements GraphUpdater, Runnable
 {
+    private final static Logger LOG = Logger.getLogger(GraphUpdaterImpl.class.getName());
+
     private final BlockingQueue<DelayedImpl<GraphChange>> queue = new DelayQueue<DelayedImpl<GraphChange>>();
     private final HttpClient httpClient = new DefaultHttpClient();
 
@@ -79,15 +82,17 @@ public class GraphUpdaterImpl implements GraphUpdater, Runnable
     {
         final HttpUriRequest request = toRequest(change);
 
-        try
-        {
+        try {
             final HttpResponse response = httpClient.execute(request);
 
-            if (!isSuccessful(response))
+            if (!isSuccessful(response)) {
+                LOG.warning("Request " + request.getMethod() + " " + request.getURI() + " was not successful. Response status code: " + response.getStatusLine().getStatusCode());
                 retry(change); // TODO: retry until infinity? (DGM-23)
+            }
         }
         catch (IOException e)
         {
+            LOG.warning("Error executing request " + request.getMethod() + " " + request.getURI() + ": " + e.getMessage());
             retry(change); // TODO: retry until infinity? (DGM-23)
         }
     }
