@@ -4,6 +4,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.shard.service.IndexShard;
 import org.elasticsearch.indices.IndicesLifecycle;
@@ -11,6 +13,8 @@ import org.elasticsearch.indices.IndicesService;
 
 public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
 {
+    private static final ESLogger LOGGER = Loggers.getLogger(DegraphmalizerLifecycleListener.class);
+
     private Map<String, DegraphmalizerIndexListener> listeners = new HashMap<String, DegraphmalizerIndexListener>();
     private GraphUpdater graphUpdater;
 
@@ -31,6 +35,8 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
             DegraphmalizerIndexListener listener = new DegraphmalizerIndexListener(graphUpdater, indexName);
             listeners.put(indexName, listener);
             indexShard.indexingService().addListener(listener);
+
+            LOGGER.info("Index listener added for index {}", indexName);
         }
     }
 
@@ -42,10 +48,14 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
             String indexName = getIndexName(indexShard);
             indexShard.indexingService().removeListener(listeners.get(indexName));
             listeners.remove(indexName);
+
+            LOGGER.info("Index listener removed for index {}", indexName);
         }
 
         if (listeners.isEmpty())
         {
+            LOGGER.info("No more index listeners, shutting down the graph updater...");
+
             graphUpdater.shutdown();
         }
     }

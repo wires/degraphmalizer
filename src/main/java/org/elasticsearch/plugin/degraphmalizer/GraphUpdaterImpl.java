@@ -5,7 +5,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.DelayQueue;
-import java.util.logging.Logger;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -15,11 +14,13 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 
 public class GraphUpdaterImpl implements GraphUpdater, Runnable
 {
-    private final static Logger LOG = Logger.getLogger(GraphUpdaterImpl.class.getName());
+    private final ESLogger LOG = Loggers.getLogger(GraphUpdaterImpl.class);
 
     private final BlockingQueue<DelayedImpl<GraphChange>> queue = new DelayQueue<DelayedImpl<GraphChange>>();
     private final HttpClient httpClient = new DefaultHttpClient();
@@ -27,7 +28,7 @@ public class GraphUpdaterImpl implements GraphUpdater, Runnable
     private final String uriScheme;
     private final String uriHost;
     private final int uriPort;
-    private final long delayOnFailureInMillis;
+    private final long retryDelayOnFailureInMillis;
 
     private boolean shutdownInProgress = false;
 
@@ -40,9 +41,11 @@ public class GraphUpdaterImpl implements GraphUpdater, Runnable
         this.uriScheme = pluginSettings.get("DegraphmalizerPlugin.degraphmalizerScheme", "http");
         this.uriHost = pluginSettings.get("DegraphmalizerPlugin.degraphmalizerHost", "localhost");
         this.uriPort = pluginSettings.getAsInt("DegraphmalizerPlugin.degraphmalizerPort", 9821);
-        this.delayOnFailureInMillis = pluginSettings.getAsLong("DegraphmalizerPlugin.delayOnFailureInMillis", 10000l);
+        this.retryDelayOnFailureInMillis = pluginSettings.getAsLong("DegraphmalizerPlugin.retryDelayOnFailureInMillis", 10000l);
 
         new Thread(this).start();
+
+        LOG.info("Started graph updater. Updates will be sent to {}://{}:{}. Retry delay on failure is {} milliseconds.", uriScheme, uriHost, uriPort, retryDelayOnFailureInMillis);
     }
 
     @Override
@@ -57,12 +60,16 @@ public class GraphUpdaterImpl implements GraphUpdater, Runnable
                 perform(change);
 
                 if (shutdownInProgress && queue.isEmpty())
+                {
                     done = true;
+                }
             }
+
+            LOG.info("Graph updater stopped.");
         }
         catch (InterruptedException e)
         {
-            // TODO: ??? (DGM-23)
+            LOG.warn("Interrupted while waiting!"); // TODO: ??? (DGM-23)
         }
     }
 
@@ -86,13 +93,13 @@ public class GraphUpdaterImpl implements GraphUpdater, Runnable
             final HttpResponse response = httpClient.execute(request);
 
             if (!isSuccessful(response)) {
-                LOG.warning("Request " + request.getMethod() + " " + request.getURI() + " was not successful. Response status code: " + response.getStatusLine().getStatusCode());
+                LOG.warn("Request {} {} was not successful. Response status code: {}", request.getMethod(), request.getURI(), response.getStatusLine().getStatusCode());
                 retry(change); // TODO: retry until infinity? (DGM-23)
             }
         }
         catch (IOException e)
         {
-            LOG.warning("Error executing request " + request.getMethod() + " " + request.getURI() + ": " + e.getMessage());
+            LOG.warn("Error executing request {} {}: {}", request.getMethod(), request.getURI(), e.getMessage());
             retry(change); // TODO: retry until infinity? (DGM-23)
         }
     }
@@ -146,7 +153,7 @@ public class GraphUpdaterImpl implements GraphUpdater, Runnable
 
     private void retry(final GraphChange change)
     {
-        final DelayedImpl<GraphChange> delayedChange = new DelayedImpl<GraphChange>(change, delayOnFailureInMillis);
+        final DelayedImpl<GraphChange> delayedChange = new DelayedImpl<GraphChange>(change, retryDelayOnFailureInMillis);
         queue.add(delayedChange);
     }
 }

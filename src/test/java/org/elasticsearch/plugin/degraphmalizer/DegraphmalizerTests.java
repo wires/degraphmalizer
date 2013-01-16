@@ -8,7 +8,6 @@ import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.network.NetworkUtils;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
-import org.elasticsearch.plugin.degraphmalizer.DegraphmalizerPlugin;
 import org.testng.annotations.*;
 
 import java.io.IOException;
@@ -23,7 +22,7 @@ import static org.hamcrest.Matchers.equalTo;
 @Test
 public class DegraphmalizerTests
 {
-    private final ESLogger logger = Loggers.getLogger(getClass());
+    private final ESLogger logger = Loggers.getLogger(DegraphmalizerTests.class);
 
     private Node node;
 

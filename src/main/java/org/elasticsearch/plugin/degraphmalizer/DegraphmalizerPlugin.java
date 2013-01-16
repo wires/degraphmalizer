@@ -25,6 +25,7 @@ public class DegraphmalizerPlugin extends AbstractPlugin {
     {
         final ArrayList<Class<? extends Module>> modules = new ArrayList<Class<? extends Module>>();
         modules.add(DegraphmalizerModule.class);
+        modules.add(GraphUpdaterModule.class);
         return modules;
     }
 }
