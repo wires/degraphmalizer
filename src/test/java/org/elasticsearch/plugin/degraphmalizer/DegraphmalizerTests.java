@@ -1,4 +1,4 @@
-package vpro;
+package org.elasticsearch.plugin.degraphmalizer;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
