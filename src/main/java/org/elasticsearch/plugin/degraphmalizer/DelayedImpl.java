@@ -33,13 +33,7 @@ public class DelayedImpl<T> implements Delayed
     @Override
     public int compareTo(Delayed other)
     {
-        final long otherDelayInMillis = other.getDelay(TimeUnit.MILLISECONDS);
-
-        if (delayInMillis < otherDelayInMillis)
-            return -1;
-        else if (delayInMillis > otherDelayInMillis)
-            return 1;
-        return 0;
+        return Long.compare(delayInMillis, other.getDelay(TimeUnit.MILLISECONDS));
     }
 
     public static <T> DelayedImpl<T> immediate(T thing)

@@ -13,10 +13,10 @@ import org.elasticsearch.indices.IndicesService;
 
 public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
 {
-    private static final ESLogger LOGGER = Loggers.getLogger(DegraphmalizerLifecycleListener.class);
+    private static final ESLogger LOG = Loggers.getLogger(DegraphmalizerLifecycleListener.class);
 
-    private Map<String, DegraphmalizerIndexListener> listeners = new HashMap<String, DegraphmalizerIndexListener>();
-    private GraphUpdater graphUpdater;
+    private final Map<ShardId, DegraphmalizerIndexListener> listeners = new HashMap<ShardId, DegraphmalizerIndexListener>();
+    private final GraphUpdater graphUpdater;
 
     @Inject
     public DegraphmalizerLifecycleListener(IndicesService indicesService, GraphUpdater graphUpdater)
@@ -29,35 +29,29 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
     @Override
     public void afterIndexShardStarted(IndexShard indexShard)
     {
-        if (indexShard.routingEntry().primary())
-        {
-            String indexName = getIndexName(indexShard);
-            DegraphmalizerIndexListener listener = new DegraphmalizerIndexListener(graphUpdater, indexName);
-            listeners.put(indexName, listener);
-            indexShard.indexingService().addListener(listener);
+        if (!indexShard.routingEntry().primary())
+            return;
 
-            LOGGER.info("Index listener added for index {}", indexName);
-        }
+        final String indexName = getIndexName(indexShard);
+        final DegraphmalizerIndexListener listener = new DegraphmalizerIndexListener(graphUpdater, indexName);
+        final ShardId shardId = indexShard.shardId();
+        listeners.put(shardId, listener);
+        indexShard.indexingService().addListener(listener);
+
+        LOG.info("Index listener added for shard {}", shardId);
     }
 
     @Override
     public void beforeIndexShardClosed(ShardId shardId, IndexShard indexShard, boolean delete)
     {
-        if (indexShard.routingEntry().primary())
-        {
-            String indexName = getIndexName(indexShard);
-            indexShard.indexingService().removeListener(listeners.get(indexName));
-            listeners.remove(indexName);
+        if (!indexShard.routingEntry().primary())
+            return;
 
-            LOGGER.info("Index listener removed for index {}", indexName);
-        }
+        final DegraphmalizerIndexListener listener = listeners.get(shardId);
+        indexShard.indexingService().removeListener(listener);
+        listeners.remove(shardId);
 
-        if (listeners.isEmpty())
-        {
-            LOGGER.info("No more index listeners, shutting down the graph updater...");
-
-            graphUpdater.shutdown();
-        }
+        LOG.info("Index listener removed for shard {}", shardId);
     }
 
     private String getIndexName(IndexShard indexShard)

@@ -7,7 +7,7 @@ public class DegraphmalizerModule extends AbstractModule
     @Override
     protected void configure()
     {
-        requireBinding(GraphUpdater.class);
+        bind(GraphUpdater.class).in(Singleton.class);
         bind(DegraphmalizerLifecycleListener.class).asEagerSingleton();
     }
 }

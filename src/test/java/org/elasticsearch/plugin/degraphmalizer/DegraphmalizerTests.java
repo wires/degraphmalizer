@@ -2,6 +2,7 @@ package org.elasticsearch.plugin.degraphmalizer;
 
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
@@ -18,6 +19,7 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 import static org.elasticsearch.node.NodeBuilder.nodeBuilder;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 
 @Test
 public class DegraphmalizerTests
@@ -50,25 +52,24 @@ public class DegraphmalizerTests
         logger.info("deleting index [test]");
         node.client().admin().indices().delete(deleteIndexRequest("test")).actionGet();
         logger.info("stopping ES");
+        node.stop();
+        logger.info("closing ES");
         node.close();
     }
 
     @Test
-    public void testHookOk() throws IOException
+    public void testCreateDocument() throws IOException
     {
-        IndexResponse response = node.client().index(indexRequest("test").type("person").source(
+        IndexResponse indexResponse = node.client().index(indexRequest("test").type("person").source(
                 jsonBuilder().startObject().field("jelle", "was here").endObject())).actionGet();
 
-        String id = response.getId();
+        String id = indexResponse.getId();
 
         node.client().admin().indices().refresh(refreshRequest()).actionGet();
 
-        node.client().index(indexRequest("test").type("person").source(
-                jsonBuilder().startObject().field("jelle", "was here").endObject())).actionGet();
+        GetResponse getResponse = node.client().get(getRequest("test").id(id)).actionGet();
 
-        node.client().delete(deleteRequest("test").type("person").id(id)).actionGet();
-
-        node.client().admin().indices().refresh(refreshRequest()).actionGet();
+        assertThat(getResponse.isExists(), is(true));
     }
 
     @Test

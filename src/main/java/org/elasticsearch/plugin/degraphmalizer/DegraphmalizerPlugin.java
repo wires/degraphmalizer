@@ -1,5 +1,6 @@
 package org.elasticsearch.plugin.degraphmalizer;
 
+import org.elasticsearch.common.component.LifecycleComponent;
 import org.elasticsearch.common.inject.Module;
 import org.elasticsearch.plugins.AbstractPlugin;
 
@@ -25,7 +26,14 @@ public class DegraphmalizerPlugin extends AbstractPlugin {
     {
         final ArrayList<Class<? extends Module>> modules = new ArrayList<Class<? extends Module>>();
         modules.add(DegraphmalizerModule.class);
-        modules.add(GraphUpdaterModule.class);
         return modules;
+    }
+
+    @Override
+    public Collection<Class<? extends LifecycleComponent>> services()
+    {
+        final ArrayList<Class<? extends LifecycleComponent>> services = new ArrayList<Class<? extends LifecycleComponent>>();
+        services.add(GraphUpdater.class);
+        return services;
     }
 }
