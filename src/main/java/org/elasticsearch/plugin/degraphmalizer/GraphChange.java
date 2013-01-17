@@ -51,4 +51,15 @@ public class GraphChange
     {
         return new GraphChange(GraphAction.DELETE, index, type, id, version);
     }
+
+    @Override
+    public String toString() {
+        return "GraphChange{" +
+                "graphAction=" + graphAction +
+                ", index='" + index + '\'' +
+                ", type='" + type + '\'' +
+                ", id='" + id + '\'' +
+                ", version=" + version +
+                '}';
+    }
 }

@@ -51,19 +51,21 @@ public class GraphUpdater extends AbstractLifecycleComponent<GraphUpdater> imple
     }
 
     @Override
-    protected void doStart() throws ElasticSearchException {
-
+    protected void doStart() throws ElasticSearchException
+    {
         new Thread(this).start();
     }
 
     @Override
-    protected void doStop() throws ElasticSearchException {
+    protected void doStop() throws ElasticSearchException
+    {
         // TODO figure out proper semantics for doStop versus doClose, and change this accordingly
         doClose();
     }
 
     @Override
-    protected void doClose() throws ElasticSearchException {
+    protected void doClose() throws ElasticSearchException
+    {
         shutdownInProgress = true;
     }
 
@@ -94,18 +96,25 @@ public class GraphUpdater extends AbstractLifecycleComponent<GraphUpdater> imple
     public void add(final GraphChange change)
     {
         queue.add(DelayedImpl.immediate(change));
+        LOG.debug("Received {}", change);
     }
 
     private void perform(final GraphChange change)
     {
+        LOG.debug("Attempting to perform {}", change);
+
         final HttpUriRequest request = toRequest(change);
 
         try {
             final HttpResponse response = httpClient.execute(request);
 
             if (!isSuccessful(response)) {
-                LOG.warn("Request {} {} was not successful. Response status code: {}", request.getMethod(), request.getURI(), response.getStatusLine().getStatusCode());
+                LOG.warn("Request {} {} was not successful. Response status code: {}.", request.getMethod(), request.getURI(), response.getStatusLine().getStatusCode());
                 retry(change); // TODO: retry until infinity? (DGM-23)
+            }
+            else
+            {
+                LOG.debug("Graph change performed: {}", change);
             }
         }
         catch (IOException e)
@@ -129,7 +138,7 @@ public class GraphUpdater extends AbstractLifecycleComponent<GraphUpdater> imple
                 request = new HttpDelete(buildURI(change));
                 break;
             default:
-                throw new RuntimeException("Unknown graph action: " + action);
+                throw new RuntimeException("Unknown graph action " + action + " for " + change);
         }
 
         return request;
@@ -166,5 +175,6 @@ public class GraphUpdater extends AbstractLifecycleComponent<GraphUpdater> imple
     {
         final DelayedImpl<GraphChange> delayedChange = new DelayedImpl<GraphChange>(change, retryDelayOnFailureInMillis);
         queue.add(delayedChange);
+        LOG.debug("Retrying {} in {} milliseconds", change, retryDelayOnFailureInMillis);
     }
 }
