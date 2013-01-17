@@ -10,9 +10,10 @@ import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.util.EntityUtils;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
@@ -85,11 +86,16 @@ public class GraphUpdater extends AbstractLifecycleComponent<GraphUpdater> imple
                 }
             }
 
+            httpClient.getConnectionManager().shutdown();
             LOG.info("Graph updater stopped.");
         }
         catch (InterruptedException e)
         {
             LOG.warn("Interrupted while waiting!"); // TODO: ??? (DGM-23)
+        }
+        catch (Exception e)
+        {
+            LOG.error("Graph updater stopped with exception: {}", e);
         }
     }
 
@@ -103,7 +109,7 @@ public class GraphUpdater extends AbstractLifecycleComponent<GraphUpdater> imple
     {
         LOG.debug("Attempting to perform {}", change);
 
-        final HttpUriRequest request = toRequest(change);
+        final HttpRequestBase request = toRequest(change);
 
         try {
             final HttpResponse response = httpClient.execute(request);
@@ -116,6 +122,15 @@ public class GraphUpdater extends AbstractLifecycleComponent<GraphUpdater> imple
             {
                 LOG.debug("Graph change performed: {}", change);
             }
+
+            try
+            {
+                EntityUtils.consume(response.getEntity());
+            }
+            finally
+            {
+                request.releaseConnection();
+            }
         }
         catch (IOException e)
         {
@@ -124,9 +139,9 @@ public class GraphUpdater extends AbstractLifecycleComponent<GraphUpdater> imple
         }
     }
 
-    private HttpUriRequest toRequest(final GraphChange change)
+    private HttpRequestBase toRequest(final GraphChange change)
     {
-        final HttpUriRequest request;
+        final HttpRequestBase request;
 
         final GraphAction action = change.action();
         switch (action)
