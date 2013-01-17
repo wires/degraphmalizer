@@ -22,9 +22,9 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 @Test
-public class DegraphmalizerTests
+public class DegraphmalizerTest
 {
-    private final ESLogger logger = Loggers.getLogger(DegraphmalizerTests.class);
+    private final ESLogger logger = Loggers.getLogger(DegraphmalizerTest.class);
 
     private Node node;
 
