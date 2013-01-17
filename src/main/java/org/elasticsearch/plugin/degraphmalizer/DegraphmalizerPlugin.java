@@ -7,6 +7,10 @@ import org.elasticsearch.plugins.AbstractPlugin;
 import java.util.ArrayList;
 import java.util.Collection;
 
+/**
+ * This class represents the Degraphmalizer Elastic Search plugin. It specifies its the dependency injection modules
+ * and services.
+ */
 public class DegraphmalizerPlugin extends AbstractPlugin {
 
     @Override

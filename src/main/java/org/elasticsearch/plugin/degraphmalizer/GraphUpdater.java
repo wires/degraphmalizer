@@ -21,6 +21,11 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
 
+/**
+ * This class handles GraphChange instances. The class can be configured via elasticsearch.yml (see README.md for
+ * more information). The GraphUpdater manages a queue of GraphChange objects, executes HTTP requests for these
+ * changes and retries changes when HTTP requests fail.
+ */
 public class GraphUpdater extends AbstractLifecycleComponent<GraphUpdater> implements Runnable
 {
     private static final ESLogger LOG = Loggers.getLogger(GraphUpdater.class);

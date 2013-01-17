@@ -4,6 +4,10 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.indexing.IndexingOperationListener;
 
+/**
+ * This class listens for updates to an index and sends GraphChange objects to the GraphUpdater for processing by the
+ * Degraphmalizer.
+ */
 public class DegraphmalizerIndexListener extends IndexingOperationListener
 {
     private GraphUpdater graphUpdater;
