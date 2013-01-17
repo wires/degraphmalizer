@@ -2,11 +2,11 @@ package org.elasticsearch.plugin.degraphmalizer;
 
 public class GraphChange
 {
-    private GraphAction graphAction;
-    private String index;
-    private String type;
-    private String id;
-    private long version;
+    private final GraphAction graphAction;
+    private final String index;
+    private final String type;
+    private final String id;
+    private final long version;
 
     public GraphChange(final GraphAction graphAction, final String index, final String type, final String id, long version)
     {
