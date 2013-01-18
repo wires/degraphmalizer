@@ -1,10 +1,13 @@
 package org.elasticsearch.plugin.degraphmalizer;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.DelayQueue;
+
+import javax.management.*;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -26,7 +29,7 @@ import org.elasticsearch.common.settings.Settings;
  * more information). The GraphUpdater manages a queue of GraphChange objects, executes HTTP requests for these
  * changes and retries changes when HTTP requests fail.
  */
-public class GraphUpdater extends AbstractLifecycleComponent<GraphUpdater> implements Runnable
+public class GraphUpdater extends AbstractLifecycleComponent<GraphUpdater> implements Runnable, GraphUpdaterMBean
 {
     private static final ESLogger LOG = Loggers.getLogger(GraphUpdater.class);
 
@@ -59,6 +62,7 @@ public class GraphUpdater extends AbstractLifecycleComponent<GraphUpdater> imple
     @Override
     protected void doStart() throws ElasticSearchException
     {
+        registerMBean();
         new Thread(this).start();
     }
 
@@ -73,6 +77,12 @@ public class GraphUpdater extends AbstractLifecycleComponent<GraphUpdater> imple
     protected void doClose() throws ElasticSearchException
     {
         shutdownInProgress = true;
+    }
+
+    @Override
+    public int getQueueSize()
+    {
+        return queue.size();
     }
 
     public void run()
@@ -108,6 +118,19 @@ public class GraphUpdater extends AbstractLifecycleComponent<GraphUpdater> imple
     {
         queue.add(DelayedImpl.immediate(change));
         LOG.debug("Received {}", change);
+    }
+
+    private void registerMBean()
+    {
+        try
+        {
+            final MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+            final ObjectName name = new ObjectName("org.elasticsearch.plugin.degraphmalizer.GraphUpdater:type=GraphUpdater");
+            mbs.registerMBean(this, name);
+            LOG.info("Registered MBean");
+        } catch (Exception e) {
+            LOG.error("Failed to register MBean", e);
+        }
     }
 
     private void perform(final GraphChange change)
