@@ -8,8 +8,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
-import org.elasticsearch.common.Nullable;
-import scala.collection.TraversableOnce;
 
 import java.io.PrintStream;
 import java.util.*;
@@ -40,12 +38,12 @@ public class Trees
      */
     public static <A> Optional<Tree<A>> optional(Tree<Optional<A>> treeOfOptionals)
     {
-        class ValueIsAbsent extends RuntimeException {};
+        class ValueIsAbsent extends RuntimeException {}
 
         final Function<Optional<A>, A> nonAbsent = new Function<Optional<A>, A>()
         {
             @Override
-            public A apply(@Nullable Optional<A> input)
+            public A apply(Optional<A> input)
             {
                 if(!input.isPresent())
                     throw new ValueIsAbsent();
@@ -67,7 +65,7 @@ public class Trees
     /**
 	 * Map a function over a tree
 	 * 
-	 * @param fn
+	 * @param fn Function
 	 * @param tree Tree of {@code A}'s
 	 * @return Tree of {@code B}'s
 	 */
@@ -87,7 +85,7 @@ public class Trees
 					}
 				};
 			
-			final Collection<Tree<B>> tb = Collections2.transform((Collection<Tree<A>>) tree.children, tmap);
+			final Collection<Tree<B>> tb = Collections2.transform(tree.children, tmap);
 			return new Tree<B>(value, tb);
 		}
 	}
@@ -95,27 +93,26 @@ public class Trees
 	/**
 	 * Turn a {@link Function} into an {@link Callable}
 	 * 
-	 * @param fn
-	 * @return
+	 * @param fn Function
+	 * @return Callable
 	 */
 	public static <A,B> Function<A,Callable<B>> mkAsync(final Function<A,B> fn)
 	{
 		return new Function<A,Callable<B>>()
-			{
-				public Callable<B> apply(final A a)
-				{
-					final Callable<B> g = new Callable<B>()
-						{
-							@Override
-							public B call() throws Exception
-							{
-								return fn.apply(a);
-							}
-						};
-					
-					return g;
-				}
-			};
+        {
+            @Override
+            public Callable<B> apply(final A a)
+            {
+                return new Callable<B>()
+                {
+                    @Override
+                    public B call() throws Exception
+                    {
+                        return fn.apply(a);
+                    }
+                };
+            }
+        };
 	}
 	
 	/**
@@ -124,7 +121,6 @@ public class Trees
 	 * @param executor Where to submit the jobs to
 	 * @param fn The function applied to every node in the tree
 	 * @param tree The tree to map
-	 * @return
 	 * @throws InterruptedException
 	 */
 	public static <A,B> Tree<B> pmap(final ExecutorService executor, final Function<A,B> fn, Tree<A> tree)
@@ -149,6 +145,7 @@ public class Trees
 		// get automatically waits for jobs to finish
 		final Function<Future<B>, B> waitDone = new Function<Future<B>, B>()
 			{
+                @Override
 				public B apply(final Future<B> b)
 				{
 					try
@@ -219,6 +216,7 @@ public class Trees
 		// get value from a tree
 		final Function<Tree<T>,T> getValue = new Function<Tree<T>,T>()
 			{
+                @Override
 				public T apply(Tree<T> node)
 				{
 					return node.value();
@@ -275,14 +273,10 @@ public class Trees
 	enum EventType
 	{
 		VISIT_NODE, BEGIN_CHILDREN, END_CHILDREN
-	};
+	}
 	
 	/**
 	 * BFS visit tree
-	 * 
-	 * @param root
-	 * @param viewer
-	 * @param visitor
 	 */
 	public static <A> void bfsVisit(final A root, final TreeViewer<A> viewer, final TreeVisitor<A> visitor)
 	{
@@ -351,7 +345,7 @@ public class Trees
 		}
 	}
 	
-	private final static <A> void insertBefore(LinkedList<A> ll, A value, A before)
+	private static <A> void insertBefore(LinkedList<A> ll, A value, A before)
 	{
 		if (before == null)
 			ll.offer(value);

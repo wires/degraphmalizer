@@ -12,6 +12,7 @@ import streaming.requestmapper.HttpRequestMapper;
 import streaming.requestmapper.RequestHandlerException;
 import streaming.requestmapper.handlers.GlobalCommandStreamRequestHandler;
 
+import java.nio.charset.Charset;
 import java.util.List;
 
 public final class GraphStreamerHttpHandler extends SimpleChannelHandler
@@ -59,7 +60,7 @@ public final class GraphStreamerHttpHandler extends SimpleChannelHandler
     private HttpResponse createErrorResponse(RequestHandlerException rhe)
     {
         HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_1, rhe.getStatus());
-        response.setContent(ChannelBuffers.wrappedBuffer(rhe.getMessage().getBytes()));
+        response.setContent(ChannelBuffers.wrappedBuffer(rhe.getMessage().getBytes(Charset.forName("UTF-8"))));
         return response;
     }
 

@@ -1,20 +1,16 @@
 package graphs;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tinkerpop.blueprints.*;
 
-import com.tinkerpop.blueprints.util.wrappers.event.listener.VertexRemovedEvent;
 import degraphmalizr.EdgeID;
 import degraphmalizr.ID;
 import trees.Pair;
 import trees.Tree;
 
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
@@ -42,17 +38,11 @@ public class GraphQueries
 		return childrenFrom(g, null, s, d, 1);
 	}
 
-	// TODO non-recursive
-	private static Tree<Pair<Edge, Vertex>> childrenFrom(Graph g, Edge e, Vertex s, Direction d)
-	{
-		return childrenFrom(g, e, s, d, 1);
-	}
-
     // TODO non-recursive
     private static Tree<Pair<Edge, Vertex>> childrenFrom(Graph g, Edge e, Vertex s, Direction d, int depth)
     {
         // TODO handle cycles in the graph
-        if(depth > 100)
+        if (depth > 100)
             throw new RuntimeException("Found a graph with a path longer that 100 nodes, this probably indicated a cyclic walk");
 
         final ArrayList<Tree<Pair<Edge, Vertex>>> children = new ArrayList<Tree<Pair<Edge, Vertex>>>();
@@ -131,8 +121,6 @@ public class GraphQueries
 
     /**
      * This method removes all properties (except the id and owner ones) and sets new properties.
-     * @param element
-     * @param properties
      */
     public static void setProperties(Element element, Map<String, JsonNode> properties)
     {
@@ -202,10 +190,6 @@ public class GraphQueries
     /**
      * Find all vertices owner by the specified ID, don't look at versions.
      * This method will not return the ownable symbolic vertices.
-     *
-     * @param G
-     * @param owner
-     * @return
      */
     public static Iterable<Vertex> findOwnedVertices(Graph G, ID owner)
     {
@@ -214,10 +198,6 @@ public class GraphQueries
 
     /**
      * Find all edge owner by the specified ID, don't look at versions.
-     *
-     * @param G
-     * @param owner
-     * @return
      */
     public static Iterable<Edge> findOwnedEdges(Graph G, ID owner)
     {
@@ -226,10 +206,6 @@ public class GraphQueries
 
     /**
      * Find vertex without considering the version specified in the ID.
-     *
-     * @param G
-     * @param id
-     * @return
      */
     public static Vertex resolveVertex(Graph G, ID id)
     {
@@ -276,15 +252,18 @@ public class GraphQueries
     {
         final Vertex tail = edge.getVertex(Direction.OUT);
         final Vertex head = edge.getVertex(Direction.IN);
-        return new EdgeID(getID(tail),edge.getLabel(),getID(head));
+
+        final ID tailID = getID(tail);
+        final ID headID = getID(head);
+
+        if (tailID != null && headID != null)
+            return new EdgeID(tailID, edge.getLabel(), headID);
+
+        return null;
     }
 
     /**
-     *
-     * // TODO return null if ID cannot be found
-     *
-     * @param vertex
-     * @return
+     * TODO: return null if ID cannot be found
      */
     public static ID getID(Vertex vertex)
     {
@@ -318,11 +297,6 @@ public class GraphQueries
 
     /**
      * Find the owner of an edge or a vertex.
-     *
-     * Returns null.
-     *
-     * @param element
-     * @return
      */
     public static ID getOwner(Element element)
     {
@@ -334,11 +308,7 @@ public class GraphQueries
     }
 
     /**
-     * Create an edge in the graph and set it's identifier.
-     *
-     * @param G
-     * @param edgeID
-     * @return
+     * Create an edge in the graph and set its identifier.
      */
     public static Edge createEdge(Graph G, EdgeID edgeID)
     {
@@ -356,9 +326,6 @@ public class GraphQueries
 
     /**
      * Create a vertex and set it's identifier.
-     *
-     * @param G
-     * @return
      */
     public static Vertex createVertex(Graph G, ID id)
     {
@@ -381,10 +348,6 @@ public class GraphQueries
      *     <li>An older version of your subset owns the vertex</li>
      *     <li>The vertex is a symbolic vertex ({@code version() == 0})</li>
      * </ul>
-     *
-     * @param v
-     * @param owner
-     * @return
      */
     public static boolean isOwnable(final Vertex v, final ID owner)
     {
@@ -412,12 +375,8 @@ public class GraphQueries
 
     /**
      * From the edge ID, return the ID that is not {@code notThisOne}.
-     *
-     * @param id
-     * @param notThisOne
-     * @return
      */
-    public static final ID getOppositeId(final EdgeID id, final ID notThisOne)
+    public static ID getOppositeId(final EdgeID id, final ID notThisOne)
     {
         return id.head().equals(notThisOne) ? id.tail() : id.head();
     }
@@ -425,17 +384,13 @@ public class GraphQueries
     /**
      * Return the direction <i>d</i> such that {@link Edge#getVertex(com.tinkerpop.blueprints.Direction d)}
      * return the vertex {@code !=} to the vertex with {@code getID() == vertexId}.
-     *
-     * @param id
-     * @param vertexId
-     * @return
      */
-    public static final Direction directionOppositeTo(final EdgeID id, final ID vertexId)
+    public static Direction directionOppositeTo(final EdgeID id, final ID vertexId)
     {
         return id.head().equals(vertexId) ? Direction.OUT : Direction.IN;
     }
 
-    public static final EdgeID createOppositeId(final EdgeID id, final ID notThisOne, final ID targetId)
+    public static EdgeID createOppositeId(final EdgeID id, final ID notThisOne, final ID targetId)
     {
         if (id.tail().equals(notThisOne))
             return new EdgeID(id.tail(), id.label(), targetId);

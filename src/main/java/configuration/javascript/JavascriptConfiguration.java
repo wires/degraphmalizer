@@ -88,7 +88,7 @@ class JavascriptIndexConfig implements IndexConfig
 			while(fi.hasNext())
 			{
 				final File file = fi.next();
-				final Reader reader = new FileReader(file);
+				final Reader reader = new InputStreamReader(new FileInputStream(file), "UTF-8");
 				final String fn = file.getCanonicalPath();
 				final String type = file.getName().replaceFirst(".conf.js", "");
 
@@ -129,7 +129,7 @@ class JavascriptIndexConfig implements IndexConfig
 	private Object loadLib(Context cx, Scriptable scope, String fn) throws IOException
 	{
 		// get loader relative to this class
-		final Reader reader = new InputStreamReader(JavascriptIndexConfig.class.getResourceAsStream(fn));
+		final Reader reader = new InputStreamReader(JavascriptIndexConfig.class.getResourceAsStream(fn), "UTF-8");
 		
 		return compile(cx, scope, reader, fn);
 	}
@@ -155,35 +155,39 @@ class JavascriptTypeConfig implements TypeConfig
 		this.script = script;
 		this.indexConfig = indexConfig;
 
-		final Context cx = Context.enter();
-		
-		// filter & graph extraction functions
-		filter = (Function)ScriptableObject.getProperty(script, "filter");
-		extract = (Function)ScriptableObject.getProperty(script, "extract");
+        try
+        {
+            Context.enter();
 
-        targetIndex = ScriptableObject.getTypedProperty(script, "targetIndex", String.class);
-        targetType = ScriptableObject.getTypedProperty(script, "targetType", String.class);
+            // filter & graph extraction functions
+            filter = (Function)ScriptableObject.getProperty(script, "filter");
+            extract = (Function)ScriptableObject.getProperty(script, "extract");
 
-		// add the walks
-		final Scriptable walks = (Scriptable)ScriptableObject.getProperty(script, "walks");
-		for(Object id : ScriptableObject.getPropertyIds(walks))
-		{
-            final String walkName = id.toString();
+            targetIndex = ScriptableObject.getTypedProperty(script, "targetIndex", String.class);
+            targetType = ScriptableObject.getTypedProperty(script, "targetType", String.class);
 
-            // get the walk object
-            final Scriptable walk = (Scriptable)ScriptableObject.getProperty(walks, walkName);
+            // add the walks
+            final Scriptable walks = (Scriptable)ScriptableObject.getProperty(script, "walks");
+            for(Object id : ScriptableObject.getPropertyIds(walks))
+            {
+                final String walkName = id.toString();
 
-            final Direction direction = Direction.valueOf(ScriptableObject.getProperty(walk, "direction").toString());
+                // get the walk object
+                final Scriptable walk = (Scriptable)ScriptableObject.getProperty(walks, walkName);
 
-            final Scriptable properties = (Scriptable)ScriptableObject.getProperty(walk, "properties");
+                final Direction direction = Direction.valueOf(ScriptableObject.getProperty(walk, "direction").toString());
 
-            final JavascriptWalkConfig walkCfg = new JavascriptWalkConfig(walkName, direction, this, scope, properties);
+                final Scriptable properties = (Scriptable)ScriptableObject.getProperty(walk, "properties");
 
-            this.walks.put(walkName, walkCfg);
-		}
+                final JavascriptWalkConfig walkCfg = new JavascriptWalkConfig(walkName, direction, this, scope, properties);
 
-		Context.exit();
-		
+                this.walks.put(walkName, walkCfg);
+            }
+        }
+        finally
+        {
+            Context.exit();
+        }
 	}
 
 	@Override
@@ -278,21 +282,26 @@ class JavascriptWalkConfig implements WalkConfig
         this.direction = direction;
         this.typeCfg = typeCfg;
 
-        final Context cx = Context.enter();
-
-        // add all the properties
-        for(Object id : ScriptableObject.getPropertyIds(propertyScriptable))
+        try
         {
-            final String propertyName = id.toString();
-            final Scriptable property = (Scriptable)ScriptableObject.getProperty(propertyScriptable, propertyName);
+            Context.enter();
 
-            final Function reduce = (Function)ScriptableObject.getProperty(property, "reduce");
-            final boolean nested = ScriptableObject.getProperty(property, "nested").toString().equals("true");
+            // add all the properties
+            for(Object id : ScriptableObject.getPropertyIds(propertyScriptable))
+            {
+                final String propertyName = id.toString();
+                final Scriptable property = (Scriptable)ScriptableObject.getProperty(propertyScriptable, propertyName);
 
-            this.properties.put(propertyName, new JavascriptPropertyConfig(propertyName, nested, reduce, scope, this));
+                final Function reduce = (Function)ScriptableObject.getProperty(property, "reduce");
+                final boolean nested = ScriptableObject.getProperty(property, "nested").toString().equals("true");
+
+                this.properties.put(propertyName, new JavascriptPropertyConfig(propertyName, nested, reduce, scope, this));
+            }
         }
-
-        Context.exit();
+        finally
+        {
+            Context.exit();
+        }
     }
 
     @Override
