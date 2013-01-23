@@ -11,9 +11,6 @@
     <artifactId>degraphmalizer</artifactId>
     <version>0.1-SNAPSHOT</version>
 
-    <name>graphs</name>
-    <description>Builds graphs in ElasticSearch.</description>
-
     <scm>
         <connection>scm:svn:svn+ssh://subversion.vpro.nl/export/svn/nl/vpro/degraphmalizer/trunk</connection>
         <developerConnection>scm:svn:svn+ssh://subversion.vpro.nl/export/svn/nl/vpro/degraphmalizer/trunk</developerConnection>
