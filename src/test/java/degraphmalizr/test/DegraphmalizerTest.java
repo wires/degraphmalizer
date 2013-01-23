@@ -1,6 +1,5 @@
 package degraphmalizr.test;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.*;
 import com.google.inject.matcher.Matchers;
 import com.tinkerpop.blueprints.Graph;
@@ -15,6 +14,8 @@ import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.nnsoft.guice.sli4j.slf4j.Slf4jLoggingModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import static org.fest.assertions.Assertions.assertThat;
@@ -43,9 +44,7 @@ class LocalNode
         // the injector
         final Injector injector = com.google.inject.Guice.createInjector(modules);
 
-        final LocalNode ln = injector.getInstance(LocalNode.class);
-
-        return ln;
+        return injector.getInstance(LocalNode.class);
     }
 
     @Inject
@@ -61,6 +60,8 @@ class LocalNode
 @Test
 public class DegraphmalizerTest implements DegraphmalizeStatus
 {
+    private final static Logger log = LoggerFactory.getLogger(DegraphmalizerTest.class);
+
     LocalNode ln;
 
 	@BeforeClass
@@ -81,38 +82,39 @@ public class DegraphmalizerTest implements DegraphmalizeStatus
         if (!ln.es.admin().indices().prepareExists(target).execute().actionGet().exists())
         {
             final CreateIndexResponse cir = ln.es.admin().indices().prepareCreate(target).execute().actionGet();
-            if (cir.acknowledged() == false)
+            if (! cir.acknowledged())
                 throw new RuntimeException("failed to create index " + target);
         }
 
         final IndexResponse ir = ln.es.prepareIndex(idx,tp,id)
                 .setSource("{\"children\":[1,2,3]}").execute().actionGet();
 
-        System.err.println("indexed /" + idx + "/" + tp + "/" + id + " as version " + ir.version() + " into ES");
+        log.info("Indexed /{}/{}/{} as version {} into ES", new Object[] { idx, tp, id, ir.version() });
 
         final IndexResponse ir1 = ln.es.prepareIndex(idx,tp,"1")
                 .setSource("{\"cheese\":\"gorgonzola\"}").execute().actionGet();
 
-        System.err.println("indexed /" + idx + "/" + tp + "/1 as version " + ir1.version() + " into ES");
+        log.info("Indexed /{}/{}/1 as version {} into ES", new Object[] { idx, tp, ir1.version() });
 
         final IndexResponse ir2 = ln.es.prepareIndex(idx,tp,"2")
                 .setSource("{\"cheese\":\"mozarella\"}").execute().actionGet();
 
-        System.err.println("indexed /" + idx + "/" + tp + "/2 as version " + ir2.version() + " into ES");
-
+        log.info("Indexed /{}/{}/2 as version {} into ES", new Object[] { idx, tp, ir2.version() });
 
         // degraphmalize "1" and wait for and print result
         final DegraphmalizeAction action1 = ln.d.degraphmalize(new ID(idx,tp,"1",ir1.version()), this);
-        System.err.println("degramalize of 1: " + action1.resultDocument().get().toString());
+
+        log.info("Degraphmalize of 1: {}", action1.resultDocument().get());
 
         // degraphmalize "2" and wait for and print result
         final DegraphmalizeAction action2 = ln.d.degraphmalize(new ID(idx,tp,"2",ir2.version()), this);
-        System.err.println("degramalize of 2: " + action2.resultDocument().get().toString());
 
+        log.info("Degraphmalize of 2: {}", action2.resultDocument().get());
 
         // degraphmalize "1234"
         final DegraphmalizeAction action0 = ln.d.degraphmalize(new ID(idx,tp,id,ir.version()), this);
-        System.err.println("degramalize of 3: " + action0.resultDocument().get().toString());
+
+        log.info("Degraphmalize of 3: {}", action0.resultDocument().get());
 
         assertThat(action0.resultDocument().get().get("succes").toString().equals("true")).isTrue();
         assertThat(action1.resultDocument().get().get("succes").toString().equals("true")).isTrue();
@@ -125,25 +127,25 @@ public class DegraphmalizerTest implements DegraphmalizeStatus
     @Override
     public void recomputeStarted(RecomputeAction action)
     {
-        System.err.println("restart");
+        log.info("restart");
     }
 
     @Override
     public void recomputeComplete(RecomputeResult result)
     {
-        System.err.println("rcomplete");
+        log.info("rcomplete");
     }
 
     @Override
     public void complete(DegraphmalizeResult result)
     {
-        System.err.println("dcomplete");
+        log.info("dcomplete");
     }
 
     @Override
     public void exception(DegraphmalizeResult result)
     {
-        System.err.println("exception: " + result.exception().getMessage());
+        log.warn("Exception: {}", result.exception().getMessage());
         result.exception().printStackTrace();
     }
 }
