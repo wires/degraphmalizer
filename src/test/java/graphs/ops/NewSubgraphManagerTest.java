@@ -82,16 +82,12 @@ public class NewSubgraphManagerTest
         // make sure it is our edge
         assertThatGraphContains(lg.G, edge);
 
-        GraphQueries.dumpGraph(lg.G);
-
         // now lets claim "d,e,f,0"
         final EdgeID newEdge = gb.edge("(a,b,c,1) -- label --> (d,e,f,2)");
         final ID claim = newEdge.head();
 
         final Subgraph subgraph2 = lg.sgm.createSubgraph(claim);
         lg.sgm.commitSubgraph(subgraph2);
-
-        GraphQueries.dumpGraph(lg.G);
 
         // see if we have exactly enough elements in the graph
         assertThat(lg.G.getEdges()).hasSize(1);
