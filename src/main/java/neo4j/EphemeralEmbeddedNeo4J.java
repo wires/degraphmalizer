@@ -9,6 +9,8 @@ import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class EphemeralEmbeddedNeo4J extends AbstractModule
@@ -19,7 +21,11 @@ public class EphemeralEmbeddedNeo4J extends AbstractModule
     {
         FileUtils.deleteDirectory(new File(dataDir));
 
-        final Neo4jGraph graph = new Neo4jGraph(dataDir);
+        // manually set the cache provider
+        final Map<String, String> settings = new HashMap<String, String>();
+        settings.put("cache_type", "soft");
+
+        final Neo4jGraph graph = new Neo4jGraph(dataDir, settings);
 		
 		// quickly get vertices by ID
 		graph.createKeyIndex(GraphQueries.IDENTIFIER, Vertex.class);
