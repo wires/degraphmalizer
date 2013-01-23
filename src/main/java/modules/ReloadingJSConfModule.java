@@ -20,10 +20,13 @@ public class ReloadingJSConfModule extends AbstractModule implements Configurati
     // current configuration is cached here
     JavascriptConfiguration configuration = null;
 
-    public ReloadingJSConfModule(String scriptFolder)
-	{
+    public ReloadingJSConfModule(String scriptFolder) throws IOException
+    {
         this.scriptFolder = scriptFolder;
         this.poller = new PollingConfigurationMonitor(scriptFolder, 200, this);
+
+        if(loadConf() == null)
+            throw new RuntimeException("Failed loading configuration!");
     }
 	
 	@Override
@@ -43,7 +46,7 @@ public class ReloadingJSConfModule extends AbstractModule implements Configurati
         poller.start();
 
         // create new configuration
-        final JavascriptConfiguration d = new JavascriptConfiguration(new File(scriptFolder));
+        final JavascriptConfiguration d = loadConf();
 
         configuration = d;
         return d;
@@ -57,5 +60,10 @@ public class ReloadingJSConfModule extends AbstractModule implements Configurati
 
         // TODO fix logging
         System.err.println("Configuration change detected for index '" + index + "'");
+    }
+
+    private JavascriptConfiguration loadConf() throws IOException
+    {
+        return new JavascriptConfiguration(new File(scriptFolder));
     }
 }
