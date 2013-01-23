@@ -168,8 +168,6 @@ public class Degraphmalizer implements Degraphmalizr
                     // we add ourselves as the first job in the list
                     affectedDocs.add(new RecomputeAction(action, action.type(), root));
 
-                    GraphQueries.dumpGraph(graph);
-
                     for(WalkConfig walkCfg : action.type().walks().values())
                     {
                         // by walking in the opposite direction we can find all nodes affected by this change
