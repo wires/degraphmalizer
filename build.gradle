@@ -1,0 +1,56 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'application'
+
+mainClassName = 'degraphmalizer.Main'
+
+// add maven central repository for application dependencies
+repositories {
+	mavenCentral()
+	maven { url 'https://oss.sonatype.org/content/repositories/releases' }
+	maven { url 'http://m2.neo4j.org/releases' }
+}
+
+startScripts {
+	ext.jvmOpts = '-Xms1024m -Xmx2048m -XX:PermSize=256m -XX:MaxPermSize=512m'
+	
+	// for incremental build to work properly
+	inputs.property("jvmOpts", { ext.jvmOpts })
+	
+	doLast {
+		def optsEnvVar = "DEFAULT_JVM_OPTS"
+		unixScript.text = unixScript.text.replace("$optsEnvVar=${'""'}", "$optsEnvVar=${'"'}$ext.jvmOpts${'"'}")
+		windowsScript.text = windowsScript.text.replace("set $optsEnvVar=", "set $optsEnvVar=$ext.jvmOpts")
+	}
+}
+
+dependencies {
+	compile ('com.tinkerpop.blueprints:blueprints-neo4j-graph:2.1.0') {
+		exclude group: 'log4j', module: 'log4j'
+	}
+
+    compile (
+            'com.beust:jcommander:1.27',
+            'ch.qos.logback:logback-classic:1.0.5',
+            'com.fasterxml.jackson.core:jackson-core:2.0.0',
+            'com.fasterxml.jackson.core:jackson-databind:2.0.0',
+            'com.google.guava:guava:latest.integration',
+            'com.google.inject:guice:latest.integration',
+            'com.sun.jersey:jersey-core:1.9',
+            'net.sf.ehcache:ehcache-core:2.6.0',
+            'org.apache.solr:solr-solrj:1.4.0',
+            'org.elasticsearch:elasticsearch:0.19.8',
+            'org.jboss.netty:netty:latest.integration',
+            'org.mozilla:rhino:1.7R4',
+            'org.neo4j.app:neo4j-server:1.8.M07',
+            'org.neo4j.app:neo4j-server:1.8.M07:static-web',
+            'org.perf4j:perf4j:0.9.16',
+            'org.slf4j:log4j-over-slf4j:1.5.8',
+            'org.xerial.snappy:snappy-java:1.0.4.1',
+            'org.99soft.guice.sli4j:sli4j-slf4j:3.3',
+            'org.testng:testng:6.7'
+            //'org.slf4j:slf4j-simple:1.6.2',
+            //'com.sun.jersey:jersey-server:1.9',
+    )
+
+}

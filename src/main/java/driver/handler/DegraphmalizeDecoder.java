@@ -1,0 +1,36 @@
+package driver.handler;
+
+import degraphmalizr.ID;
+import exceptions.DegraphmalizerException;
+import org.jboss.netty.channel.Channel;
+import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.handler.codec.http.HttpRequest;
+import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
+
+/**
+ * Transform a HttpRequest into
+ */
+public class DegraphmalizeDecoder extends OneToOneDecoder
+{
+   @Override
+    protected Object decode(ChannelHandlerContext channelHandlerContext, Channel channel, Object o) throws Exception
+    {
+        final HttpRequest request = (HttpRequest)o;
+
+        // split url /TYPE/ID/ or fail
+        final String[] components = request.getUri().substring(1).split("/");
+
+        if (components.length != 4)
+            throw new DegraphmalizerException("URL must be of the form '/{index}/{type}/{id}/{version}'");
+
+//        if (request.getMethod() == HttpMethod.DELETE)
+//            return null; // TODO do something
+
+        final String index = components[0];
+        final String type = components[1];
+        final String id = components[2];
+        final long v = Long.parseLong(components[3]);
+
+        return new ID(index, type, id, v);
+    }
+}

@@ -1,0 +1,26 @@
+<configuration>
+	<jmxConfigurator />
+
+	<contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+		<resetJUL>true</resetJUL>
+	</contextListener>
+
+	<appender name="stdout" class="ch.qos.logback.core.ConsoleAppender"> 
+		<encoder>
+			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{35} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<appender name="file" class="ch.qos.logback.core.FileAppender">
+		<file>graphs.log</file>
+		<append>true</append>
+		<encoder>
+			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{35} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<root level="INFO">
+		<appender-ref ref="stdout"/>
+		<appender-ref ref="file"/>
+	</root>
+</configuration>
