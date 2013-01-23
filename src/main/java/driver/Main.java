@@ -12,8 +12,7 @@ import elasticsearch.LocalES;
 import elasticsearch.TransportES;
 import jmx.GraphBuilder;
 import modules.*;
-import neo4j.CommonNeo4j;
-import neo4j.EphemeralEmbeddedNeo4J;
+import neo4j.*;
 import org.elasticsearch.client.Client;
 import org.nnsoft.guice.sli4j.slf4j.Slf4jLoggingModule;
 import org.slf4j.Logger;
@@ -42,9 +41,9 @@ public class Main
         }
 
         // check if script directory exists
-        if(!new File(opt.script).isDirectory())
+        if(!new File(opt.config).isDirectory())
         {
-            System.err.println("Cannot find script directory '" + opt.script + "'");
+            System.err.println("Cannot find script directory '" + opt.config + "'");
             System.exit(1);
         }
 
@@ -58,27 +57,23 @@ public class Main
         modules.add(new ServerModule(opt.port));
         modules.add(new HandlerModule());
 
-        if(!opt.local)
+        // setup elasticsearch transport node
+        if(!(opt.transport.size() == 3))
         {
-            if(!(opt.transport.size() == 3))
-            {
-                System.err.println("You need to specify either the local or transport ES config");
-                System.exit(0);
-            }
-
-            // transport elasticsearch node
-            final String cluster = opt.transport.get(0);
-            final String host = opt.transport.get(1);
-            final int port = Integer.parseInt(opt.transport.get(2));
-            modules.add(new TransportES(cluster, host, port));
+            System.err.println("You need to specify either the local or transport ES config");
+            System.exit(0);
         }
-        else
-            // local (embedded) elasticsearch node
-            modules.add(new LocalES());
+
+        final String cluster = opt.transport.get(0);
+        final String host = opt.transport.get(1);
+        final int port = Integer.parseInt(opt.transport.get(2));
+        modules.add(new TransportES(cluster, host, port));
+
+        // we always run an embedded local graph database
+        modules.add(new EmbeddedNeo4J(opt.graphdb));
 
         // some defaults
         modules.add(new CommonNeo4j());
-        modules.add(new EphemeralEmbeddedNeo4J());
         modules.add(new BlueprintsSubgraphManagerModule());
         modules.add(new Slf4jLoggingModule(Matchers.any()));
         modules.add(new LogconfModule());
@@ -90,13 +85,13 @@ public class Main
         {
             // TODO logging
             System.err.println("Automatic reloading: enabled");
-            modules.add(new ReloadingJSConfModule(opt.script));
+            modules.add(new ReloadingJSConfModule(opt.config));
         }
         else
         {
             // TODO logging
             System.err.println("Automatic reloading: disabled");
-            modules.add(new StaticJSConfModule(opt.script));
+            modules.add(new StaticJSConfModule(opt.config));
         }
 
         // the injector
