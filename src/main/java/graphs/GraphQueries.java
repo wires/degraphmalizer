@@ -3,6 +3,7 @@ package graphs;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tinkerpop.blueprints.*;
 
@@ -28,7 +29,7 @@ public class GraphQueries
 
 	/**
 	 * Compute the vertices reached from <code>s</code> in one step in direction <code>d</code>.
-	 * 
+	 *
 	 * @param g the graph to operate on
 	 * @param s Initial vertex
 	 * @param d Direction to follow edges
@@ -40,7 +41,7 @@ public class GraphQueries
 	{
 		return childrenFrom(g, null, s, d, 1);
 	}
-	
+
 	// TODO non-recursive
 	private static Tree<Pair<Edge, Vertex>> childrenFrom(Graph g, Edge e, Vertex s, Direction d)
 	{
@@ -238,29 +239,36 @@ public class GraphQueries
     public static String toJsonStringRepresentation(ID id)
     {
         final ObjectMapper objectMapper = new ObjectMapper();
-        final StringWriter stringWriter = new StringWriter();
-        try {
-            objectMapper.writeValue(stringWriter, id);
-            return stringWriter.toString();
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException("Writing to StringWriter failed: " + e.getMessage()); // TODO: rechttrekken
-        }
+        final ArrayNode n = objectMapper.createArrayNode();
+        n.add(id.index()).add(id.type()).add(id.id()).add(id.version());
+        return n.toString();
     }
 
 
 
     private static ID fromJsonStringRepresentation(String json)
     {
-        final ObjectMapper objectMapper = new ObjectMapper();
         try
         {
-            return objectMapper.readValue(json, ID.class);
+            final ObjectMapper objectMapper = new ObjectMapper();
+            final JsonNode n = objectMapper.readTree(json);
+
+            if(!n.isArray())
+                return null;
+
+            final ArrayNode a = (ArrayNode)n;
+            final String index = a.get(0).textValue();
+            final String type = a.get(1).textValue();
+            final String id = a.get(2).textValue();
+            final long version = a.get(3).longValue();
+
+            return new ID(index,type,id,version);
+
         }
         catch (IOException e)
         {
-            throw new RuntimeException("Reading ID from JSON string failed: " + e.getMessage()); // TODO: rechttrekken
+            // log.trace("Failed to deserialize '" + json + "' into an ID");
+            return null;
         }
     }
 
@@ -345,8 +353,6 @@ public class GraphQueries
         setEdgeId(edgeID, e);
         return e;
     }
-
-
 
     /**
      * Create a vertex and set it's identifier.
