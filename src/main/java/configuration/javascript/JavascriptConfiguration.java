@@ -144,8 +144,8 @@ class JavascriptTypeConfig implements TypeConfig
 	final Function filter;
 	final Function extract;
 
-    final String targetIndex;
-    final String targetType;
+    final String sourceIndex;
+    final String sourceType;
 
     final Map<String,WalkConfig> walks = new HashMap<String, WalkConfig>();
 
@@ -163,8 +163,8 @@ class JavascriptTypeConfig implements TypeConfig
             filter = (Function)ScriptableObject.getProperty(script, "filter");
             extract = (Function)ScriptableObject.getProperty(script, "extract");
 
-            targetIndex = ScriptableObject.getTypedProperty(script, "targetIndex", String.class);
-            targetType = ScriptableObject.getTypedProperty(script, "targetType", String.class);
+            sourceIndex = ScriptableObject.getTypedProperty(script, "sourceIndex", String.class);
+            sourceType = ScriptableObject.getTypedProperty(script, "sourceType", String.class);
 
             // add the walks
             final Scriptable walks = (Scriptable)ScriptableObject.getProperty(script, "walks");
@@ -251,13 +251,25 @@ class JavascriptTypeConfig implements TypeConfig
     @Override
     public String targetType()
     {
-        return targetType;
+        return name();
+    }
+
+    @Override
+    public String sourceIndex()
+    {
+        return sourceIndex;
+    }
+
+    @Override
+    public String sourceType()
+    {
+        return sourceType;
     }
 
     @Override
     public String targetIndex()
     {
-        return targetIndex;
+        return index().name();
     }
 
     @Override

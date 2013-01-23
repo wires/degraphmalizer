@@ -64,9 +64,8 @@ public class Handler extends SimpleChannelHandler
             }
         };
 
-        final DegraphmalizeAction action = degraphmalizr.degraphmalize(id, callback);
-
         // write the action object
-        ctx.getChannel().write(action);
+        for(final DegraphmalizeAction action : degraphmalizr.degraphmalize(id, callback))
+            ctx.getChannel().write(action);
     }
 }

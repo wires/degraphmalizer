@@ -50,7 +50,13 @@ public interface TypeConfig
      */
     public String targetType();
 
-	/**
+    // match on this index
+    public String sourceIndex();
+
+    // match this type
+    public String sourceType();
+
+    /**
 	 * Walks performed for this type
 	 */
 	public Map<String, WalkConfig> walks();

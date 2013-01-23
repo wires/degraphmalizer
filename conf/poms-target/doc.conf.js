@@ -1,6 +1,6 @@
 ({
-    targetIndex: "koekje",
-    targetType: "pretzel",
+    sourceIndex: "poms",
+    sourceType: "doc",
 
     filter: (function(doc) {
         return true;
@@ -14,6 +14,8 @@
 
     extract: (function(doc, subgraph)
     {
+        // _.each(doc.episodeOf || [], function(p) { ... })
+
         // for each episodeOf, add an edge (us) -- episodeOf --> urn
         if (doc.episodeOf && doc.episodeOf.length)
         {
@@ -26,8 +28,6 @@
                     });
             });
         }
-
-
     }),
 
     "walks":{

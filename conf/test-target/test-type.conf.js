@@ -1,6 +1,6 @@
 ({
-    targetIndex: "test-target",
-    targetType: "test-type",
+    sourceIndex: "test-index",
+    sourceType: "test-type",
 
 	filter: (function(doc) {
 		return true;

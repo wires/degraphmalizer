@@ -99,27 +99,39 @@ public class Degraphmalizer implements Degraphmalizr
         this.updater = esUtilities;
 	}
 
+    List<TypeConfig> configsFor(String index, String type) throws DegraphmalizerException
+    {
+        final ArrayList<TypeConfig> configs = new ArrayList<TypeConfig>();
+
+        // TODO refactor
+        for(IndexConfig i : cfgProvider.get().indices().values())
+            for(TypeConfig t : i.types().values())
+                if(index.equals(t.sourceIndex()) && type.equals(t.sourceType()))
+                    configs.add(t);
+
+        if(configs.size() == 0)
+            throw new DegraphmalizerException("No configuration for index '" + index + "', type '" + type + "'");
+
+        return configs;
+    }
 
     @Override
-    public DegraphmalizeAction degraphmalize(ID id, DegraphmalizeStatus callback) throws DegraphmalizerException
+    public List<DegraphmalizeAction> degraphmalize(ID id, DegraphmalizeStatus callback) throws DegraphmalizerException
     {
-        // get configuration for index
-        final IndexConfig indexCfg = cfgProvider.get().indices().get(id.index());
-        if(indexCfg == null)
-            throw new DegraphmalizerException("No configuration for index '" + id.index() + "'");
+        final ArrayList<DegraphmalizeAction> actions = new ArrayList<DegraphmalizeAction>();
 
-        // get configuration for this type
-        final TypeConfig typeCfg = indexCfg.types().get(id.type());
-        if(typeCfg == null)
-            throw new DegraphmalizerException("No configuration for type '" + id.type() + "'");
+        for(TypeConfig cfg : configsFor(id.index(), id.type()))
+        {
+            // construct the action object
+            final DegraphmalizeAction action = new DegraphmalizeAction(cfg, id, callback);
 
-        // construct the action object
-        final DegraphmalizeAction action = new DegraphmalizeAction(typeCfg, id, callback);
+            // convert object into task and queue
+            action.result = updateDocs.submit(degraphmalizeJob(action));
 
-        // convert object into task and queue
-        action.result = updateDocs.submit(degraphmalizeJob(action));
+            actions.add(action);
+        }
 
-        return action;
+        return actions;
     }
 
 	public Callable<JsonNode> degraphmalizeJob(final DegraphmalizeAction action)

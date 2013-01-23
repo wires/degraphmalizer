@@ -89,36 +89,30 @@ public class DegraphmalizerTest implements DegraphmalizeStatus
         final IndexResponse ir = ln.es.prepareIndex(idx,tp,id)
                 .setSource("{\"children\":[1,2,3]}").execute().actionGet();
 
-        log.info("Indexed /{}/{}/{} as version {} into ES", new Object[] { idx, tp, id, ir.version() });
+        log.info("Indexed /{}/{}/{} as version {} into ES", new Object[]{idx, tp, id, ir.version()});
 
         final IndexResponse ir1 = ln.es.prepareIndex(idx,tp,"1")
                 .setSource("{\"cheese\":\"gorgonzola\"}").execute().actionGet();
 
-        log.info("Indexed /{}/{}/1 as version {} into ES", new Object[] { idx, tp, ir1.version() });
+        log.info("Indexed /{}/{}/1 as version {} into ES", new Object[]{idx, tp, ir1.version()});
 
         final IndexResponse ir2 = ln.es.prepareIndex(idx,tp,"2")
                 .setSource("{\"cheese\":\"mozarella\"}").execute().actionGet();
 
-        log.info("Indexed /{}/{}/2 as version {} into ES", new Object[] { idx, tp, ir2.version() });
+        log.info("Indexed /{}/{}/2 as version {} into ES", new Object[]{idx, tp, ir2.version()});
 
         // degraphmalize "1" and wait for and print result
-        final DegraphmalizeAction action1 = ln.d.degraphmalize(new ID(idx,tp,"1",ir1.version()), this);
+        final ArrayList<DegraphmalizeAction> actions = new ArrayList<DegraphmalizeAction>();
 
-        log.info("Degraphmalize of 1: {}", action1.resultDocument().get());
+        actions.addAll(ln.d.degraphmalize(new ID(idx,tp,"1",ir1.version()), this));
+        actions.addAll(ln.d.degraphmalize(new ID(idx,tp,"2",ir2.version()), this));
+        actions.addAll(ln.d.degraphmalize(new ID(idx,tp,id,ir.version()), this));
 
-        // degraphmalize "2" and wait for and print result
-        final DegraphmalizeAction action2 = ln.d.degraphmalize(new ID(idx,tp,"2",ir2.version()), this);
-
-        log.info("Degraphmalize of 2: {}", action2.resultDocument().get());
-
-        // degraphmalize "1234"
-        final DegraphmalizeAction action0 = ln.d.degraphmalize(new ID(idx,tp,id,ir.version()), this);
-
-        log.info("Degraphmalize of 3: {}", action0.resultDocument().get());
-
-        assertThat(action0.resultDocument().get().get("succes").toString().equals("true")).isTrue();
-        assertThat(action1.resultDocument().get().get("succes").toString().equals("true")).isTrue();
-        assertThat(action2.resultDocument().get().get("succes").toString().equals("true")).isTrue();
+        for(final DegraphmalizeAction a : actions)
+        {
+            log.info("Degraphmalize of {}: {}", a.id(), a.resultDocument().get());
+            assertThat(a.resultDocument().get().get("succes").toString().equals("true")).isTrue();
+        }
 
         ln.es.close();
         ln.G.shutdown();
