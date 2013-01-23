@@ -5,12 +5,13 @@ import degraphmalizr.Degraphmalizr;
 import degraphmalizr.ID;
 import degraphmalizr.jobs.*;
 import org.jboss.netty.channel.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- *
- */
 public class Handler extends SimpleChannelHandler
 {
+    private final static Logger log = LoggerFactory.getLogger(Handler.class);
+
     private final Degraphmalizr degraphmalizr;
 
     @Inject
@@ -33,21 +34,21 @@ public class Handler extends SimpleChannelHandler
             @Override
             public void recomputeStarted(RecomputeAction action)
             {
-                System.err.println("recompute started");
+                log.info("recompute started");
 //                ctx.getChannel().write(action);
             }
 
             @Override
             public void recomputeComplete(RecomputeResult result)
             {
-                System.err.println("recompute completed");
+                log.info("recompute completed");
 //                ctx.getChannel().write(result);
             }
 
             @Override
             public void complete(DegraphmalizeResult result)
             {
-                System.err.println("completed degraphmalization");
+                log.info("completed degraphmalization");
 
                 // write completion message and close channel
                 ctx.getChannel().write(result).addListener(ChannelFutureListener.CLOSE);
@@ -56,7 +57,7 @@ public class Handler extends SimpleChannelHandler
             @Override
             public void exception(DegraphmalizeResult result)
             {
-                System.err.println("exception occured " + result.exception());
+                log.error("Exception occurred: {}", result.exception());
                 // send exception message upstream. We cannot simply throw the exception because this is not executed
                 // in the netty selector thread
                 ctx.sendUpstream(new DefaultExceptionEvent(ctx.getChannel(), result.exception()));
