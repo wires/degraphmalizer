@@ -10,4 +10,4 @@ if [ $? = 0 ] && [ $COLORS -gt 2 ]; then
     OPTION='-L logback-ansi.xml'
 fi
 
-mvn --quiet exec:java -Dexec.args="$OPTION $*"
+mvn -DskipTests=true --quiet exec:java -Dexec.args="$OPTION $*"
