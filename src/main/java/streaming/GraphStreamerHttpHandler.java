@@ -22,7 +22,6 @@ public final class GraphStreamerHttpHandler extends SimpleChannelHandler {
     private final ChannelContext channelContext;
     private final StreamingGraph streamingGraph;
 
-
     public GraphStreamerHttpHandler(HttpRequestMapper requestMapper, ChannelContext channelContext, StreamingGraph streamingGraph) {
         this.requestMapper = requestMapper;
         this.channelContext = channelContext;
@@ -30,18 +29,24 @@ public final class GraphStreamerHttpHandler extends SimpleChannelHandler {
     }
 
     @Override
-    public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-        System.out.println("Connection received from");
+    public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception
+    {
+        LOGGER.debug("Connection received from");
     }
 
     @Override
-    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-        if (HttpRequest.class.isAssignableFrom(e.getMessage().getClass())) {
+    public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception
+    {
+        if (HttpRequest.class.isAssignableFrom(e.getMessage().getClass()))
+        {
             HttpRequest request = (HttpRequest) e.getMessage();
             Channel channel = e.getChannel();
-            try {
+            try
+            {
                 requestMapper.handleRequest(request, channel);
-            } catch (RequestHandlerException rhe) {
+            }
+            catch (RequestHandlerException rhe)
+            {
                 String errorMessage = "Can not handle request [" + request.getUri() + "]. Reason: " + rhe.getMessage();
                 LOGGER.error(errorMessage);
                 channel.write(createErrorResponse(rhe));
@@ -76,6 +81,7 @@ public final class GraphStreamerHttpHandler extends SimpleChannelHandler {
                 return false;
             }
         });
+
         if (listener.size() > 0) {
             //there shouldn't be more than one
             if(listener.size() > 1)
@@ -84,9 +90,6 @@ public final class GraphStreamerHttpHandler extends SimpleChannelHandler {
             streamingGraph.removeGraphCommandListener(listener.get(0));
             LOGGER.debug("ChannelpushingGraphCommandListener removed for channel [{}] on account of the fact this channel is closing", event.getChannel());
         }
-
-
-
     }
 
     @Override
