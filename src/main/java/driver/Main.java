@@ -82,13 +82,13 @@ public class Main
         {
             // TODO logging
             System.err.println("Automatic reloading: enabled");
-            modules.add(new ReloadingJSConfModule("scripts/"));
+            modules.add(new ReloadingJSConfModule(opt.script));
         }
         else
         {
             // TODO logging
             System.err.println("Automatic reloading: disabled");
-            modules.add(new StaticJSConfModule("scripts/"));
+            modules.add(new StaticJSConfModule(opt.script));
         }
 
         // the injector
