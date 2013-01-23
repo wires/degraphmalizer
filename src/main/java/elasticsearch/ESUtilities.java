@@ -104,7 +104,7 @@ public class ESUtilities
                     log.debug("Document {} does not exist!", id);
                     // TODO optional.absent is now considered a query problem, in the future we want to handle each case
                     // separately, see DGM-45
-                    return Optional.absent();
+                    return Optional.of(r);
                 }
 
                 return Optional.of(r);
