@@ -5,10 +5,10 @@
     <name>elasticsearch-degraphmalizer</name>
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.elasticsearch</groupId>
-    <artifactId>degraphmalizer</artifactId>
+    <artifactId>elasticsearch-degraphmalizer</artifactId>
     <version>0.20.2-0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
-    <description>ES Plugin that sends notifies to a Degraphmalizer instance.</description>
+    <description>Elasticsearch plugin that sends HTTP requests to a Degraphmalizer instance.</description>
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
@@ -17,9 +17,9 @@
         </license>
     </licenses>
     <scm>
-        <connection>scm:git:git@github.com:breun/degraphmalizer.git</connection>
-        <developerConnection>scm:git:git@github.com:breun/degraphmalizer.git</developerConnection>
-        <url>http://github.com/breun/degraphmalizer</url>
+        <connection>scm:git:git@github.com:breun/elasticsearch-degraphmalizer.git</connection>
+        <developerConnection>scm:git:git@github.com:breun/elasticsearch-degraphmalizer.git</developerConnection>
+        <url>http://github.com/breun/elasticsearch-degraphmalizer</url>
     </scm>
 
     <parent>
