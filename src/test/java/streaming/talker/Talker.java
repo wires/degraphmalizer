@@ -1,49 +1,59 @@
 package streaming.talker;
 
 
-public abstract class Talker<T> implements Runnable {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public abstract class Talker<T> implements Runnable
+{
+    final private static Logger log = LoggerFactory.getLogger(Talker.class);
 
     private SomeOne<T> someOne;
-    private int i = 0;
     boolean active = false;
 
     Thread t;
 
-    public Talker(SomeOne<T> someOne) {
+    public Talker(SomeOne<T> someOne)
+    {
         this.someOne = someOne;
     }
 
-    public final void start() {
-        System.out.println("Starting the thread");
+    public final void start()
+    {
+        log.info("Starting the thread");
         t = new Thread(this);
         active = true;
         t.start();
     }
 
     public final void stop() {
-        i = 0;
-        System.out.println("Stopping the thread");
+        log.info("Stopping the thread");
         active = false;
     }
 
     @Override
-    public final void run() {
-        while (active) {
+    public final void run()
+    {
+        while (active)
+        {
             T next = nextMessage();
-            if (next == null) {
-                System.out.println("no more messages");
+            if (next == null)
+            {
+                log.info("no more messages");
                 someOne.done();
                 stop();
                 break;
             }
             someOne.talk(next);
-            try {
+            try
+            {
                 Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
+            catch (InterruptedException e)
+            {
+                e.printStackTrace();
             }
         }
-
     }
 
     protected abstract T nextMessage();
