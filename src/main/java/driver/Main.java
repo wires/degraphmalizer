@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
+import java.io.File;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,13 @@ public class Main
         if(opt.help)
         {
             jcommander.usage();
+            System.exit(1);
+        }
+
+        // check if script directory exists
+        if(!new File(opt.script).isDirectory())
+        {
+            System.err.println("Cannot find script directory '" + opt.script + "'");
             System.exit(1);
         }
 
