@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import java.io.File;
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,7 +86,15 @@ public class Main
         {
             // TODO logging
             System.err.println("Automatic reloading: enabled");
-            modules.add(new ReloadingJSConfModule(opt.config));
+            try
+            {
+                modules.add(new ReloadingJSConfModule(opt.config));
+            }
+            catch (IOException e)
+            {
+                System.err.println("Failed parsing the configuration");
+                System.exit(1);
+            }
         }
         else
         {
