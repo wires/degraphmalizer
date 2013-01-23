@@ -8,7 +8,6 @@ import degraphmalizr.DegraphmalizerModule;
 import driver.handler.HandlerModule;
 import driver.server.Server;
 import driver.server.ServerModule;
-import elasticsearch.LocalES;
 import elasticsearch.TransportES;
 import jmx.GraphBuilder;
 import modules.*;
@@ -16,6 +15,7 @@ import neo4j.*;
 import org.elasticsearch.client.Client;
 import org.nnsoft.guice.sli4j.slf4j.Slf4jLoggingModule;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -27,6 +27,8 @@ import java.util.List;
 
 public class Main
 {
+    private final static Logger log = LoggerFactory.getLogger(Main.class);
+
     public static void main(String[] args)
     {
         final Options opt = new Options();
@@ -44,7 +46,7 @@ public class Main
         // check if script directory exists
         if(!new File(opt.config).isDirectory())
         {
-            System.err.println("Cannot find script directory '" + opt.config + "'");
+            log.error("Cannot find configuration directory {}. Exiting.", opt.config);
             System.exit(1);
         }
 
@@ -61,8 +63,8 @@ public class Main
         // setup elasticsearch transport node
         if(!(opt.transport.size() == 3))
         {
-            System.err.println("You need to specify either the local or transport ES config");
-            System.exit(0);
+            log.error("You need to specify either the local or transport ES config. Exiting.");
+            System.exit(1);
         }
 
         final String host = opt.transport.get(0);
@@ -85,22 +87,20 @@ public class Main
         // automatic reloading
         if(opt.reloading)
         {
-            // TODO logging
-            System.err.println("Automatic reloading: enabled");
+            log.info("Automatic reloading: enabled");
             try
             {
                 modules.add(new ReloadingJSConfModule(opt.config));
             }
             catch (IOException e)
             {
-                System.err.println("Failed parsing the configuration");
+                log.error("Failed to parse the configuration. Exiting.");
                 System.exit(1);
             }
         }
         else
         {
-            // TODO logging
-            System.err.println("Automatic reloading: disabled");
+            log.info("Automatic reloading: disabled");
             modules.add(new StaticJSConfModule(opt.config));
         }
 
