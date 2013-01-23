@@ -35,7 +35,7 @@ class LocalNode
         modules.add(new LocalES());
         modules.add(new CommonNeo4j());
         modules.add(new EphemeralEmbeddedNeo4J());
-        modules.add(new StaticJSConfModule("scripts/"));
+        modules.add(new StaticJSConfModule("conf/"));
         modules.add(new Slf4jLoggingModule(Matchers.any()));
 
         modules.add(new LogconfModule());

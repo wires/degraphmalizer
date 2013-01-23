@@ -65,9 +65,10 @@ public class Main
             System.exit(0);
         }
 
-        final String cluster = opt.transport.get(0);
+        final String host = opt.transport.get(0);
         final int port = Integer.parseInt(opt.transport.get(1));
-        final String host = opt.transport.get(2);
+        final String cluster = opt.transport.get(2);
+
         modules.add(new TransportES(cluster, host, port));
 
         // we always run an embedded local graph database
