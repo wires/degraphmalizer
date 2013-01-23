@@ -140,28 +140,4 @@ public class PollingConfigurationMonitor implements Runnable
         // ... because we don't care about order in which files are listed
         return Hashing.combineUnordered(codes);
     }
-
-    public static void main(String[] args)
-    {
-        new PollingConfigurationMonitor("scripts/", 400, new ConfigurationMonitor()
-        {
-            @Override
-            public void configurationChanged(String index)
-            {
-                System.err.format("Configuration change detected for index %s\n", index);
-            }
-        }).start();
-
-        while(true)
-        {
-            try
-            {
-                Thread.sleep(10000);
-            } catch (InterruptedException e)
-            {
-                e.printStackTrace();
-                System.exit(1);
-            }
-        }
-    }
 }
