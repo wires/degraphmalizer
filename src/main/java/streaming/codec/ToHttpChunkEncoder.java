@@ -12,7 +12,7 @@ public class ToHttpChunkEncoder extends OneToOneEncoder {
 
 
     @Override
-    protected Object encode(ChannelHandlerContext ctx, Channel channel, Object msg) throws Exception {
+    protected final Object encode(ChannelHandlerContext ctx, Channel channel, Object msg) throws Exception {
         if (!(msg instanceof ChannelBuffer)) {
             return msg;
         }

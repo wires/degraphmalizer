@@ -41,7 +41,7 @@ public final class UpdateStreamRequestHandler extends BaseGraphStreamerRequestHa
         final String id = getParamOrFail(params, 0, ERR_MSG);
         final String vertexId = getParamOrFail(params, 1, ERR_MSG);
 
-        final Optional<ChannelGroup> channelOptional = channelContext.getChannelGroup(id);
+        final Optional<ChannelGroup> channelOptional = getChannelContext().getChannelGroup(id);
         if(!channelOptional.isPresent())
             throw new RequestHandlerException("There is no command stream with id " + id + "\n", HttpResponseStatus.BAD_REQUEST);
 
@@ -51,7 +51,7 @@ public final class UpdateStreamRequestHandler extends BaseGraphStreamerRequestHa
         channel.close();
 
         //handle the GraphCommand stuff
-        graphStreamingService.unfoldVertex(vertexId, new ToChannelGroupListener(channelOptional.get()));
+        getGraphStreamingService().unfoldVertex(vertexId, new ToChannelGroupListener(channelOptional.get()));
     }
 
     @Override

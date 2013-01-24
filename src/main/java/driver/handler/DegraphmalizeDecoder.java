@@ -12,8 +12,8 @@ import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
  */
 public class DegraphmalizeDecoder extends OneToOneDecoder
 {
-   @Override
-    protected Object decode(ChannelHandlerContext channelHandlerContext, Channel channel, Object o) throws Exception
+    @Override
+    protected final Object decode(ChannelHandlerContext channelHandlerContext, Channel channel, Object o) throws DegraphmalizerException
     {
         final HttpRequest request = (HttpRequest)o;
 

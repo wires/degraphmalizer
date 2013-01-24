@@ -26,7 +26,7 @@ public class GraphUnfoldingServiceImpl implements GraphUnfoldingService
     }
 
     @Override
-    public void unfoldVertex(String id, GraphCommandListener listener)
+    public final void unfoldVertex(String id, GraphCommandListener listener)
     {
         final Vertex v = graph.getVertex(id);
 
@@ -46,12 +46,12 @@ public class GraphUnfoldingServiceImpl implements GraphUnfoldingService
             for(Edge e : v.getEdges(d))
             {
                 final Vertex v2 = e.getVertex(d.opposite());
-                final String v2_id = (String)v2.getId();
-                final String e_id = (String)e.getId();
-                final String e_label = e.getLabel();
+                final String v2Id = (String)v2.getId();
+                final String eId = (String)e.getId();
+                final String eLabel = e.getLabel();
 
-                listener.commandCreated(addNodeCommand(node(v2_id)).build());
-                listener.commandCreated(addEdgeCommand(edge(e_id, id, v2_id, true).set("label", e_label)).build());
+                listener.commandCreated(addNodeCommand(node(v2Id)).build());
+                listener.commandCreated(addEdgeCommand(edge(eId, id, v2Id, true).set("label", eLabel)).build());
             }
         }
     }

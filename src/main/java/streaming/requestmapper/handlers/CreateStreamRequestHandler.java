@@ -39,7 +39,7 @@ public final class CreateStreamRequestHandler extends BaseGraphStreamerRequestHa
         final Optional<String> vertexIdOption = getParamOption(params, 1);
 
         //add the channel to the context.
-        final ChannelGroup channelGroup =  channelContext.addChannel(id, channel);
+        final ChannelGroup channelGroup = getChannelContext().addChannel(id, channel);
 
         //now emit the response, but keep the line open
         final HttpResponse res = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
@@ -48,7 +48,7 @@ public final class CreateStreamRequestHandler extends BaseGraphStreamerRequestHa
 
         //now, if a vertex id was given, send that to the channel group with this id.
         if (vertexIdOption.isPresent())
-            graphStreamingService.unfoldVertex(vertexIdOption.get(), new ToChannelGroupListener(channelGroup));
+            getGraphStreamingService().unfoldVertex(vertexIdOption.get(), new ToChannelGroupListener(channelGroup));
     }
 
     @Override

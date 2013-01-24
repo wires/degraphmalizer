@@ -25,7 +25,7 @@ public class StaticJSConfModule extends AbstractModule
 	
 	@Provides
 	@Singleton
-    Configuration provideConfiguration() throws IOException
+    final Configuration provideConfiguration() throws IOException
 	{
 		return new JavascriptConfiguration(new File(scriptFolder));
 	}

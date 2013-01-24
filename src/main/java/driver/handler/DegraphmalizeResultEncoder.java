@@ -20,7 +20,7 @@ public class DegraphmalizeResultEncoder extends OneToOneEncoder
     private final Class[] acceptedMessages = new Class[]{DegraphmalizeAction.class, DegraphmalizeResult.class, RecomputeAction.class, RecomputeResult.class};
 
     @Override
-    protected Object encode(ChannelHandlerContext ctx, Channel channel, Object o) throws Exception
+    protected final Object encode(ChannelHandlerContext ctx, Channel channel, Object o)
     {
         final Class oc = o.getClass();
         for(Class c : acceptedMessages)

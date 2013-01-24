@@ -19,7 +19,7 @@ public class LocalES extends AbstractModule
 
     @Provides
     @Singleton
-    Client provideElasticInterface()
+    final Client provideElasticInterface()
     {
         final Node node = nodeBuilder().local(true).node();
         return node.client();

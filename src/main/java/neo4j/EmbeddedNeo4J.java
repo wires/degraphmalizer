@@ -12,7 +12,7 @@ public class EmbeddedNeo4J extends AbstractModule
     }
 
     @Override
-    protected void configure()
+    protected final void configure()
     {
         bind(String.class).annotatedWith(Neo4jDataDir.class).toInstance(dataDir);
     }

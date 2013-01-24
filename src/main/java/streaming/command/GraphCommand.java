@@ -13,11 +13,11 @@ public class GraphCommand {
         this.nodes = nodes;
     }
 
-    public GraphCommandType getCommandType() {
+    public final GraphCommandType getCommandType() {
         return typeGraph;
     }
 
-    public List<GraphNode> getNodes() {
+    public final List<GraphNode> getNodes() {
         return Collections.unmodifiableList(nodes);
     }
 }

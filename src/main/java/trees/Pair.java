@@ -23,7 +23,7 @@ public class Pair<A,B>
 	}
 
     @Override
-	public String toString()
+	public final String toString()
 	{
 		final StringBuilder s = new StringBuilder("<");
 		s.append(getStringRepresentation(a));

@@ -27,7 +27,7 @@ public class GraphBuilder implements GraphBuilderMBean
 	}
 	
 	@Override
-	public String esGet(String index, String type, String id)
+	public final String esGet(String index, String type, String id)
 	{
 		try
         {
@@ -65,7 +65,7 @@ public class GraphBuilder implements GraphBuilderMBean
 	}
 
     @Override
-    public void dumpGraph() {
+    public final void dumpGraph() {
         GraphQueries.dumpGraph(graph);
     }
 }

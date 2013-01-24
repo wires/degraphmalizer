@@ -44,7 +44,7 @@ public class JavascriptConfiguration implements Configuration
     }
 
     @Override
-    public Map<String, ? extends IndexConfig> indices()
+    public final Map<String, ? extends IndexConfig> indices()
     {
         return indices;
     }

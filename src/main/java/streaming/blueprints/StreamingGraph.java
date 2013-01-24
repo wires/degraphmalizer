@@ -203,7 +203,8 @@ public final class StreamingGraph implements Graph {
         }
 
         @Override
-        public Vertex getVertex(Direction direction) throws IllegalArgumentException {
+        public Vertex getVertex(Direction direction)
+        {
             return new StreamingVertex(wrapped.getVertex(direction));
         }
 

@@ -22,13 +22,15 @@ public class ServerModule extends AbstractModule
     }
 
     @Override
-    protected void configure()
+    protected final void configure()
     {
         bind(SocketAddress.class).toInstance(new InetSocketAddress(port));
     }
 
-    @Provides @Inject @Singleton
-    ServerBootstrap provideServerBootstrap(ChannelFactory channelFactory, Provider<ChannelPipeline> pipelineProvider)
+    @Provides
+    @Inject
+    @Singleton
+    final ServerBootstrap provideServerBootstrap(ChannelFactory channelFactory, Provider<ChannelPipeline> pipelineProvider)
     {
         final ServerBootstrap bootstrap = new ServerBootstrap(channelFactory);
 
@@ -44,7 +46,7 @@ public class ServerModule extends AbstractModule
     }
 
     @Provides @Inject @Singleton
-    ChannelFactory provideChannelFactory()
+    final ChannelFactory provideChannelFactory()
     {
         // NIO channels
         return new NioServerSocketChannelFactory(

@@ -21,12 +21,12 @@ public class GlobalCommandStreamRequestHandler implements HttpRequestMapper.Requ
     }
 
     @Override
-    public void handleRequest(HttpRequest request, Channel channel) throws RequestHandlerException {
+    public final void handleRequest(HttpRequest request, Channel channel) throws RequestHandlerException {
         streamingGraph.addGraphCommandListener(new ChannelpushingGraphCommandListener(channel));
     }
 
     @Override
-    public String getPathMatchingExpression() {
+    public final String getPathMatchingExpression() {
         return PATH_REGEX;
     }
 

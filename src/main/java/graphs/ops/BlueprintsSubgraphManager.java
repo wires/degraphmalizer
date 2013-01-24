@@ -13,11 +13,11 @@ import static graphs.GraphQueries.*;
 
 public class BlueprintsSubgraphManager implements SubgraphManager
 {
-    protected final TransactionalGraph G;
+    private final TransactionalGraph graph;
 
-    public BlueprintsSubgraphManager(TransactionalGraph G)
+    public BlueprintsSubgraphManager(TransactionalGraph graph)
     {
-        this.G = G;
+        this.graph = graph;
     }
 
     @Override
@@ -37,11 +37,11 @@ public class BlueprintsSubgraphManager implements SubgraphManager
         {
             // create a list of all elements owned by any version of this subgraph
             final List<Vertex> verticesToDelete = new ArrayList<Vertex>();
-            for (Vertex v : findOwnedVertices(G, sg.id))
+            for (Vertex v : findOwnedVertices(graph, sg.id()))
                 verticesToDelete.add(v);
 
             final List<Edge> edgesToDelete = new ArrayList<Edge>();
-            for (Edge e : findOwnedEdges(G, sg.id))
+            for (Edge e : findOwnedEdges(graph, sg.id()))
                 edgesToDelete.add(e);
 
             // do stuff needed for central vertex...
@@ -59,22 +59,22 @@ public class BlueprintsSubgraphManager implements SubgraphManager
             for(Edge e: edgesToDelete)
             {
                 // it is possible that a vertex turned symbolic and we are the last edge pointing to it, then remove it
-                final Vertex v = e.getVertex(directionOppositeTo(getEdgeID(e), sg.id));
-                if(canDeleteVertex(v, sg.id, edgesToDelete))
+                final Vertex v = e.getVertex(directionOppositeTo(getEdgeID(e), sg.id()));
+                if(canDeleteVertex(v, sg.id(), edgesToDelete))
                     verticesToDelete.add(v);
 
-                G.removeEdge(e);
+                graph.removeEdge(e);
             }
 
             // Now remove the vertices.
             for(final Vertex v: verticesToDelete)
-                if (canDeleteVertex(v, sg.id, edgesToDelete))
-                    G.removeVertex(v);
+                if (canDeleteVertex(v, sg.id(), edgesToDelete))
+                    graph.removeVertex(v);
 
 
             // commit changes to graph
             success = true;
-            G.stopTransaction(TransactionalGraph.Conclusion.SUCCESS);
+            graph.stopTransaction(TransactionalGraph.Conclusion.SUCCESS);
         }
         catch(DegraphmalizerException e)
         {
@@ -84,7 +84,7 @@ public class BlueprintsSubgraphManager implements SubgraphManager
         {
             // rollback if something failed
             if(! success)
-                G.stopTransaction(TransactionalGraph.Conclusion.FAILURE);
+                graph.stopTransaction(TransactionalGraph.Conclusion.FAILURE);
         }
     }
 
@@ -115,25 +115,25 @@ public class BlueprintsSubgraphManager implements SubgraphManager
     private Vertex createOrUpdateCentralVertex(SG sg) throws DegraphmalizerException
     {
         // find vertex, doesn't care about version
-        Vertex center = resolveVertex(G, sg.id);
+        Vertex center = resolveVertex(graph, sg.id());
 
         if (center == null)
-           center = createVertex(G, sg.id);
+           center = createVertex(graph, sg.id());
 
-        if (isOlder(sg.id, getID(center)))
+        if (isOlder(sg.id(), getID(center)))
             throw new DegraphmalizerException("Cannot override older vertex");
 
-        if (! isOwnable(center, sg.id))
+        if (! isOwnable(center, sg.id()))
             throw new DegraphmalizerException("It is not possible to change the owner of a vertex");
 
         setProperties(center, sg.properties);
 
         //if the 'center' vertex has edges, then the edge id should be updated.
-        updateEdgeIds(center, sg.id);
+        updateEdgeIds(center, sg.id());
 
         // update the identifier (to the latest version)
-        setID(center, sg.id);
-        setOwner(center, sg.id);
+        setID(center, sg.id());
+        setOwner(center, sg.id());
 
         return center;
     }
@@ -172,20 +172,20 @@ public class BlueprintsSubgraphManager implements SubgraphManager
         for (Map.Entry<EdgeID, Map<String, JsonNode>> e : sg.edges.entrySet())
         {
             final EdgeID edgeId = e.getKey();
-            Edge edge = findEdge(G, edgeId);
+            Edge edge = findEdge(graph, edgeId);
 
             if (edge != null)
                 //check if this edge belongs to this subgraph.
-                edgeConsistencyCheck(sg.id, edgeId, edge);
+                edgeConsistencyCheck(sg.id(), edgeId, edge);
             else
             {
-                final Pair<Edge, Vertex> pair = createEdgeAndVertex(sg.id, edgeId);
+                final Pair<Edge, Vertex> pair = createEdgeAndVertex(sg.id(), edgeId);
                 vertexList.add(pair.b);
                 edge = pair.a;
             }
 
             // claim edge
-            setOwner(edge, sg.id);
+            setOwner(edge, sg.id());
             setProperties(edge, e.getValue());
             edgeList.add(edge);
         }
@@ -197,11 +197,11 @@ public class BlueprintsSubgraphManager implements SubgraphManager
         final ID other = getOppositeId(edgeId, centralVertex);
 
         // we either resolve the symbolic vertex, or create one to represent it
-        Vertex v = resolveVertex(G, other);
+        Vertex v = resolveVertex(graph, other);
         if (v == null)
-            v = createVertex(G, other);
+            v = createVertex(graph, other);
 
-        final Edge edge = createEdge(G, createOppositeId(edgeId, centralVertex, getID(v)));
+        final Edge edge = createEdge(graph, createOppositeId(edgeId, centralVertex, getID(v)));
         return new Pair<Edge,Vertex>(edge, v);
     }
 
@@ -225,15 +225,15 @@ public class BlueprintsSubgraphManager implements SubgraphManager
 
 class SG implements Subgraph
 {
-    final ID id;
+    private final ID id;
+
+    final Map<EdgeID, Map<String, JsonNode>> edges = new HashMap<EdgeID, Map<String, JsonNode>>();
+    final Map<String, JsonNode> properties = new IdentityHashMap<String, JsonNode>();
 
     public SG(ID id)
     {
         this.id = id;
     }
-
-    final HashMap<EdgeID, Map<String, JsonNode>> edges = new HashMap<EdgeID, Map<String, JsonNode>>();
-    final IdentityHashMap<String, JsonNode> properties = new IdentityHashMap<String, JsonNode>();
 
     @Override
     public void addEdge(String label, ID other, Direction direction, Map<String, JsonNode> edgeProperties)
@@ -262,5 +262,10 @@ class SG implements Subgraph
     public void setProperty(String key, JsonNode value)
     {
         properties.put(key, value);
+    }
+
+    public ID id()
+    {
+        return id;
     }
 }

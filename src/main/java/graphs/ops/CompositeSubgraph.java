@@ -2,6 +2,7 @@ package graphs.ops;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -12,7 +13,7 @@ import degraphmalizr.ID;
 public class CompositeSubgraph implements Subgraph
 {
 
-	final ArrayList<Subgraph> subgraphs;
+	private final List<Subgraph> subgraphs;
 	
 	public CompositeSubgraph(Subgraph... subgraphs)
 	{

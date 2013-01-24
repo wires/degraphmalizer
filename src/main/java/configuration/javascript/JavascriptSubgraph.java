@@ -31,7 +31,7 @@ public class JavascriptSubgraph
         this.scope = scope;
     }
 
-    public void addEdge(String label, String index, String type, String id, boolean inwards, Map<String, Object> properties) throws IOException
+    public final void addEdge(String label, String index, String type, String id, boolean inwards, Map<String, Object> properties) throws IOException
     {
         final ID other = new ID(index, type, id, 0);
         final Map<String,JsonNode> props = new HashMap<String, JsonNode>();
@@ -49,7 +49,7 @@ public class JavascriptSubgraph
         subgraph.addEdge(label, other, inwards ? Direction.IN : Direction.OUT, props);
     }
 
-    public void setProperty(String key, Object value) throws IOException
+    public final void setProperty(String key, Object value) throws IOException
     {
         // convert into JsonNode
         final JsonNode result = JSONUtilities.fromJSONObject(om, cx, scope, value);

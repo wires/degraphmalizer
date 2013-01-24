@@ -29,7 +29,7 @@ public class Server extends AbstractIdleService
     }
 
     @Override
-    protected void startUp() throws Exception
+    protected final void startUp() throws Exception
     {
         //log.info("Server started at {}", address);
         final Channel channel = bootstrap.bind(address);
@@ -37,7 +37,7 @@ public class Server extends AbstractIdleService
     }
 
     @Override
-    protected void shutDown() throws Exception
+    protected final void shutDown() throws Exception
     {
         allChannels.close().awaitUninterruptibly();
         factory.releaseExternalResources();

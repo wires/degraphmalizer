@@ -15,11 +15,11 @@ import java.util.*;
  */
 public class PollingConfigurationMonitor implements Runnable
 {
-    final protected ConfigurationMonitor monitor;
-    final protected File directory;
-    final protected int interval;
+    protected final ConfigurationMonitor monitor;
+    protected final File directory;
+    protected final int interval;
 
-    final protected Thread poller = new Thread(this);
+    protected final Thread poller = new Thread(this);
 
     public PollingConfigurationMonitor(String directory, int interval, ConfigurationMonitor monitor)
     {
@@ -31,7 +31,7 @@ public class PollingConfigurationMonitor implements Runnable
             throw new RuntimeException("Don't monitor faster than once every 100ms");
     }
 
-    public void start()
+    public final void start()
     {
         if(poller.isAlive())
             return;
@@ -40,7 +40,7 @@ public class PollingConfigurationMonitor implements Runnable
     }
 
     @Override
-    public void run()
+    public final void run()
     {
         Map<String, HashCode> state = null;
 

@@ -141,7 +141,7 @@ public final class GraphQueries
             setProperty(element, e.getKey(), e.getValue());
     }
 
-    public static void checkPropertyName(String name) throws IllegalArgumentException
+    public static void checkPropertyName(String name)
     {
         if(name.equals(IDENTIFIER) || name.equals(OWNER) || name.equals(SYMBOLIC_IDENTIFER) || name.equals(SYMBOLIC_OWNER))
             throw new IllegalArgumentException("Property name '" + name + "' is a reserved name");
@@ -411,11 +411,11 @@ public final class GraphQueries
 
         for(Edge e : graph.getEdges())
         {
-            final EdgeID edge_id = getEdgeID(e);
-            if(edge_id == null)
+            final EdgeID edgeId = getEdgeID(e);
+            if(edgeId == null)
                 log.info(e.toString());
             else
-                log.info(edge_id.toString());
+                log.info(edgeId.toString());
         }
 
         log.info("Graph dump done");

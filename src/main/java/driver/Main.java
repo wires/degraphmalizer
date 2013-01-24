@@ -27,7 +27,8 @@ import java.util.List;
 
 public final class Main
 {
-    private final static Logger log = LoggerFactory.getLogger(Main.class);
+    private static final Logger log = LoggerFactory.getLogger(Main.class);
+    private static final String LOGBACK_CFG = "logback.configurationFile";
 
     private Main() {}
 
@@ -53,7 +54,6 @@ public final class Main
         }
 
         // find logback settings file
-        final String LOGBACK_CFG = "logback.configurationFile";
         if (System.getProperty(LOGBACK_CFG) == null)
             System.setProperty(LOGBACK_CFG, "file:" + opt.logbackConf);
 

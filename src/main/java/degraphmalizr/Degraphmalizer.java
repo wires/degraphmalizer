@@ -29,9 +29,9 @@ import java.util.concurrent.*;
 
 class Result implements DegraphmalizeResult
 {
-    final boolean succes;
-    final DegraphmalizeAction action;
-    final DegraphmalizerException exception;
+    private final boolean succes;
+    private final DegraphmalizeAction action;
+    private final DegraphmalizerException exception;
 
     public Result(DegraphmalizeAction action, DegraphmalizerException ex)
     {
@@ -63,23 +63,21 @@ public class Degraphmalizer implements Degraphmalizr
 {
 	@Inject
 	Logger log;
-	
-	final protected Client client;
 
-	final protected Graph graph;
-    final protected SubgraphManager subgraphmanager;
+    protected final Client client;
 
-    final protected ExecutorService degraphmalizeQueue;
-    final protected ExecutorService recomputeQueue;
-    final protected ExecutorService fetchQueue;
+    protected final Graph graph;
+    protected final SubgraphManager subgraphmanager;
+
+    protected final ExecutorService degraphmalizeQueue;
+    protected final ExecutorService recomputeQueue;
+    protected final ExecutorService fetchQueue;
 
     protected final QueryFunction queryFn;
 
     protected final Provider<Configuration> cfgProvider;
 
     final ObjectMapper objectMapper = new ObjectMapper();
-
-
 
 	@Inject
 	public Degraphmalizer(Client client, SubgraphManager subgraphmanager, Graph graph,
@@ -100,7 +98,7 @@ public class Degraphmalizer implements Degraphmalizr
         this.queryFn = queryFunction;
 	}
 
-    List<TypeConfig> configsFor(String index, String type) throws DegraphmalizerException
+    final List<TypeConfig> configsFor(String index, String type) throws DegraphmalizerException
     {
         final ArrayList<TypeConfig> configs = new ArrayList<TypeConfig>();
 
@@ -117,7 +115,7 @@ public class Degraphmalizer implements Degraphmalizr
     }
 
     @Override
-    public List<DegraphmalizeAction> degraphmalize(ID id, DegraphmalizeStatus callback) throws DegraphmalizerException
+    public final List<DegraphmalizeAction> degraphmalize(ID id, DegraphmalizeStatus callback) throws DegraphmalizerException
     {
         final ArrayList<DegraphmalizeAction> actions = new ArrayList<DegraphmalizeAction>();
 
@@ -135,7 +133,7 @@ public class Degraphmalizer implements Degraphmalizr
         return actions;
     }
 
-	public Callable<JsonNode> degraphmalizeJob(final DegraphmalizeAction action)
+    public final Callable<JsonNode> degraphmalizeJob(final DegraphmalizeAction action) throws DegraphmalizerException
 	{
 		return new Callable<JsonNode>()
 		{
@@ -144,16 +142,16 @@ public class Degraphmalizer implements Degraphmalizr
 			{
 				try
 				{
-                    final ID ID = action.id();
-					log.info("Processing request '{}', for id={}", action.hash().toString(), ID);
+                    final ID id = action.id();
+					log.info("Processing request '{}', for id={}", action.hash().toString(), id);
 
                     // get the source document from Elasticsearch
-                    final GetResponse resp = client.prepareGet(ID.index(), ID.type(), ID.id()).execute().get();
+                    final GetResponse resp = client.prepareGet(id.index(), id.type(), id.id()).execute().get();
 
                     if(!resp.exists())
                         throw new DegraphmalizerException("Document does not exist");
 
-                    if(resp.version() != ID.version())
+                    if(resp.version() != id.version())
                         throw new DegraphmalizerException("Query expired, current version is " + resp.version());
 
                     // alright, we have the right source document, so let's start processing.
@@ -163,7 +161,7 @@ public class Degraphmalizer implements Degraphmalizr
 
                     // then we extract the graph elements from it
                     log.debug("Extracting graph elements");
-                    final Subgraph sg = subgraphmanager.createSubgraph(ID);
+                    final Subgraph sg = subgraphmanager.createSubgraph(id);
                     action.type().extract(action, sg);
                     log.debug("Completed extraction of graph elements");
                     subgraphmanager.commitSubgraph(sg);
@@ -171,10 +169,10 @@ public class Degraphmalizer implements Degraphmalizr
 
 
                     // we now start traversals for each walk do find documents affected by this change
-                    final Vertex root = GraphQueries.findVertex(graph, ID);
+                    final Vertex root = GraphQueries.findVertex(graph, id);
                     if (root == null)
                         // TODO this shouldn't occur, because the subgraph implicitly commits a vertex to the graph
-                        throw new DegraphmalizerException("No node for document " + ID);
+                        throw new DegraphmalizerException("No node for document " + id);
 
                     final ArrayList<RecomputeAction> affectedDocs = new ArrayList<RecomputeAction>();
 
@@ -281,12 +279,12 @@ public class Degraphmalizer implements Degraphmalizr
 		};
 	}
 
-    public Callable<Optional<IndexResponse>> recomputeDocument(final RecomputeAction action)
+    public final Callable<Optional<IndexResponse>> recomputeDocument(final RecomputeAction action)
     {
         return new Callable<Optional<IndexResponse>>()
         {
             @Override
-            public Optional<IndexResponse> call() throws Exception
+            public Optional<IndexResponse> call()
             {
                 try
                 {
@@ -313,16 +311,16 @@ public class Degraphmalizer implements Degraphmalizr
                         }
 
                         // get all documents in the tree from Elasticsearch (in parallel)
-                        final Tree<Optional<ResolvedPathElement>> doc_tree =
+                        final Tree<Optional<ResolvedPathElement>> docTree =
                                 Trees.pmap(fetchQueue, queryFn, tree);
 
                         // the tree has Optional.absent values when versions for instance don't match up
 
-                        if(doc_tree.value().isPresent())
-                            root = doc_tree.value().get();
+                        if(docTree.value().isPresent())
+                            root = docTree.value().get();
 
                         // if some value is absent from the tree, abort the computation
-                        final Optional<Tree<ResolvedPathElement>> fullTree = Trees.optional(doc_tree);
+                        final Optional<Tree<ResolvedPathElement>> fullTree = Trees.optional(docTree);
 
                         // TODO split various failure modes
                         if(!fullTree.isPresent())
@@ -363,18 +361,18 @@ public class Degraphmalizer implements Degraphmalizr
                     // write the result document to the target index
                     final String targetIndex = action.typeConfig.targetIndex();
                     final String targetType = action.typeConfig.targetType();
-                    final ID ID = GraphQueries.getID(action.root);
-                    final String id = ID.id();
+                    final ID id = GraphQueries.getID(action.root);
+                    final String idString = id.id();
 
                     // write the source version to the document
-                    ((ObjectNode)doc).put("_fromSource", JSONUtilities.toJSON(objectMapper, ID));
+                    ((ObjectNode)doc).put("_fromSource", JSONUtilities.toJSON(objectMapper, id));
 
                     // write document to Elasticsearch
                     final String documentSource = doc.toString();
-                    final IndexResponse ir = client.prepareIndex(targetIndex, targetType, id).setSource(documentSource)
+                    final IndexResponse ir = client.prepareIndex(targetIndex, targetType, idString).setSource(documentSource)
                             .execute().actionGet();
 
-                    log.debug("Written /{}/{}/{}, version={}", new Object[]{targetIndex, targetType, id, ir.version()});
+                    log.debug("Written /{}/{}/{}, version={}", new Object[]{targetIndex, targetType, idString, ir.version()});
 
                     log.debug("Content: {}", documentSource);
                     return Optional.of(ir);

@@ -39,38 +39,38 @@ public class DegraphmalizeAction
         this.hash = hf.newHasher().putLong(salt).putString(typeCfg.name()).putString(id.toString()).hash(); // TODO: Job hashing broken
     }
 
-    public HashCode hash()
+    public final HashCode hash()
     {
         return hash;
     }
 
-    public ID id()
+    public final ID id()
     {
         return id;
     }
 
-    public TypeConfig type()
+    public final TypeConfig type()
     {
         return typeCfg;
     }
 
-    public DegraphmalizeStatus status()
+    public final DegraphmalizeStatus status()
     {
         return status;
     }
 
     // TODO wrong
-    public void setDocument(JsonNode document)
+    public final void setDocument(JsonNode document)
     {
         this.document = document;
     }
 
-    public JsonNode document()
+    public final JsonNode document()
     {
         return document;
     }
 
-    public Future<JsonNode> resultDocument()
+    public final Future<JsonNode> resultDocument()
     {
         return result;
     }

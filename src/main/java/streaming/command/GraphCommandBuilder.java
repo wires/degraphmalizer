@@ -66,7 +66,7 @@ public final class GraphCommandBuilder {
         return edge(name, source, destination, directed, 1);
     }
 
-    public final static class NodeCommandBuilder {
+    public static final class NodeCommandBuilder {
         private final GraphCommandType graphCommandType;
         private List<NodeBuilder> nodeBuilders = new ArrayList<NodeBuilder>();
 
@@ -75,12 +75,12 @@ public final class GraphCommandBuilder {
             this.graphCommandType = graphCommandType;
         }
 
-        final public NodeCommandBuilder addNode(NodeBuilder nodeBuilder) {
+        public NodeCommandBuilder addNode(NodeBuilder nodeBuilder) {
             this.nodeBuilders.add(nodeBuilder);
             return this;
         }
 
-        public final GraphCommand build() {
+        public GraphCommand build() {
             List<GraphNode> nodes = new ArrayList<GraphNode>();
             for (NodeBuilder nodeBuilder : nodeBuilders) {
                 if ((graphCommandType == GraphCommandType.AddNode || graphCommandType == GraphCommandType.AddEdge) && nodeBuilder.properties.get("size") == null) {

@@ -31,40 +31,40 @@ public class ID
         this.version = version;
     }
 
-    public String index()
+    public final String index()
     {
         return index;
     }
 
-    public String type()
+    public final String type()
     {
         return type;
     }
 
-    public String id()
+    public final String id()
     {
         return id;
     }
 
-    public long version()
+    public final long version()
     {
         return version;
     }
 
     @JsonIgnore
-    public boolean isSymbolic()
+    public final boolean isSymbolic()
     {
         return version == 0;
     }
 
     @Override
-    public String toString()
+    public final String toString()
     {
         return "(" + index + "," + type + "," + id + "," + version + ")";
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
@@ -79,7 +79,7 @@ public class ID
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = index != null ? index.hashCode() : 0;
         result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + (id != null ? id.hashCode() : 0);

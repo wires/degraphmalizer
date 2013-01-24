@@ -8,7 +8,7 @@ import java.util.*;
  */
 public class CompositeMonitor implements ConfigurationMonitor
 {
-    final List<ConfigurationMonitor> monitors = new ArrayList<ConfigurationMonitor>();
+    private final List<ConfigurationMonitor> monitors = new ArrayList<ConfigurationMonitor>();
 
     public CompositeMonitor(ConfigurationMonitor... monitors)
     {

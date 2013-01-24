@@ -2,14 +2,14 @@ package driver.handler;
 
 public abstract class TypedHandler<T>
 {
-    final private Class<T> type;
+    private final Class<T> type;
 
     public TypedHandler(Class<T> type)
     {
         this.type = type;
     }
 
-    public boolean handleEvent(Object msg) throws Exception
+    public final boolean handleEvent(Object msg) throws Exception
     {
         // only handle messages
         if (! type.isAssignableFrom(msg.getClass()))
@@ -19,5 +19,5 @@ public abstract class TypedHandler<T>
         return handle((T)msg);
     }
 
-    abstract protected boolean handle(T msg);
+    protected abstract boolean handle(T msg);
 }

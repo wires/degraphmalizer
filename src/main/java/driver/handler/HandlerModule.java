@@ -15,21 +15,22 @@ import java.util.concurrent.Executor;
 public class HandlerModule extends AbstractModule
 {
     @Override
-    protected void configure()
+    protected final void configure()
     {
         // bind to our handler
         bind(ChannelHandler.class).to(Handler.class);
     }
 
-    @Provides @Singleton
-    Executor provideExecutor()
+    @Provides
+    @Singleton
+    final Executor provideExecutor()
     {
         return new OrderedMemoryAwareThreadPoolExecutor(1, 1048576, 1048576);
     }
 
     @Provides
     @Inject
-    ChannelPipeline providePipeline(ChannelHandler handler, Executor executor, Provider<Configuration> cfg)
+    final ChannelPipeline providePipeline(ChannelHandler handler, Executor executor, Provider<Configuration> cfg)
     {
         // construct empty pipeline
         final ChannelPipeline pipeline = Channels.pipeline();

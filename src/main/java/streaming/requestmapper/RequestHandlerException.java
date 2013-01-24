@@ -13,7 +13,7 @@ public class RequestHandlerException extends Exception {
         this.status = status;
     }
 
-    public HttpResponseStatus getStatus() {
+    public final HttpResponseStatus getStatus() {
         return status;
     }
 }

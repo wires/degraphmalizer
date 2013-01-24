@@ -33,13 +33,13 @@ public final class ChannelContextImpl implements ChannelContext {
     private static final Logger LOGGER = LoggerFactory.getLogger(ChannelContextImpl.class);
 
     @Override
-    public final Optional<ChannelGroup> getChannelGroup(String id) {
+    public Optional<ChannelGroup> getChannelGroup(String id) {
         if (repository.containsKey(id)) return Optional.of(repository.get(id));
         return Optional.absent();
     }
 
     @Override
-    public final ChannelGroup addChannel(String id, Channel channel) {
+    public ChannelGroup addChannel(String id, Channel channel) {
         if(!repository.containsKey(id)) {
             repository.put(id, new DefaultChannelGroup(id));
             LOGGER.debug("Adding channel group with id {}", id);

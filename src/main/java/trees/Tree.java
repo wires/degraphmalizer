@@ -46,17 +46,17 @@ public class Tree<A>
 		this.children = Collections.emptyList();
 	}
 
-	public Iterable<Tree<A>> children()
+	public final Iterable<Tree<A>> children()
 	{
 		return this.children;
 	}
 	
-	public A value()
+	public final A value()
 	{
 		return this.value;
 	}
 	
-	public boolean isLeaf()
+	public final boolean isLeaf()
 	{
 		return this.children.size() == 0;
 	}

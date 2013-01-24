@@ -22,14 +22,14 @@ public class LoggingSubgraph implements Subgraph
 	}
 
     @Override
-    public void addEdge(String label, ID other, Direction direction, Map<String, JsonNode> properties)
+    public final void addEdge(String label, ID other, Direction direction, Map<String, JsonNode> properties)
     {
         final String d = direction == Direction.IN ? "to" : "from";
         log.info(prefix + " edge " + d + " self to " + other + " with label " + label + " created");
     }
 
     @Override
-    public void setProperty(String key, JsonNode value)
+    public final void setProperty(String key, JsonNode value)
     {
         log.info(prefix + " property " + key + " set to " + value.toString());
     }

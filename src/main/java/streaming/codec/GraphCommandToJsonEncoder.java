@@ -7,6 +7,7 @@ import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
 import streaming.command.GraphCommand;
 import streaming.command.GraphNode;
 
+import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +15,8 @@ import java.util.Map;
 public class GraphCommandToJsonEncoder extends OneToOneEncoder {
 
     @Override
-    protected Object encode(ChannelHandlerContext ctx, Channel channel, Object msg) throws Exception {
+    protected final Object encode(ChannelHandlerContext ctx, Channel channel, Object msg) throws IOException
+    {
         if (!(msg instanceof GraphCommand)) {
             return msg;
         } else {
@@ -23,7 +25,8 @@ public class GraphCommandToJsonEncoder extends OneToOneEncoder {
         }
     }
 
-    private String encodeGraphCommand(final GraphCommand graphCommand) throws Exception {
+    private String encodeGraphCommand(final GraphCommand graphCommand) throws IOException
+    {
         Map<String, Object> json = new HashMap<String, Object>();
         Map<String, Object> nodes = new HashMap<String, Object>();
 

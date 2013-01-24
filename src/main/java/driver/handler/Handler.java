@@ -10,7 +10,7 @@ import org.slf4j.LoggerFactory;
 
 public class Handler extends SimpleChannelHandler
 {
-    private final static Logger log = LoggerFactory.getLogger(Handler.class);
+    private static final Logger log = LoggerFactory.getLogger(Handler.class);
 
     private final Degraphmalizr degraphmalizr;
 
@@ -21,7 +21,7 @@ public class Handler extends SimpleChannelHandler
     }
 
     @Override
-    public void messageReceived(final ChannelHandlerContext ctx, MessageEvent e) throws Exception
+    public final void messageReceived(final ChannelHandlerContext ctx, MessageEvent e) throws Exception
     {
 
         if(!ID.class.isAssignableFrom(e.getMessage().getClass()))

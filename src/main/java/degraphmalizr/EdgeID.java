@@ -14,22 +14,23 @@ public class EdgeID
         this.head = head;
     }
 
-    public ID tail()
+    public final ID tail()
     {
         return tail;
     }
 
-    public String label()
+    public final String label()
     {
         return label;
     }
 
-    public ID head()
+    public final ID head()
     {
         return head;
     }
 
-    public String toString()
+    @Override
+    public final String toString()
     {
         return tail.toString() + " -- " + label + " --> " + head.toString();
     }

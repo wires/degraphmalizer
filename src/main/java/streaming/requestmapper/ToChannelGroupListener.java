@@ -15,7 +15,7 @@ public class ToChannelGroupListener implements GraphCommandListener {
     }
 
     @Override
-    public void commandCreated(GraphCommand graphCommand) {
+    public final void commandCreated(GraphCommand graphCommand) {
         channelGroup.write(graphCommand);
     }
 }

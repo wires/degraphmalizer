@@ -13,11 +13,11 @@ public class GraphNode {
         this.properties = properties;
     }
 
-    public String getName() {
+    public final String getName() {
         return name;
     }
 
-    public Map<String, Object> getProperties() {
+    public final Map<String, Object> getProperties() {
         return Collections.unmodifiableMap(properties);
     }
 }

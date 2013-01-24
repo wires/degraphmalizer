@@ -56,7 +56,7 @@ class CachedProvider<T> implements Provider<T>
  */
 public class ReloadingJSConfModule extends AbstractModule implements ConfigurationMonitor
 {
-    private final static Logger log = LoggerFactory.getLogger(ReloadingJSConfModule.class);
+    private static final Logger log = LoggerFactory.getLogger(ReloadingJSConfModule.class);
 
 	final String scriptFolder;
     final PollingConfigurationMonitor poller;
@@ -88,13 +88,13 @@ public class ReloadingJSConfModule extends AbstractModule implements Configurati
 	
     @Provides
     @Singleton
-    public Configuration provideConfiguration() throws IOException
+    public final Configuration provideConfiguration() throws IOException
 	{
         return cachedProvider.get();
     }
 
     @Override
-    public void configurationChanged(String index)
+    public final void configurationChanged(String index)
     {
         log.info("Configuration change detected for target-index {}", index);
         cachedProvider.invalidate();

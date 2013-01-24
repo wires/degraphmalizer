@@ -18,9 +18,9 @@ import static org.jboss.netty.handler.codec.http.HttpResponseStatus.*;
 public class ExceptionHandler extends SimpleChannelHandler
 {
     // TODO use annotated POJO messages and inject the objectmapper
-    private final static ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    protected void renderException(ObjectNode parent, Throwable t)
+    protected final void renderException(ObjectNode parent, Throwable t)
     {
         final ArrayNode ss = objectMapper.createArrayNode();
         for(StackTraceElement elt : t.getStackTrace())
@@ -32,7 +32,7 @@ public class ExceptionHandler extends SimpleChannelHandler
     }
 
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception
+    public final void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception
     {
         final Channel c = ctx.getChannel();
         final Throwable t = e.getCause();

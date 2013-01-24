@@ -33,7 +33,7 @@ public class TransportES extends AbstractModule
 
     @Provides
     @Singleton
-    Client providesClient()
+    final Client providesClient()
     {
         final Settings s = settingsBuilder().put("cluster.name", cluster).build();
 

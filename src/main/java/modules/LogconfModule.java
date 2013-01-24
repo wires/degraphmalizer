@@ -10,7 +10,7 @@ public class LogconfModule extends AbstractModule
 {
     @Provides
     @Singleton
-    Logger provideLogger()
+    final Logger provideLogger()
     {
         // TODO this is a hack until Sli4j works
         return LoggerFactory.getLogger("Main");
@@ -18,7 +18,7 @@ public class LogconfModule extends AbstractModule
 
 	@Provides
 	@Singleton
-	LoggingProvider provideLoggingProvider()
+	final LoggingProvider provideLoggingProvider()
 	{
 		return new LoggingProvider()
 			{

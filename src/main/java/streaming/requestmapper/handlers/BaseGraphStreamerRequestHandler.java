@@ -14,8 +14,8 @@ import java.util.List;
  * @author Ernst Bunders
  */
 public abstract class BaseGraphStreamerRequestHandler implements HttpRequestMapper.RequestHandler {
-    protected final GraphUnfoldingService graphStreamingService;
-    protected final ChannelContext channelContext;
+    private final GraphUnfoldingService graphStreamingService;
+    private final ChannelContext channelContext;
 
     public BaseGraphStreamerRequestHandler(ChannelContext channelContext, GraphUnfoldingService graphStreamingService) {
         this.channelContext = channelContext;
@@ -32,4 +32,13 @@ public abstract class BaseGraphStreamerRequestHandler implements HttpRequestMapp
         return params.get(index);
     }
 
+    GraphUnfoldingService getGraphStreamingService()
+    {
+        return graphStreamingService;
+    }
+
+    ChannelContext getChannelContext()
+    {
+        return channelContext;
+    }
 }

@@ -10,26 +10,32 @@ import java.util.concurrent.Executors;
 public class ThreadpoolModule extends AbstractModule
 {
     @Override
-    protected void configure()
+    protected final void configure()
     {
         bind(QueryFunction.class);
     }
 
-    @Provides @Singleton @Degraphmalizes
-    ExecutorService provideDegraphmalizesExecutor()
+    @Provides
+    @Singleton
+    @Degraphmalizes
+    final ExecutorService provideDegraphmalizesExecutor()
     {
         // single threaded updates!
         return Executors.newSingleThreadExecutor();
     }
 
-    @Provides @Singleton @Recomputes
-    ExecutorService provideRecomputesExecutor()
+    @Provides
+    @Singleton
+    @Recomputes
+    final ExecutorService provideRecomputesExecutor()
     {
         return Executors.newFixedThreadPool(16);
     }
 
-    @Provides @Singleton @Fetches
-    ExecutorService provideFetchesExecutor()
+    @Provides
+    @Singleton
+    @Fetches
+    final ExecutorService provideFetchesExecutor()
     {
         return Executors.newFixedThreadPool(64);
     }

@@ -18,23 +18,23 @@ public class ResolvedPathElement
         this.vertex = vertex;
     }
 
-    public GetResponse getResponse()
+    public final GetResponse getResponse()
     {
         return getResponse;
     }
 
-    public Edge edge()
+    public final Edge edge()
     {
         return edge;
     }
 
-    public Vertex vertex()
+    public final Vertex vertex()
     {
         return vertex;
     }
 
     @Override
-    public boolean equals(Object o) {
+    public final boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
@@ -48,7 +48,7 @@ public class ResolvedPathElement
     }
 
     @Override
-    public int hashCode() {
+    public final int hashCode() {
         int result = getResponse.hashCode();
         result = 31 * result + edge.hashCode();
         result = 31 * result + vertex.hashCode();
@@ -56,7 +56,7 @@ public class ResolvedPathElement
     }
 
     @Override
-    public String toString() {
+    public final String toString() {
         return "ResolvedPathElement{" +
                 "getResponse=" + getResponse +
                 ", edge=" + edge +

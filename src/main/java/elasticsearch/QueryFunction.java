@@ -26,9 +26,9 @@ import trees.Pair;
  */
 public class QueryFunction implements Function<Pair<Edge,Vertex>, Optional<ResolvedPathElement>>
 {
-    final protected Logger log;
-    final protected Client searchIndex;
-    final protected ObjectMapper objectMapper;
+    protected final Logger log;
+    protected final Client searchIndex;
+    protected final ObjectMapper objectMapper;
 
     @Inject
     public QueryFunction(Logger log, Client searchIndex, ObjectMapper objectMapper)
@@ -39,7 +39,7 @@ public class QueryFunction implements Function<Pair<Edge,Vertex>, Optional<Resol
     }
 
     @Override
-    public Optional<ResolvedPathElement> apply(final Pair<Edge,Vertex> pair)
+    public final Optional<ResolvedPathElement> apply(final Pair<Edge,Vertex> pair)
     {
         // dump information on the current vertex
         if (log.isTraceEnabled())

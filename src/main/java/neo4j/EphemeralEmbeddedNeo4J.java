@@ -8,7 +8,7 @@ import java.io.File;
 public class EphemeralEmbeddedNeo4J extends AbstractModule
 {
     @Override
-    protected void configure()
+    protected final void configure()
     {
         // create temporary directory and use this as Neo4j datadir
         final File dataDir = Files.createTempDir();
