@@ -23,6 +23,8 @@ public class GraphQueries
     public static final String OWNER              = PREFIX + "owner";
     public static final String SYMBOLIC_OWNER     = PREFIX + "symbolicOwner";
 
+    private GraphQueries() {}
+
 	/**
 	 * Compute the vertices reached from <code>s</code> in one step in direction <code>d</code>.
 	 *

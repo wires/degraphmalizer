@@ -8,7 +8,9 @@ import java.util.regex.Pattern;
 /**
  * @author Ernst Bunders
  */
-public class RequestHandlerUtil {
+public class RequestHandlerUtil
+{
+    private RequestHandlerUtil() {}
 
     public static List<String> getGroups(String path, String regex) {
         List<String> captures = new ArrayList<String>();

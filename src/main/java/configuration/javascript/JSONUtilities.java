@@ -13,6 +13,8 @@ import java.io.IOException;
  */
 public class JSONUtilities
 {
+    private JSONUtilities() {}
+
     /**
      * Transform a JSON string into a JS Object
      */
@@ -36,9 +38,7 @@ public class JSONUtilities
         final String objectJson = (String) NativeJSON.stringify(cx, scope, obj, null, null);
 
         // convert JSON string to JsonNode
-        final JsonNode result = om.readTree(objectJson);
-
-        return result;
+        return om.readTree(objectJson);
     }
 
     public static ObjectNode toJSON(ObjectMapper om, ID id)

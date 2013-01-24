@@ -7,6 +7,8 @@ import java.util.Map;
 
 public class GraphCommandBuilder {
 
+    private GraphCommandBuilder() {}
+
     public static NodeCommandBuilder addNodeCommand(NodeBuilder nodeBuilder) {
         return new NodeCommandBuilder(GraphCommandType.AddNode, nodeBuilder);
     }

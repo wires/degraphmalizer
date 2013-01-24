@@ -21,6 +21,8 @@ import java.util.concurrent.*;
  */
 public class Trees
 {
+    private Trees() {}
+
 	public static <A> void printTree(Tree<A> tree, PrintStream ps)
 	{
 		ps.printf("(%s (", tree.value());
