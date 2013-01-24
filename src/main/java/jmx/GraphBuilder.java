@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 
 import com.tinkerpop.blueprints.Graph;
 
+import graphs.GraphQueries;
+
 public class GraphBuilder implements GraphBuilderMBean
 {
 	@Inject
@@ -61,5 +63,9 @@ public class GraphBuilder implements GraphBuilderMBean
 		console.run();
 	    */
 	}
-	
+
+    @Override
+    public void dumpGraph() {
+        GraphQueries.dumpGraph(graph);
+    }
 }
