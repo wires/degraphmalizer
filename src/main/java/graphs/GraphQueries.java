@@ -15,8 +15,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public final class GraphQueries
 {
+    private static final Logger log = LoggerFactory.getLogger(GraphQueries.class);
+
     public static final String PREFIX             = "_";
     public static final String IDENTIFIER         = PREFIX + "identifier";
     public static final String SYMBOLIC_IDENTIFER = PREFIX + "symbolic";
@@ -402,13 +407,17 @@ public final class GraphQueries
 
     public static void dumpGraph(Graph graph)
     {
+        log.info("Graph dump start");
+
         for(Edge e : graph.getEdges())
         {
             final EdgeID edge_id = getEdgeID(e);
             if(edge_id == null)
-                System.err.println(e.toString());
+                log.info(e.toString());
             else
-                System.err.println(edge_id);
+                log.info(edge_id.toString());
         }
+
+        log.info("Graph dump done");
     }
 }
