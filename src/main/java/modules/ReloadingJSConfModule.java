@@ -86,10 +86,11 @@ public class ReloadingJSConfModule extends AbstractModule implements Configurati
         poller.start();
     }
 	
-    @Provides @Singleton
-    public Provider<Configuration> provideConfiguration() throws IOException
+    @Provides
+    @Singleton
+    public Configuration provideConfiguration() throws IOException
 	{
-        return cachedProvider;
+        return cachedProvider.get();
     }
 
     @Override
