@@ -58,8 +58,35 @@ class LocalNode
 }
 
 @Test
-public class DegraphmalizerTest implements DegraphmalizeStatus
+public class DegraphmalizerTest
 {
+    class Fixme implements DegraphmalizeStatus
+    {
+        @Override
+        public void recomputeStarted(RecomputeAction action)
+        {
+            log.info("restart");
+        }
+
+        @Override
+        public void recomputeComplete(RecomputeResult result)
+        {
+            log.info("rcomplete");
+        }
+
+        @Override
+        public void complete(DegraphmalizeResult result)
+        {
+            log.info("dcomplete");
+        }
+
+        @Override
+        public void exception(DegraphmalizeResult result)
+        {
+            log.warn("Exception: {}", result.exception().getMessage());
+            result.exception().printStackTrace();
+        }
+    }
     private final static Logger log = LoggerFactory.getLogger(DegraphmalizerTest.class);
 
     LocalNode ln;
@@ -104,9 +131,10 @@ public class DegraphmalizerTest implements DegraphmalizeStatus
         // degraphmalize "1" and wait for and print result
         final ArrayList<DegraphmalizeAction> actions = new ArrayList<DegraphmalizeAction>();
 
-        actions.addAll(ln.d.degraphmalize(new ID(idx,tp,"1",ir1.version()), this));
-        actions.addAll(ln.d.degraphmalize(new ID(idx,tp,"2",ir2.version()), this));
-        actions.addAll(ln.d.degraphmalize(new ID(idx,tp,id,ir.version()), this));
+        final Fixme callback = new Fixme();
+        actions.addAll(ln.d.degraphmalize(new ID(idx,tp,"1",ir1.version()), callback));
+        actions.addAll(ln.d.degraphmalize(new ID(idx,tp,"2",ir2.version()), callback));
+        actions.addAll(ln.d.degraphmalize(new ID(idx,tp,id,ir.version()), callback));
 
         for(final DegraphmalizeAction a : actions)
         {
@@ -117,29 +145,4 @@ public class DegraphmalizerTest implements DegraphmalizeStatus
         ln.es.close();
         ln.G.shutdown();
 	}
-
-    @Override
-    public void recomputeStarted(RecomputeAction action)
-    {
-        log.info("restart");
-    }
-
-    @Override
-    public void recomputeComplete(RecomputeResult result)
-    {
-        log.info("rcomplete");
-    }
-
-    @Override
-    public void complete(DegraphmalizeResult result)
-    {
-        log.info("dcomplete");
-    }
-
-    @Override
-    public void exception(DegraphmalizeResult result)
-    {
-        log.warn("Exception: {}", result.exception().getMessage());
-        result.exception().printStackTrace();
-    }
 }
