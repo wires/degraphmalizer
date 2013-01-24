@@ -5,8 +5,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.Vertex;
+
 import configuration.*;
 import degraphmalizr.jobs.DegraphmalizeAction;
+import elasticsearch.ResolvedPathElement;
 import graphs.ops.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
@@ -366,32 +370,37 @@ class JavascriptPropertyConfig implements PropertyConfig
 	}
 
 	@Override
-	public JsonNode reduce(Tree<GetResponse> tree)
+	public JsonNode reduce(Tree<ResolvedPathElement> tree)
 	{
 		JsonNode result = null;
 
         final ObjectMapper om = new ObjectMapper();
 
-        final com.google.common.base.Function<GetResponse, JsonNode> resultToString = new com.google.common.base.Function<GetResponse, JsonNode>()
+        final com.google.common.base.Function<ResolvedPathElement, JsonNode> resultToString = new com.google.common.base.Function<ResolvedPathElement, JsonNode>()
         {
             @Override
-            public JsonNode apply(GetResponse input)
+            public JsonNode apply(ResolvedPathElement input)
             {
                 try
                 {
-                    if(input.exists())
+                    final GetResponse getResponse = input.getResponse();
+                    if(getResponse.exists())
                     {
-                        final String s = input.getSourceAsString();
+                        final String getResponseString = getResponse.getSourceAsString();
+                        final Edge edge = input.edge();
+                        final Vertex vertex = input.vertex();
+
                         final ObjectNode n = om.createObjectNode();
-                        n.put("ok", true);
                         n.put("exists", true);
-                        n.put("value", om.readTree(s));
+                        n.put("value", om.readTree(getResponseString));
+                        if (edge != null)
+                            n.put("edge", JSONUtilities.toJSON(om, edge));
+                        n.put("vertex", JSONUtilities.toJSON(om, vertex));
                         return n;
                     }
                     else
                     {
                         final ObjectNode n = om.createObjectNode();
-                        n.put("ok", true);
                         n.put("exists", false);
                         return n;
                     }
@@ -399,7 +408,6 @@ class JavascriptPropertyConfig implements PropertyConfig
                 catch (IOException e)
                 {
                     final ObjectNode n = om.createObjectNode();
-                    n.put("ok", false);
                     n.put("exception", e.getClass().getCanonicalName());
                     n.put("message", e.getMessage());
                     return n;

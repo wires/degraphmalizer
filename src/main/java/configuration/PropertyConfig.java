@@ -1,7 +1,8 @@
 package configuration;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.elasticsearch.action.get.GetResponse;
+
+import elasticsearch.ResolvedPathElement;
 import trees.Tree;
 
 /**
@@ -31,7 +32,7 @@ public interface PropertyConfig {
      *
      * @param tree The root of the tree is the <i>raw</i> document itself.
      */
-    public JsonNode reduce(Tree<GetResponse> tree);
+    public JsonNode reduce(Tree<ResolvedPathElement> tree);
 
     /**
      * A property is always part of a {@link WalkConfig}

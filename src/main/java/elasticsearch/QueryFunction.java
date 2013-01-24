@@ -24,7 +24,7 @@ import trees.Pair;
  *
  * @author wires
  */
-public class QueryFunction implements Function<Pair<Edge,Vertex>,Optional<GetResponse>>
+public class QueryFunction implements Function<Pair<Edge,Vertex>, Optional<ResolvedPathElement>>
 {
     final protected Logger log;
     final protected Client searchIndex;
@@ -38,7 +38,8 @@ public class QueryFunction implements Function<Pair<Edge,Vertex>,Optional<GetRes
         this.objectMapper = objectMapper;
     }
 
-    public Optional<GetResponse> apply(final Pair<Edge,Vertex> pair)
+    @Override
+    public Optional<ResolvedPathElement> apply(final Pair<Edge,Vertex> pair)
     {
         // dump information on the current vertex
         if (log.isTraceEnabled())
@@ -83,10 +84,10 @@ public class QueryFunction implements Function<Pair<Edge,Vertex>,Optional<GetRes
                 log.debug("Document {} does not exist!", id);
                 // TODO optional.absent is now considered a query problem, in the future we want to handle each case
                 // separately, see DGM-45
-                return Optional.of(r);
+                return Optional.of(new ResolvedPathElement(r, pair.a, pair.b));
             }
 
-            return Optional.of(r);
+            return Optional.of(new ResolvedPathElement(r, pair.a, pair.b));
         }
         catch (ElasticSearchException e)
         {

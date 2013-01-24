@@ -10,6 +10,7 @@ import com.tinkerpop.blueprints.*;
 import configuration.*;
 import configuration.javascript.JSONUtilities;
 import degraphmalizr.jobs.*;
+import elasticsearch.ResolvedPathElement;
 import elasticsearch.QueryFunction;
 import exceptions.DegraphmalizerException;
 import graphs.GraphQueries;
@@ -293,7 +294,7 @@ public class Degraphmalizer implements Degraphmalizr
                     final HashMap<String, JsonNode> results = new HashMap<String, JsonNode>();
 
                     // during the traverals, we collect the root document (the one we are expanding)
-                    GetResponse root = null;
+                    ResolvedPathElement root = null;
 
                     // ideally, this is handled in a monad, but with this boolean we keep track of failures
                     boolean isAbsent = false;
@@ -312,7 +313,7 @@ public class Degraphmalizer implements Degraphmalizr
                         }
 
                         // get all documents in the tree from Elasticsearch (in parallel)
-                        final Tree<Optional<GetResponse>> doc_tree =
+                        final Tree<Optional<ResolvedPathElement>> doc_tree =
                                 Trees.pmap(fetchQueue, queryFn, tree);
 
                         // the tree has Optional.absent values when versions for instance don't match up
@@ -321,7 +322,7 @@ public class Degraphmalizer implements Degraphmalizr
                             root = doc_tree.value().get();
 
                         // if some value is absent from the tree, abort the computation
-                        final Optional<Tree<GetResponse>> fullTree = Trees.optional(doc_tree);
+                        final Optional<Tree<ResolvedPathElement>> fullTree = Trees.optional(doc_tree);
 
                         // TODO split various failure modes
                         if(!fullTree.isPresent())
@@ -344,7 +345,7 @@ public class Degraphmalizer implements Degraphmalizr
                     }
 
                     // store the new document
-                    final JsonNode rawDocument = objectMapper.readTree(root.getSourceAsString());
+                    final JsonNode rawDocument = objectMapper.readTree(root.getResponse().getSourceAsString());
 
                     // preprocess document using javascript
                     final JsonNode doc = action.typeConfig.transform(rawDocument);
