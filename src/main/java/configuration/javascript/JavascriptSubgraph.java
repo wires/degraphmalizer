@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tinkerpop.blueprints.Direction;
 import degraphmalizr.ID;
 import graphs.ops.Subgraph;
-import org.mozilla.javascript.NativeJSON;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.Context;
 

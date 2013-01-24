@@ -6,7 +6,6 @@ import com.google.common.hash.*;
 import configuration.ConfigurationMonitor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
-import org.neo4j.cypher.internal.commands.Has;
 
 import java.io.File;
 import java.util.*;

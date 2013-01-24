@@ -1,11 +1,9 @@
 package graphs.ops;
 
-import java.awt.image.DirectColorModel;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.tinkerpop.blueprints.Direction;
-import com.tinkerpop.blueprints.Element;
 
 import degraphmalizr.ID;
 

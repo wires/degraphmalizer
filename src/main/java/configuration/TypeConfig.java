@@ -8,15 +8,15 @@ import java.util.Map;
 
 public interface TypeConfig
 {
-	public String name();
-	
+	String name();
+
 	/**
 	 * Function that given the document computes it's generated subgraph
 	 * 
 	 * @param job
 	 * @param subgraph
 	 */
-	public void extract(DegraphmalizeAction job, Subgraph subgraph);
+	void extract(DegraphmalizeAction job, Subgraph subgraph);
 
 	/**
 	 * Process the document before it is inserted into ES
@@ -24,7 +24,7 @@ public interface TypeConfig
 	 * @param document
 	 * @return the process document as you want it inserted into ES
 	 */
-	public JsonNode transform(JsonNode document);
+	JsonNode transform(JsonNode document);
 
 
     /**
@@ -33,32 +33,31 @@ public interface TypeConfig
      * @param document
      * @return
      */
-	public boolean filter(JsonNode document);
+	boolean filter(JsonNode document);
 	
 	/**
 	 * A type is always part of a {@link IndexConfig}
 	 */
-	public IndexConfig index();
+	IndexConfig index();
 
     /**
      * The index to which the denormalized documents should be written.
      */
-    public String targetIndex();
+    String targetIndex();
 
     /**
      * The type which denormalized documents should be assigned.
      */
-    public String targetType();
+    String targetType();
 
     // match on this index
-    public String sourceIndex();
+    String sourceIndex();
 
     // match this type
-    public String sourceType();
+    String sourceType();
 
     /**
 	 * Walks performed for this type
 	 */
-	public Map<String, WalkConfig> walks();
-
+	Map<String, WalkConfig> walks();
 }

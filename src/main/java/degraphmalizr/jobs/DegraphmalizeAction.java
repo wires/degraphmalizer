@@ -2,7 +2,6 @@ package degraphmalizr.jobs;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.hash.*;
-import configuration.IndexConfig;
 import configuration.TypeConfig;
 import degraphmalizr.ID;
 

@@ -11,5 +11,5 @@ public interface ConfigurationMonitor
      *
      * @param index
      */
-    public void configurationChanged(String index);
+    void configurationChanged(String index);
 }

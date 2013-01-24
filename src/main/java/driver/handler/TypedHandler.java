@@ -1,11 +1,5 @@
 package driver.handler;
 
-import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.channel.*;
-
-/**
- *
- */
 public abstract class TypedHandler<T>
 {
     final private Class<T> type;

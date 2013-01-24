@@ -7,6 +7,6 @@ import streaming.blueprints.GraphCommandListener;
  */
 public interface GraphUnfoldingService
 {
-    public void unfoldVertex(String id, GraphCommandListener listener);
+    void unfoldVertex(String id, GraphCommandListener listener);
 }
 

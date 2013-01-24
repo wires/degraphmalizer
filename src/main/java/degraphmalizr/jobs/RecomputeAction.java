@@ -1,13 +1,8 @@
 package degraphmalizr.jobs;
 
 import configuration.TypeConfig;
-import trees.Pair;
-import trees.Tree;
 
-import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
-
-import configuration.PropertyConfig;
 
 public class RecomputeAction
 {

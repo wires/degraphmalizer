@@ -9,5 +9,5 @@ public interface Configuration
      *
      * @return Mapping of index name (as used by ES) to index config
      */
-    public Map<String,? extends IndexConfig> indices();
+    Map<String,? extends IndexConfig> indices();
 }

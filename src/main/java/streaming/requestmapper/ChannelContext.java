@@ -7,11 +7,11 @@ import org.jboss.netty.channel.group.ChannelGroup;
 /**
  * @author Ernst Bunders
  */
-public interface ChannelContext {
-    public Optional<ChannelGroup> getChannelGroup(String id);
+public interface ChannelContext
+{
+    Optional<ChannelGroup> getChannelGroup(String id);
 
-    public ChannelGroup addChannel(String id, Channel channel);
+    ChannelGroup addChannel(String id, Channel channel);
 
-    public void removeChannel(Channel channel);
-
+    void removeChannel(Channel channel);
 }

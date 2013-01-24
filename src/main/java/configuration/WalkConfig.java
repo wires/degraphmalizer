@@ -27,7 +27,7 @@ public interface WalkConfig {
      *
      * @return
      */
-    public Direction direction();
+    Direction direction();
 
 
     /**
@@ -35,7 +35,7 @@ public interface WalkConfig {
      *
      * @return
      */
-    public TypeConfig type();
+    TypeConfig type();
 
 
     /**
@@ -43,10 +43,10 @@ public interface WalkConfig {
      *
      * @return
      */
-    public Map<String, ? extends PropertyConfig> properties();
+    Map<String, ? extends PropertyConfig> properties();
 
     /**
      * Name of the walk
      */
-    public String name();
+    String name();
 }

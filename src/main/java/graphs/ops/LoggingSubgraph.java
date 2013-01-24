@@ -1,11 +1,9 @@
 package graphs.ops;
 
 import java.util.Map;
-import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.tinkerpop.blueprints.Direction;
-import com.tinkerpop.blueprints.Element;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

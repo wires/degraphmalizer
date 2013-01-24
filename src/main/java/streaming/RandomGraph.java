@@ -1,12 +1,8 @@
 package streaming;
 
-import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 
-/**
- *
- */
 class RandomGraph extends TinkerGraph
 {
     /**
@@ -34,7 +30,7 @@ class RandomGraph extends TinkerGraph
                     if((va == null) || (vb == null))
                         continue;
 
-                    final Edge e = addEdge("e" + Integer.toOctalString(i), va, vb, "edge");
+                    addEdge("e" + Integer.toOctalString(i), va, vb, "edge");
                 }
             }
         }

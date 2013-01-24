@@ -8,12 +8,12 @@ public interface IndexConfig {
      *
      * @return name of the index (as used by ES)
      */
-    public String name();
+    String name();
 
     /**
      * Get all registered types
      *
      * @return Mapping of type name (as used by ES) to type config
      */
-    public Map<String, ? extends TypeConfig> types();
+    Map<String, ? extends TypeConfig> types();
 }

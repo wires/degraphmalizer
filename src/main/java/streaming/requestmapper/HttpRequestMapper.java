@@ -65,12 +65,13 @@ public final class HttpRequestMapper {
         }
     }
 
-    public interface RequestHandler {
-        public void handleRequest(HttpRequest request, Channel channel) throws RequestHandlerException;
+    public interface RequestHandler
+    {
+        void handleRequest(HttpRequest request, Channel channel) throws RequestHandlerException;
 
         /**
          * Returns the regular expression string that will be used to match the request path with.
          */
-        public String getPathMatchingExpression();
+        String getPathMatchingExpression();
     }
 }

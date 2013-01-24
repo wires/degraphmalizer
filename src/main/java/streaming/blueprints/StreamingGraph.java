@@ -128,8 +128,9 @@ public final class StreamingGraph implements Graph {
         }
     }
 
-    public interface GraphCommandListenerFilter{
-        public boolean matches(GraphCommandListener listener);
+    public interface GraphCommandListenerFilter
+    {
+        boolean matches(GraphCommandListener listener);
     }
 
     final class StreamingVertex implements Vertex {

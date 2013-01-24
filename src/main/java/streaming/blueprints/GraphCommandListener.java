@@ -5,5 +5,5 @@ import streaming.command.GraphCommand;
 
 public interface GraphCommandListener {
 
-    public void commandCreated(GraphCommand graphCommand);
+    void commandCreated(GraphCommand graphCommand);
 }

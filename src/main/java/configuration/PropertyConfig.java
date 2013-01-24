@@ -22,7 +22,7 @@ public interface PropertyConfig {
      *
      * @return
      */
-    public String name();
+    String name();
 
     /**
      * The reduction function.
@@ -32,10 +32,10 @@ public interface PropertyConfig {
      *
      * @param tree The root of the tree is the <i>raw</i> document itself.
      */
-    public JsonNode reduce(Tree<ResolvedPathElement> tree);
+    JsonNode reduce(Tree<ResolvedPathElement> tree);
 
     /**
      * A property is always part of a {@link WalkConfig}
      */
-    public WalkConfig walk();
+    WalkConfig walk();
 }

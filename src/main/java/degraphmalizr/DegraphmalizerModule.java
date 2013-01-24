@@ -1,9 +1,6 @@
 package degraphmalizr;
 
-import com.google.inject.*;
-import com.tinkerpop.blueprints.TransactionalGraph;
-import graphs.ops.BlueprintsSubgraphManager;
-import graphs.ops.SubgraphManager;
+import com.google.inject.AbstractModule;
 
 public class DegraphmalizerModule extends AbstractModule
 {
