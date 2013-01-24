@@ -1,7 +1,7 @@
 package modules;
 
 import com.google.inject.*;
-import elasticsearch.ESUtilities;
+import elasticsearch.QueryFunction;
 import modules.bindingannotations.*;
 
 import java.util.concurrent.ExecutorService;
@@ -12,7 +12,7 @@ public class ThreadpoolModule extends AbstractModule
     @Override
     protected void configure()
     {
-        bind(ESUtilities.class);
+        bind(QueryFunction.class);
     }
 
     @Provides @Singleton @Degraphmalizes

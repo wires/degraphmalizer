@@ -10,7 +10,7 @@ import com.tinkerpop.blueprints.*;
 import configuration.*;
 import configuration.javascript.JSONUtilities;
 import degraphmalizr.jobs.*;
-import elasticsearch.ESUtilities;
+import elasticsearch.QueryFunction;
 import exceptions.DegraphmalizerException;
 import graphs.GraphQueries;
 import graphs.ops.Subgraph;
@@ -72,7 +72,7 @@ public class Degraphmalizer implements Degraphmalizr
     final protected ExecutorService recomputeQueue;
     final protected ExecutorService fetchQueue;
 
-    protected final ESUtilities updater;
+    protected final QueryFunction queryFn;
 
     protected final Provider<Configuration> cfgProvider;
 
@@ -85,7 +85,7 @@ public class Degraphmalizer implements Degraphmalizr
                           @Degraphmalizes ExecutorService degraphmalizeQueue,
                           @Fetches ExecutorService fetchQueue,
                           @Recomputes ExecutorService recomputeQueue,
-                          ESUtilities esUtilities,
+                          QueryFunction queryFunction,
                           Provider<Configuration> configProvider)
 	{
         this.fetchQueue = fetchQueue;
@@ -96,7 +96,7 @@ public class Degraphmalizer implements Degraphmalizr
         this.subgraphmanager = subgraphmanager;
 		this.client = client;
         this.cfgProvider = configProvider;
-        this.updater = esUtilities;
+        this.queryFn = queryFunction;
 	}
 
     List<TypeConfig> configsFor(String index, String type) throws DegraphmalizerException
@@ -313,7 +313,7 @@ public class Degraphmalizer implements Degraphmalizr
 
                         // get all documents in the tree from Elasticsearch (in parallel)
                         final Tree<Optional<GetResponse>> doc_tree =
-                                Trees.pmap(fetchQueue, updater.documentGetter(), tree);
+                                Trees.pmap(fetchQueue, queryFn, tree);
 
                         // the tree has Optional.absent values when versions for instance don't match up
 
