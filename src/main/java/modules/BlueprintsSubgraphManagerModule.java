@@ -12,7 +12,7 @@ public class BlueprintsSubgraphManagerModule extends AbstractModule
     {}
 
     @Provides @Inject @Singleton
-    SubgraphManager provideSubgraphManager(TransactionalGraph G)
+    final SubgraphManager provideSubgraphManager(TransactionalGraph G)
     {
         return new BlueprintsSubgraphManager(G);
     }

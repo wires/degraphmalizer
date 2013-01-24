@@ -17,7 +17,7 @@ public class CommonNeo4j extends AbstractModule
     {}
 
     @Provides @Singleton
-    TransactionalGraph provideGraph(@Neo4jDataDir String dataDir) throws IOException
+    final TransactionalGraph provideGraph(@Neo4jDataDir String dataDir) throws IOException
     {
         // manually set the cache provider
         final Map<String, String> settings = new HashMap<String, String>();
@@ -34,7 +34,7 @@ public class CommonNeo4j extends AbstractModule
     }
 
     @Provides @Singleton
-    Graph provideGr(TransactionalGraph graph)
+    final Graph provideGr(TransactionalGraph graph)
     {
         return graph;
     }

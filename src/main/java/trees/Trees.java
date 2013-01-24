@@ -19,7 +19,7 @@ import java.util.concurrent.*;
  * @author wires
  *
  */
-public class Trees
+public final class Trees
 {
     private Trees() {}
 

@@ -121,15 +121,15 @@ public final class StreamingGraph implements Graph {
         return Collections.unmodifiableList(found);
     }
 
-    public interface GraphCommandListenerFilter{
-        public boolean matches(GraphCommandListener listener);
-    }
-
     protected void notifyGraphCommandListeners(GraphCommand graphCommand) {
         //simple way to get a consistent view on a possibly changing collection
         for (GraphCommandListener listener : Collections.unmodifiableList(graphCommandListeners)) {
             listener.commandCreated(graphCommand);
         }
+    }
+
+    public interface GraphCommandListenerFilter{
+        public boolean matches(GraphCommandListener listener);
     }
 
     final class StreamingVertex implements Vertex {

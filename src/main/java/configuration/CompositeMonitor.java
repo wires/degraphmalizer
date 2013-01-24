@@ -22,7 +22,7 @@ public class CompositeMonitor implements ConfigurationMonitor
     }
 
     @Override
-    public void configurationChanged(String index)
+    public final void configurationChanged(String index)
     {
         for(ConfigurationMonitor w : monitors)
             w.configurationChanged(index);

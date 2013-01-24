@@ -21,7 +21,7 @@ public class BlueprintsSubgraphManager implements SubgraphManager
     }
 
     @Override
-    public Subgraph createSubgraph(ID id) throws DegraphmalizerException
+    public final Subgraph createSubgraph(ID id) throws DegraphmalizerException
     {
         if(id.version() == 0)
             throw new DegraphmalizerException("Subgraph must have version > 0");
@@ -29,7 +29,7 @@ public class BlueprintsSubgraphManager implements SubgraphManager
     }
 
     @Override
-    public void commitSubgraph(Subgraph subgraph) throws DegraphmalizerException
+    public final void commitSubgraph(Subgraph subgraph) throws DegraphmalizerException
     {
         final SG sg = (SG) subgraph;
         boolean success = false;
@@ -91,11 +91,6 @@ public class BlueprintsSubgraphManager implements SubgraphManager
     /**
      * A vertex can only be deleted if all edges pointed to it are owned by us and are about to be deleted also.
      * Unless the vertex is not symbolic
-     *
-     * @param v
-     * @param owner
-     * @param edgesToDelete
-     * @return
      */
     private boolean canDeleteVertex(Vertex v, ID owner, List<Edge> edgesToDelete)
     {
@@ -167,7 +162,6 @@ public class BlueprintsSubgraphManager implements SubgraphManager
      * if The edge does not exist in the graph yet, create the target (symbolic) Vertex and the edge.
      * If it does exist check if the existing is owned by this subgraph. if not so: Error Error Error!!!
      * If so: update the properties of that edge.
-     * @param sg
      * @return A pair of lists that contain all Edges and All vertices that will be part of the new subgraph.
      */
     private Pair<List<Vertex>, List<Edge>> createOrUpdateEdges(SG sg)
@@ -216,10 +210,6 @@ public class BlueprintsSubgraphManager implements SubgraphManager
      * Check if a given edge belongs to this subgraph
      *
      * TODO: if we don't bother with the version component of the owner we can skip all this.
-     *
-     * @param centralVertex
-     * @param edgeId
-     * @param edge
      */
     private void edgeConsistencyCheck(ID centralVertex, EdgeID edgeId, Edge edge)
     {
@@ -246,7 +236,7 @@ class SG implements Subgraph
     final IdentityHashMap<String, JsonNode> properties = new IdentityHashMap<String, JsonNode>();
 
     @Override
-    public void addEdge(String label, ID other, Direction direction, Map<String, JsonNode> properties)
+    public void addEdge(String label, ID other, Direction direction, Map<String, JsonNode> edgeProperties)
     {
         if (other.version() != 0)
             throw new IllegalArgumentException("Other vertex must be a symbolic vertex (version == 0)");
@@ -255,12 +245,12 @@ class SG implements Subgraph
         {
             // edge to us
             case IN:
-                edges.put(new EdgeID(other, label, id), properties);
+                edges.put(new EdgeID(other, label, id), edgeProperties);
                 return;
 
             // edge from us
             case OUT:
-                edges.put(new EdgeID(id, label, other), properties);
+                edges.put(new EdgeID(id, label, other), edgeProperties);
                 return;
 
             default:

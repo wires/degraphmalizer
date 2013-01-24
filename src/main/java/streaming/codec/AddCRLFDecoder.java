@@ -12,7 +12,7 @@ public class AddCRLFDecoder extends OneToOneEncoder {
     private static final byte[] BYTES = new byte[]{10, 13};
 
     @Override
-    protected Object encode(ChannelHandlerContext ctx, Channel channel, Object msg) throws Exception {
+    protected final Object encode(ChannelHandlerContext ctx, Channel channel, Object msg) throws Exception {
         if (!(msg instanceof ChannelBuffer)) return msg;
         return wrappedBuffer(
                 (ChannelBuffer) msg,

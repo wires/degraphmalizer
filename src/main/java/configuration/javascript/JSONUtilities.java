@@ -11,7 +11,7 @@ import java.io.IOException;
 /**
  * Some helper functions to convert between Object (coming from Rhino) and {@link JsonNode}
  */
-public class JSONUtilities
+public final class JSONUtilities
 {
     private JSONUtilities() {}
 

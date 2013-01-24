@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 
-public class GraphQueries
+public final class GraphQueries
 {
     public static final String PREFIX             = "_";
     public static final String IDENTIFIER         = PREFIX + "identifier";

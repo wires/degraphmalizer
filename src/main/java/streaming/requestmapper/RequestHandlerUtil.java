@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 /**
  * @author Ernst Bunders
  */
-public class RequestHandlerUtil
+public final class RequestHandlerUtil
 {
     private RequestHandlerUtil() {}
 

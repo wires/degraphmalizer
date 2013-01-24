@@ -20,14 +20,14 @@ public class CompositeSubgraph implements Subgraph
 	}
 
     @Override
-    public void addEdge(String label, ID other, Direction direction, Map<String, JsonNode> properties)
+    public final void addEdge(String label, ID other, Direction direction, Map<String, JsonNode> properties)
     {
         for(Subgraph s : subgraphs)
             s.addEdge(label, other, direction, properties);
     }
 
     @Override
-    public void setProperty(String key, JsonNode value)
+    public final void setProperty(String key, JsonNode value)
     {
         for(Subgraph s : subgraphs)
             s.setProperty(key, value);

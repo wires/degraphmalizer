@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class GraphCommandBuilder {
+public final class GraphCommandBuilder {
 
     private GraphCommandBuilder() {}
 
@@ -66,7 +66,7 @@ public class GraphCommandBuilder {
         return edge(name, source, destination, directed, 1);
     }
 
-    public static class NodeCommandBuilder {
+    public final static class NodeCommandBuilder {
         private final GraphCommandType graphCommandType;
         private List<NodeBuilder> nodeBuilders = new ArrayList<NodeBuilder>();
 

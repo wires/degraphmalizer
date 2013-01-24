@@ -2,10 +2,7 @@ package trees;
 
 import org.elasticsearch.action.get.GetResponse;
 
-/**
- *
- */
-public class QueryResponse
+public final class QueryResponse
 {
     final boolean hasExpired;
     final GetResponse response;
@@ -18,8 +15,6 @@ public class QueryResponse
 
     /**
      * Call this method when the specific version was no longer available
-     *
-     * @return
      */
     public static QueryResponse expired()
     {
@@ -28,8 +23,6 @@ public class QueryResponse
 
     /**
      * Call this method when no ID was defined for the vertex.
-     *
-     * @return
      */
     public static QueryResponse noID()
     {

@@ -25,7 +25,7 @@ import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Main
+public final class Main
 {
     private final static Logger log = LoggerFactory.getLogger(Main.class);
 
