@@ -12,8 +12,47 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+class CachedProvider<T> implements Provider<T>
+{
+    final Provider<T> sourceProvider;
+
+    // current cached is cached here
+    T cached = null;
+
+    public CachedProvider(Provider<T> sourceProvider)
+    {
+        this.sourceProvider = sourceProvider;
+        this.cached = sourceProvider.get();
+    }
+
+    public T get()
+    {
+        // (for thread safety)
+        final T c = cached;
+
+        // still up to date
+        if (c != null)
+            return c;
+
+        // create new cached
+        final T d = sourceProvider.get();
+
+        // return old config if loading failed
+        if (d == null)
+            return c;
+
+        cached = d;
+        return d;
+    }
+
+    public void invalidate()
+    {
+        cached = null;
+    }
+}
+
 /**
- * Non-reloading javascript configuration
+ * Non-reloading javascript cached
  */
 public class ReloadingJSConfModule extends AbstractModule implements ConfigurationMonitor
 {
@@ -21,53 +60,46 @@ public class ReloadingJSConfModule extends AbstractModule implements Configurati
 
 	final String scriptFolder;
     final PollingConfigurationMonitor poller;
+    final CachedProvider<Configuration> cachedProvider;
 
-    // current configuration is cached here
-    JavascriptConfiguration configuration = null;
-
-    public ReloadingJSConfModule(String scriptFolder) throws IOException
+    public ReloadingJSConfModule(final String scriptFolder) throws IOException
     {
+        final Provider<Configuration> confLoader = new Provider<Configuration>() {
+            @Override public Configuration get() {
+                try
+                {
+                    return new JavascriptConfiguration(new File(scriptFolder));
+                }
+                catch (Exception e)
+                {
+                    log.info("Failed to load configuration, {}", e.getMessage());
+                    return null;
+                }
+            }
+        };
+
+        this.cachedProvider = new CachedProvider(confLoader);
         this.scriptFolder = scriptFolder;
         this.poller = new PollingConfigurationMonitor(scriptFolder, 200, this);
 
-        if(loadConf() == null)
-            throw new RuntimeException("Failed loading configuration!");
-    }
-	
-	@Override
-    protected void configure()
-    {}
-	
-	@Provides
-    Configuration provideConfiguration() throws IOException
-	{
-        final Configuration c = configuration;
-
-        // still up to date
-        if (c != null)
-            return c;
-
         // start the poller (does nothing if it is already running)
         poller.start();
-
-        // create new configuration
-        final JavascriptConfiguration d = loadConf();
-
-        configuration = d;
-        return d;
-	}
+    }
+	
+    @Provides @Singleton
+    public Provider<Configuration> provideConfiguration() throws IOException
+	{
+        return cachedProvider;
+    }
 
     @Override
     public void configurationChanged(String index)
     {
-        // when the configurating changes, mark it for (lazy) reloading
-        configuration = null;
-
-        log.info("Configuration change detected for index {}", index);
+        log.info("Configuration change detected for target-index {}", index);
+        cachedProvider.invalidate();
     }
 
-    private JavascriptConfiguration loadConf() throws IOException
-    {
-        return new JavascriptConfiguration(new File(scriptFolder));
-    }
+    @Override
+    protected void configure()
+    {}
 }
