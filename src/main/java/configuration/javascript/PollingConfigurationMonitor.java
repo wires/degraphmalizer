@@ -6,6 +6,7 @@ import com.google.common.hash.*;
 import configuration.ConfigurationMonitor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
+import org.neo4j.cypher.internal.commands.Has;
 
 import java.io.File;
 import java.util.*;
@@ -135,6 +136,14 @@ public class PollingConfigurationMonitor implements Runnable
 
             // we collect all hash codes...
             codes.add(hasher.hash());
+        }
+
+        // when we have no files, return some fixed hash
+        if(codes.size() == 0)
+        {
+            final Hasher hasher = hf.newHasher();
+            hasher.putLong(0);
+            return hasher.hash();
         }
 
         // ... because we don't care about order in which files are listed
