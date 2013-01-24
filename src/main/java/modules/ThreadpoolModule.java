@@ -15,27 +15,21 @@ public class ThreadpoolModule extends AbstractModule
         bind(ESUtilities.class);
     }
 
-    @Provides
-    @Singleton
-    @Dirty
-    ExecutorService provideDirtyExecutor()
-    {
-        return Executors.newFixedThreadPool(16);
-    }
-
-    @Provides
-    @Singleton
-    @Update
-    ExecutorService provideUpdateExecutor()
+    @Provides @Singleton @Degraphmalizes
+    ExecutorService provideDegraphmalizesExecutor()
     {
         // single threaded updates!
         return Executors.newSingleThreadExecutor();
     }
 
-    @Provides
-    @Singleton
-    @Fetches
-    ExecutorService provideExecutorService()
+    @Provides @Singleton @Recomputes
+    ExecutorService provideRecomputesExecutor()
+    {
+        return Executors.newFixedThreadPool(16);
+    }
+
+    @Provides @Singleton @Fetches
+    ExecutorService provideFetchesExecutor()
     {
         return Executors.newFixedThreadPool(64);
     }

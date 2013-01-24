@@ -68,9 +68,9 @@ public class Degraphmalizer implements Degraphmalizr
 	final protected Graph graph;
     final protected SubgraphManager subgraphmanager;
 
-	final protected ExecutorService dirtyDocs;
-    final protected ExecutorService service;
-    final protected ExecutorService updateDocs;
+    final protected ExecutorService degraphmalizeQueue;
+    final protected ExecutorService recomputeQueue;
+    final protected ExecutorService fetchQueue;
 
     protected final ESUtilities updater;
 
@@ -82,15 +82,15 @@ public class Degraphmalizer implements Degraphmalizr
 
 	@Inject
 	public Degraphmalizer(Client client, SubgraphManager subgraphmanager, Graph graph,
-                          @Update ExecutorService updateDocs,
-                          @Fetches ExecutorService service,
-                          @Dirty ExecutorService dirtyDocs,
+                          @Degraphmalizes ExecutorService degraphmalizeQueue,
+                          @Fetches ExecutorService fetchQueue,
+                          @Recomputes ExecutorService recomputeQueue,
                           ESUtilities esUtilities,
                           Provider<Configuration> configProvider)
 	{
-        this.service = service;
-        this.dirtyDocs = dirtyDocs;
-        this.updateDocs = updateDocs;
+        this.fetchQueue = fetchQueue;
+        this.recomputeQueue = recomputeQueue;
+        this.degraphmalizeQueue = degraphmalizeQueue;
 
         this.graph = graph;
         this.subgraphmanager = subgraphmanager;
@@ -126,7 +126,7 @@ public class Degraphmalizer implements Degraphmalizr
             final DegraphmalizeAction action = new DegraphmalizeAction(cfg, id, callback);
 
             // convert object into task and queue
-            action.result = updateDocs.submit(degraphmalizeJob(action));
+            action.result = degraphmalizeQueue.submit(degraphmalizeJob(action));
 
             actions.add(action);
         }
@@ -208,8 +208,6 @@ public class Degraphmalizer implements Degraphmalizr
 
                     log.debug("Action {} caused recompute for {} documents", action.hash(), affectedDocs.size());
 
-
-
                     // create Callable from the actions
                     // TODO call 'recompute started' for each action
                     final ArrayList<Callable<Optional<IndexResponse>>> jobs = new ArrayList<Callable<Optional<IndexResponse>>>();
@@ -218,7 +216,7 @@ public class Degraphmalizer implements Degraphmalizr
 
                     // recompute all affected documents and wait for results
                     // TODO call 'recompute finished' for each action
-                    final List<Future<Optional<IndexResponse>>> results = dirtyDocs.invokeAll(jobs);
+                    final List<Future<Optional<IndexResponse>>> results = recomputeQueue.invokeAll(jobs);
 
                     // TODO get rid of this innerclass
                     final DegraphmalizeResult result = new DegraphmalizeResult()
@@ -315,7 +313,7 @@ public class Degraphmalizer implements Degraphmalizr
 
                         // get all documents in the tree from Elasticsearch (in parallel)
                         final Tree<Optional<GetResponse>> doc_tree =
-                                Trees.pmap(service, updater.documentGetter(), tree);
+                                Trees.pmap(fetchQueue, updater.documentGetter(), tree);
 
                         // the tree has Optional.absent values when versions for instance don't match up
 
