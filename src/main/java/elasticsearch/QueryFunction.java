@@ -70,6 +70,14 @@ public class QueryFunction implements Function<Pair<Edge,Vertex>, Optional<Resol
             final GetResponse r = searchIndex.prepareGet(id.index(), id.type(), id.id())
                     .execute().actionGet();
 
+            if ((r.version() == -1) || !r.exists())
+            {
+                log.debug("Document {} does not exist!", id);
+                // TODO optional.absent is now considered a query problem, in the future we want to handle each case
+                // separately, see DGM-45
+                return Optional.of(new ResolvedPathElement(r, pair.a, pair.b));
+            }
+
             // query has expired in the meantime
             if (r.version() != id.version())
             {
@@ -77,14 +85,6 @@ public class QueryFunction implements Function<Pair<Edge,Vertex>, Optional<Resol
                 // TODO optional.absent is now considered a query problem, in the future we want to handle each case
                 // separately, see DGM-45
                 return Optional.absent();
-            }
-
-            if (!r.exists())
-            {
-                log.debug("Document {} does not exist!", id);
-                // TODO optional.absent is now considered a query problem, in the future we want to handle each case
-                // separately, see DGM-45
-                return Optional.of(new ResolvedPathElement(r, pair.a, pair.b));
             }
 
             return Optional.of(new ResolvedPathElement(r, pair.a, pair.b));
