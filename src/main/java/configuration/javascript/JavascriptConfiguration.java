@@ -215,7 +215,10 @@ class JavascriptTypeConfig implements TypeConfig
         final CompositeSubgraph csg = new CompositeSubgraph(lsg, graphops);
 
         final JavascriptSubgraph sg = new JavascriptSubgraph(csg, cx, script);
-		extract.call(cx, script, null, new Object[]{job, sg});
+
+        final Object obj = JSONUtilities.toJSONObject(cx, script,  job.document().toString());
+
+		extract.call(cx, script, null, new Object[]{obj, sg});
 		
 		Context.exit();
     }
