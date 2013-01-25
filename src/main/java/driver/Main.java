@@ -15,7 +15,6 @@ import neo4j.*;
 import org.elasticsearch.client.Client;
 import org.nnsoft.guice.sli4j.slf4j.Slf4jLoggingModule;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -27,7 +26,6 @@ import java.util.List;
 
 public final class Main
 {
-    private static final Logger log = LoggerFactory.getLogger(Main.class);
     private static final String LOGBACK_CFG = "logback.configurationFile";
 
     private Main() {}
@@ -46,16 +44,16 @@ public final class Main
             System.exit(1);
         }
 
-        // check if script directory exists
-        if(!new File(opt.config).isDirectory())
-        {
-            log.error("Cannot find configuration directory {}. Exiting.", opt.config);
-            System.exit(1);
-        }
-
         // find logback settings file
         if (System.getProperty(LOGBACK_CFG) == null)
             System.setProperty(LOGBACK_CFG, opt.logbackConf);
+
+        // check if script directory exists
+        if(!new File(opt.config).isDirectory())
+        {
+            System.err.println("Cannot find configuration directory "+opt.config+" Exiting.");
+            System.exit(1);
+        }
 
         // depending on properties / CLI, load proper modules
         final List<Module> modules = new ArrayList<Module>();
@@ -65,7 +63,7 @@ public final class Main
         // setup elasticsearch transport node
         if(!(opt.transport.size() == 3))
         {
-            log.error("You need to specify either the local or transport ES config. Exiting.");
+            System.err.println("You need to specify either the local or transport ES config. Exiting.");
             System.exit(1);
         }
 
@@ -89,20 +87,20 @@ public final class Main
         // automatic reloading
         if(opt.reloading)
         {
-            log.info("Automatic reloading: enabled");
+            System.out.println("Automatic reloading: enabled");
             try
             {
                 modules.add(new ReloadingJSConfModule(opt.config));
             }
             catch (IOException e)
             {
-                log.error("Failed to parse the configuration. Exiting.");
+                System.err.println("Failed to parse the configuration. Exiting.");
                 System.exit(1);
             }
         }
         else
         {
-            log.info("Automatic reloading: disabled");
+            System.out.println("Automatic reloading: disabled");
             modules.add(new StaticJSConfModule(opt.config));
         }
 
