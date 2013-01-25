@@ -407,17 +407,17 @@ public final class GraphQueries
 
     public static void dumpGraph(Graph graph)
     {
-        log.info("Graph dump start");
+        log.trace("Graph dump start");
 
         for(Edge e : graph.getEdges())
         {
             final EdgeID edgeId = getEdgeID(e);
             if(edgeId == null)
-                log.info(e.toString());
+                log.trace(e.toString());
             else
-                log.info(edgeId.toString());
+                log.trace(edgeId.toString());
         }
 
-        log.info("Graph dump done");
+        log.trace("Graph dump done");
     }
 }

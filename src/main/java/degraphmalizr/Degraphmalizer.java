@@ -106,7 +106,12 @@ public class Degraphmalizer implements Degraphmalizr
         for(IndexConfig i : cfgProvider.get().indices().values())
             for(TypeConfig t : i.types().values())
                 if(index.equals(t.sourceIndex()) && type.equals(t.sourceType()))
+                {
+                    log.debug("Matching to request for /{}/{} --> /{}/{}",
+                            new Object[]{t.sourceIndex(), t.sourceType(), i.name(), t.name()});
+
                     configs.add(t);
+                }
 
         if(configs.size() == 0)
             throw new DegraphmalizerException("No configuration for index '" + index + "', type '" + type + "'");
@@ -165,6 +170,10 @@ public class Degraphmalizer implements Degraphmalizr
                     action.type().extract(action, sg);
                     log.debug("Completed extraction of graph elements");
                     subgraphmanager.commitSubgraph(sg);
+
+                    if(log.isTraceEnabled())
+                        GraphQueries.dumpGraph(graph);
+
                     log.debug("Committed subgraph to graph");
 
 
@@ -195,13 +204,23 @@ public class Degraphmalizer implements Degraphmalizr
                         }
 
                         // create "dirty document" messages for each node in the tree
-                        for (Pair<Edge, Vertex> affectedVertex : Trees.bfsWalk(tree))
+                        for (Pair<Edge, Vertex> pathElement : Trees.bfsWalk(tree))
                         {
+                            final Vertex v = pathElement.b;
+
                             // skip the root of the tree, ie. ourselves:
-                            if(affectedVertex.b.equals(root))
+                            if(v.equals(root))
                                 continue;
 
-                            affectedDocs.add(new RecomputeAction(action, action.type(), affectedVertex.b));
+                            // TODO add ID to action object, avoid graph queries at some later point
+                            final ID v_id = GraphQueries.getID(v);
+
+                            // we already know this document does not exist in ES, skip
+                            if(v_id.version() == 0)
+                                continue;
+
+                            // alright, mark for computation
+                            affectedDocs.add(new RecomputeAction(action, action.type(), v));
                         }
                     }
 
@@ -379,7 +398,9 @@ public class Degraphmalizer implements Degraphmalizr
                 }
                 catch (Exception e)
                 {
-                    log.error("Exception in recomputation phase, {}", e);
+                    // TODO store and retrieve from action object, see TODO above line 215, at time of this commit ;^)
+                    final ID id = GraphQueries.getID(action.root);
+                    log.error("Exception in recomputation phase for id " + id, e);
                     return Optional.absent();
                 }
             }
