@@ -55,7 +55,7 @@ public final class Main
 
         // find logback settings file
         if (System.getProperty(LOGBACK_CFG) == null)
-            System.setProperty(LOGBACK_CFG, "file:" + opt.logbackConf);
+            System.setProperty(LOGBACK_CFG, opt.logbackConf);
 
         // depending on properties / CLI, load proper modules
         final List<Module> modules = new ArrayList<Module>();
