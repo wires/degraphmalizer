@@ -76,10 +76,6 @@ public class BlueprintsSubgraphManager implements SubgraphManager
             success = true;
             graph.stopTransaction(TransactionalGraph.Conclusion.SUCCESS);
         }
-        catch(DegraphmalizerException e)
-        {
-            throw e;
-        }
         finally
         {
             // rollback if something failed
@@ -126,7 +122,7 @@ public class BlueprintsSubgraphManager implements SubgraphManager
         if (! isOwnable(center, sg.id()))
             throw new DegraphmalizerException("It is not possible to change the owner of a vertex");
 
-        setProperties(center, sg.properties);
+        setProperties(center, sg.properties());
 
         //if the 'center' vertex has edges, then the edge id should be updated.
         updateEdgeIds(center, sg.id());
@@ -169,7 +165,7 @@ public class BlueprintsSubgraphManager implements SubgraphManager
         List<Vertex> vertexList = new ArrayList<Vertex>();
         List<Edge> edgeList = new ArrayList<Edge>();
 
-        for (Map.Entry<EdgeID, Map<String, JsonNode>> e : sg.edges.entrySet())
+        for (Map.Entry<EdgeID, Map<String, JsonNode>> e : sg.edges().entrySet())
         {
             final EdgeID edgeId = e.getKey();
             Edge edge = findEdge(graph, edgeId);
@@ -227,8 +223,8 @@ class SG implements Subgraph
 {
     private final ID id;
 
-    final Map<EdgeID, Map<String, JsonNode>> edges = new HashMap<EdgeID, Map<String, JsonNode>>();
-    final Map<String, JsonNode> properties = new IdentityHashMap<String, JsonNode>();
+    private final Map<EdgeID, Map<String, JsonNode>> edges = new HashMap<EdgeID, Map<String, JsonNode>>();
+    private final Map<String, JsonNode> properties = new IdentityHashMap<String, JsonNode>();
 
     public SG(ID id)
     {
@@ -267,5 +263,15 @@ class SG implements Subgraph
     public ID id()
     {
         return id;
+    }
+
+    public Map<EdgeID, Map<String, JsonNode>> edges()
+    {
+        return edges;
+    }
+
+    public Map<String, JsonNode> properties()
+    {
+        return properties;
     }
 }

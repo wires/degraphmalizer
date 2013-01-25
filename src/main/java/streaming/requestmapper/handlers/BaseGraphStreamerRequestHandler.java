@@ -32,12 +32,12 @@ public abstract class BaseGraphStreamerRequestHandler implements HttpRequestMapp
         return params.get(index);
     }
 
-    GraphUnfoldingService getGraphStreamingService()
+    final GraphUnfoldingService getGraphStreamingService()
     {
         return graphStreamingService;
     }
 
-    ChannelContext getChannelContext()
+    final ChannelContext getChannelContext()
     {
         return channelContext;
     }

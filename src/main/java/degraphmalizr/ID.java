@@ -11,16 +11,16 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 public class ID
 {
     @JsonProperty("idx")
-    final String index;
+    private final String index;
 
     @JsonProperty("t")
-    final String type;
+    private final String type;
 
     @JsonProperty("id")
-    final String id;
+    private final String id;
 
     @JsonProperty("v")
-    final long version;
+    private final long version;
 
     @JsonCreator
     public ID(@JsonProperty("idx") String index, @JsonProperty("t") String type, @JsonProperty("id") String id, @JsonProperty("v") long version)

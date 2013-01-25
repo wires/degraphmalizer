@@ -6,6 +6,7 @@ import com.tinkerpop.blueprints.*;
 import degraphmalizr.EdgeID;
 import degraphmalizr.ID;
 import exceptions.DegraphmalizerException;
+
 import org.neo4j.helpers.collection.Iterables;
 import org.testng.annotations.*;
 
@@ -114,7 +115,7 @@ public class SubgraphManagerTest
         // first create some node in the graph
         final ID id0 = randomVersionedID();
         final Props p0 = new Props("[1,2,3]", "{\"a\":2}", "3", "\"abc\"", "{}");
-        final Subgraph sg0 = commitSubgraphAndVerifyProperties(p0, id0);
+        commitSubgraphAndVerifyProperties(p0, id0);
 
         // now we create a subgraph referring the node above
         final ID id1 = randomVersionedID();
@@ -219,18 +220,19 @@ public class SubgraphManagerTest
     {
         //first create an existing virtual node
         ID  targetId = randomSymbolicID();
-        Vertex vertex = addVertexWithId(targetId, true);
+        addVertexWithId(targetId, true);
 
         //then create a subgraph, that creates an edge to this existing symbolic vertex
         final ID id = randomVersionedID();
         final Subgraph sg = lg.sgm.createSubgraph(id);
-        sg.addEdge("edge1", targetId, Direction.OUT, Collections.EMPTY_MAP);
+        sg.addEdge("edge1", targetId, Direction.OUT, Collections.<String, JsonNode>emptyMap());
         lg.sgm.commitSubgraph(sg);
         Vertex v = commitAndFindCentralVertex(sg, id);
 
         //test if the edge has been created properly
         Edge edge = v.getEdges(Direction.OUT).iterator().next();
         Vertex vout = edge.getVertex(Direction.IN);
+        assertThat(getID(vout)).isEqualTo(targetId);
 
         //test if exactly two vertices are created.
         assertThat(Iterables.toList(lg.G.getVertices()).size()).isEqualTo(2);
@@ -253,7 +255,7 @@ public class SubgraphManagerTest
 
         //create a subgraph that links to this vertex, and commit it.
         final Subgraph sg = lg.sgm.createSubgraph(randomVersionedID());
-        sg.addEdge("edge1", getSymbolicID(targetID), Direction.IN, Collections.EMPTY_MAP); /* try it with no properties*/
+        sg.addEdge("edge1", getSymbolicID(targetID), Direction.IN, Collections.<String, JsonNode>emptyMap()); /* try it with no properties*/
         lg.sgm.commitSubgraph(sg);
 
         //test that the vertex still has the properties.
@@ -405,7 +407,7 @@ public class SubgraphManagerTest
      * Creates an edge and also creates the vertices. The vertex id is used for the vertex owner, and the
      * graph id is used for the edges ownership
      *
-     * @param graphID
+     * @param graphID id of the center vertex of the subgraph
      * @param targetID id of the target Vertex
      * @param label the label for the edge
      * @param direction the edge direction.
@@ -437,9 +439,9 @@ public class SubgraphManagerTest
      * - puts the props on the subgraph
      * - commits the subgraph into the graph
      * - checks the properties on the created vertex.
-     * @param p
-     * @param id
-     * @return
+     * @param p properties
+     * @param id id of the center vertex of the subgraph
+     * @return the committed subgraph
      * @throws DegraphmalizerException
      * @throws IOException
      */

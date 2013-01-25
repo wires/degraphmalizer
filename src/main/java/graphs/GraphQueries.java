@@ -343,7 +343,7 @@ public final class GraphQueries
 
     public static boolean isSymbolic(final Vertex v)
     {
-        return getID(v).version() == 0;
+        return getID(v).isSymbolic();
     }
 
     /**
