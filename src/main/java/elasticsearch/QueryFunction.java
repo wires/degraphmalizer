@@ -19,8 +19,6 @@ import trees.Pair;
  *
  * TODO caching
  * TODO query priorities
- * TODO optional.absent is now considered a query problem, in the future we want to handle each
- *      case separately, see DGM-45
  *
  * @author wires
  */
@@ -59,9 +57,7 @@ public class QueryFunction implements Function<Pair<Edge,Vertex>, Optional<Resol
             for (String key : pair.b.getPropertyKeys())
                 log.debug("Property {} has value '{}'", key, pair.b.getProperty(key));
 
-            // TODO optional.absent is now considered a query problem, in the future we want to handle each case
-            // separately, see DGM-45
-            return Optional.absent();
+            return Optional.of(new ResolvedPathElement(Optional.<GetResponse>absent(), pair.a, pair.b));
         }
 
         try
@@ -73,21 +69,17 @@ public class QueryFunction implements Function<Pair<Edge,Vertex>, Optional<Resol
             if ((r.version() == -1) || !r.exists())
             {
                 log.debug("Document {} does not exist!", id);
-                // TODO optional.absent is now considered a query problem, in the future we want to handle each case
-                // separately, see DGM-45
-                return Optional.of(new ResolvedPathElement(r, pair.a, pair.b));
+                return Optional.of(new ResolvedPathElement(Optional.<GetResponse>absent(), pair.a, pair.b));
             }
 
             // query has expired in the meantime
             if (r.version() != id.version())
             {
                 log.debug("Document {} expired, version in ES is {}!", id, r.version());
-                // TODO optional.absent is now considered a query problem, in the future we want to handle each case
-                // separately, see DGM-45
                 return Optional.absent();
             }
 
-            return Optional.of(new ResolvedPathElement(r, pair.a, pair.b));
+            return Optional.of(new ResolvedPathElement(Optional.of(r), pair.a, pair.b));
         }
         catch (ElasticSearchException e)
         {

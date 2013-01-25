@@ -1,5 +1,6 @@
 package elasticsearch;
 
+import com.google.common.base.Optional;
 import org.elasticsearch.action.get.GetResponse;
 
 import com.tinkerpop.blueprints.Edge;
@@ -7,18 +8,18 @@ import com.tinkerpop.blueprints.Vertex;
 
 public class ResolvedPathElement
 {
-    private GetResponse getResponse;
+    private Optional<GetResponse> getResponse;
     private Edge edge;
     private Vertex vertex;
 
-    public ResolvedPathElement(GetResponse getResponse, Edge edge, Vertex vertex)
+    public ResolvedPathElement(Optional<GetResponse> getResponse, Edge edge, Vertex vertex)
     {
         this.getResponse = getResponse;
         this.edge = edge;
         this.vertex = vertex;
     }
 
-    public final GetResponse getResponse()
+    public final Optional<GetResponse> getResponse()
     {
         return getResponse;
     }

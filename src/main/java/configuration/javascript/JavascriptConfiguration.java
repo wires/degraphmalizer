@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Optional;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
@@ -386,10 +387,10 @@ class JavascriptPropertyConfig implements PropertyConfig
             {
                 try
                 {
-                    final GetResponse getResponse = input.getResponse();
-                    if(getResponse.exists())
+                    final Optional<GetResponse> getResponse = input.getResponse();
+                    if(getResponse.isPresent())
                     {
-                        final String getResponseString = getResponse.getSourceAsString();
+                        final String getResponseString = getResponse.get().getSourceAsString();
                         final Edge edge = input.edge();
                         final Vertex vertex = input.vertex();
 

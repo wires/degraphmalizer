@@ -362,7 +362,7 @@ public class Degraphmalizer implements Degraphmalizr
                     }
 
                     // store the new document
-                    final JsonNode rawDocument = objectMapper.readTree(root.getResponse().getSourceAsString());
+                    final JsonNode rawDocument = objectMapper.readTree(root.getResponse().get().getSourceAsString());
 
                     // preprocess document using javascript
                     final JsonNode doc = action.typeConfig.transform(rawDocument);

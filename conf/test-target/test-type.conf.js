@@ -11,7 +11,7 @@
 
 	extract: (function(doc, subgraph)
 	{
-	    if (doc.id().id() != "1234")
+	    if (doc._id != "1234")
 	        return;
 
         subgraph.setProperty("test", [1,2,3]);
