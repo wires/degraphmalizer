@@ -1,8 +1,7 @@
 package modules;
 
 import com.google.inject.*;
-import configuration.Configuration;
-import configuration.ConfigurationMonitor;
+import configuration.*;
 import configuration.javascript.JavascriptConfiguration;
 import configuration.javascript.PollingConfigurationMonitor;
 
@@ -98,6 +97,17 @@ public class ReloadingJSConfModule extends AbstractModule implements Configurati
     {
         log.info("Configuration change detected for target-index {}", index);
         cachedProvider.invalidate();
+
+        // print configuration if debugging is enabled
+        if(!log.isDebugEnabled())
+            return;
+
+        // get new config
+        final Configuration cfg = cachedProvider.get();
+        for(final IndexConfig i : cfg.indices().values())
+            for(final TypeConfig t : i.types().values())
+                log.debug("Found target configuration /{}/{} --> /{}/{}",
+                        new Object[]{t.sourceIndex(), t.sourceType(), i.name(), t.name()});
     }
 
     @Override
