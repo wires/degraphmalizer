@@ -21,6 +21,26 @@
         <jackson.version>2.0.0</jackson.version>
     </properties>
 
+    <dependencyManagement>
+      <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.6.5</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.0.7</version>
+        </dependency>
+        <dependency>
+          <groupId>org.apache.lucene</groupId>
+          <artifactId>lucene-core</artifactId>
+          <version>3.6.0</version>
+        </dependency>
+      </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <!-- command line parsing -->
         <dependency>
@@ -97,12 +117,10 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.6.4</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.0.5</version>
         </dependency>
         <dependency>
             <groupId>org.99soft.guice.sli4j</groupId>
@@ -119,6 +137,12 @@
             <artifactId>testng</artifactId>
             <version>6.7</version>
             <scope>test</scope>
+            <exclusions>
+              <exclusion>
+                <groupId>com.beust</groupId>
+                <artifactId>jcommander</artifactId>
+              </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.easytesting</groupId>
