@@ -108,7 +108,7 @@ public final class Main
         final Injector injector = Guice.createInjector(modules);
 
         // logger
-        final Logger logger = injector.getInstance(Logger.class);
+        final Logger log = injector.getInstance(Logger.class);
 
         // start JMX?
         if(opt.jmx)
@@ -116,11 +116,12 @@ public final class Main
             // setup our JMX bean
             try
             {
-                // TODO log JMX
+                log.info("Starting JMX");
                 final MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
                 final ObjectName name = new ObjectName("graph.mbeans:type=GraphBuilder");
                 final GraphBuilder gb = injector.getInstance(GraphBuilder.class);
                 mbs.registerMBean(gb, name);
+                log.info("JMX bean {} started", name);
             }
             catch (Exception e)
             {
@@ -139,23 +140,23 @@ public final class Main
             public void run()
             {
 
-                logger.info("JVM Shutdown received (e.g., Ctrl-c pressed)");
+                log.info("JVM Shutdown received (e.g., Ctrl-c pressed)");
                 server.stopAndWait();
 
                 // shutdown ES
-                logger.info("Terminating ElasticSearch client connection");
+                log.info("Terminating ElasticSearch client connection");
                 final Client client = injector.getInstance(Client.class);
                 client.close();
 
                 // shutdown the graph
-                logger.info("Terminating graph database connection");
+                log.info("Terminating graph database connection");
                 final Graph graph = injector.getInstance(Graph.class);
                 graph.shutdown();
             }
         });
 
         // start listening
-        logger.info("Starting server at {}", opt.port);
+        log.info("Starting server at {}", opt.port);
         server.startAndWait();
     }
 }
