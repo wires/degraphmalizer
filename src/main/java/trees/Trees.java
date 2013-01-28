@@ -126,8 +126,16 @@ public final class Trees
 	 * @throws InterruptedException
 	 */
 	public static <A,B> Tree<B> pmap(final ExecutorService executor, final Function<A,B> fn, Tree<A> tree)
-	        throws InterruptedException
+	        throws InterruptedException, ExecutionException
 	{
+        final class PmapException extends RuntimeException
+        {
+            public PmapException(Exception e)
+            {
+                super(e);
+            }
+        }
+
 		// convert the tree into jobs, and submit them to the executor
 		final Function<A,Future<B>> toJob = new Function<A,Future<B>>()
 			{
@@ -156,16 +164,35 @@ public final class Trees
                     }
                     catch (InterruptedException e)
                     {
-	                   throw new RuntimeException(e);
+	                    throw new PmapException(e);
                     }
                     catch (ExecutionException e)
                     {
-                    	throw new RuntimeException(e);
+                    	throw new PmapException(e);
                     }
 				}
 			};
 
-		return map(waitDone, map(toJob, tree));
+        // for each node in the tree, start a job
+        final Tree<Future<B>> jobTree = map(toJob, tree);
+
+        try
+        {
+            // blocking wait for all jobs to finish
+            return map(waitDone, jobTree);
+        }
+        catch (final PmapException exception)
+        {
+            final Throwable inner = exception.getCause();
+
+            if(inner instanceof InterruptedException)
+                throw (InterruptedException)inner;
+
+            if(inner instanceof ExecutionException)
+                throw (ExecutionException)inner;
+
+            throw exception;
+        }
 	}
 
 	

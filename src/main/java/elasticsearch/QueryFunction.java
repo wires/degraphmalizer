@@ -8,7 +8,6 @@ import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
 import degraphmalizr.ID;
 import graphs.GraphQueries;
-import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
 import org.slf4j.Logger;
@@ -60,30 +59,23 @@ public class QueryFunction implements Function<Pair<Edge,Vertex>, Optional<Resol
             return Optional.of(new ResolvedPathElement(Optional.<GetResponse>absent(), pair.a, pair.b));
         }
 
-        try
+        // query ES for the document
+        final GetResponse r = searchIndex.prepareGet(id.index(), id.type(), id.id())
+                .execute().actionGet();
+
+        if ((r.version() == -1) || !r.exists())
         {
-            // query ES for the document
-            final GetResponse r = searchIndex.prepareGet(id.index(), id.type(), id.id())
-                    .execute().actionGet();
-
-            if ((r.version() == -1) || !r.exists())
-            {
-                log.debug("Document {} does not exist!", id);
-                return Optional.of(new ResolvedPathElement(Optional.<GetResponse>absent(), pair.a, pair.b));
-            }
-
-            // query has expired in the meantime
-            if (r.version() != id.version())
-            {
-                log.debug("Document {} expired, version in ES is {}!", id, r.version());
-                return Optional.absent();
-            }
-
-            return Optional.of(new ResolvedPathElement(Optional.of(r), pair.a, pair.b));
+            log.debug("Document {} does not exist!", id);
+            return Optional.of(new ResolvedPathElement(Optional.<GetResponse>absent(), pair.a, pair.b));
         }
-        catch (ElasticSearchException e)
+
+        // query has expired in the meantime
+        if (r.version() != id.version())
         {
+            log.warn("Document {} expired, version in ES is {}!", id, r.version());
             return Optional.absent();
         }
+
+        return Optional.of(new ResolvedPathElement(Optional.of(r), pair.a, pair.b));
     }
 }

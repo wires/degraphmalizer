@@ -303,7 +303,7 @@ public class Degraphmalizer implements Degraphmalizr
         return new Callable<Optional<IndexResponse>>()
         {
             @Override
-            public Optional<IndexResponse> call()
+            public Optional<IndexResponse> call() throws DegraphmalizerException
             {
                 try
                 {
@@ -400,8 +400,10 @@ public class Degraphmalizer implements Degraphmalizr
                 {
                     // TODO store and retrieve from action object, see TODO above line 215, at time of this commit ;^)
                     final ID id = GraphQueries.getID(action.root);
-                    log.error("Exception in recomputation phase for id " + id, e);
-                    return Optional.absent();
+                    final String msg = "Exception in recomputation phase for id " + id;
+                    log.error(msg, e);
+
+                    throw new DegraphmalizerException(msg, e);
                 }
             }
         };
