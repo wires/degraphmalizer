@@ -19,6 +19,7 @@
 
     <properties>
         <jackson.version>2.0.0</jackson.version>
+        <blueprints.version>2.2.0</blueprints.version>
     </properties>
 
     <dependencyManagement>
@@ -81,7 +82,7 @@
         <dependency>
             <groupId>com.tinkerpop.blueprints</groupId>
             <artifactId>blueprints-neo4j-graph</artifactId>
-            <version>2.2.0</version>
+            <version>${blueprints.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>log4j</groupId>

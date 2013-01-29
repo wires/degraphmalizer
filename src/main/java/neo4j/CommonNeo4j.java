@@ -29,6 +29,7 @@ public class CommonNeo4j extends AbstractModule
         graph.createKeyIndex(GraphQueries.IDENTIFIER, Vertex.class);
         graph.createKeyIndex(GraphQueries.SYMBOLIC_OWNER, Vertex.class);
         graph.createKeyIndex(GraphQueries.SYMBOLIC_OWNER, Edge.class);
+        graph.stopTransaction(TransactionalGraph.Conclusion.SUCCESS);
 
         return graph;
     }
