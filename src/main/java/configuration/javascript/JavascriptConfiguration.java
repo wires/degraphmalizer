@@ -5,23 +5,28 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Optional;
+import com.google.inject.Inject;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
-
 import configuration.*;
 import degraphmalizr.jobs.DegraphmalizeAction;
 import elasticsearch.ResolvedPathElement;
-import graphs.ops.*;
+import graphs.ops.CompositeSubgraph;
+import graphs.ops.LoggingSubgraph;
+import graphs.ops.Subgraph;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.elasticsearch.action.get.GetResponse;
 import org.mozilla.javascript.*;
+import org.slf4j.Logger;
 import trees.Tree;
 import trees.Trees;
 
 import java.io.*;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Load configuration from javascript files in a directory
@@ -29,6 +34,8 @@ import java.util.*;
 public class JavascriptConfiguration implements Configuration
 {
     final Map<String,JavascriptIndexConfig> indices = new HashMap<String,JavascriptIndexConfig>();
+
+
 
     public JavascriptConfiguration(File directory) throws IOException
     {
@@ -45,7 +52,7 @@ public class JavascriptConfiguration implements Configuration
     }
 
     @Override
-    public final Map<String, ? extends IndexConfig> indices()
+    public Map<String, ? extends IndexConfig> indices()
     {
         return indices;
     }
@@ -93,7 +100,7 @@ class JavascriptIndexConfig implements IndexConfig
 			while(fi.hasNext())
 			{
 				final File file = fi.next();
-				final Reader reader = new InputStreamReader(new FileInputStream(file), "UTF-8");
+				final Reader reader = new FileReader(file);
 				final String fn = file.getCanonicalPath();
 				final String type = file.getName().replaceFirst(".conf.js", "");
 
@@ -148,9 +155,13 @@ class JavascriptTypeConfig implements TypeConfig
 
 	final Function filter;
 	final Function extract;
+	final Function transform;
 
     final String sourceIndex;
     final String sourceType;
+
+    @Inject
+    Logger log;
 
     final Map<String,WalkConfig> walks = new HashMap<String, WalkConfig>();
 
@@ -160,40 +171,52 @@ class JavascriptTypeConfig implements TypeConfig
 		this.script = script;
 		this.indexConfig = indexConfig;
 
-        try
-        {
-            Context.enter();
+        try{
+		    Context.enter();
 
             // filter & graph extraction functions
-            filter = (Function)ScriptableObject.getProperty(script, "filter");
-            extract = (Function)ScriptableObject.getProperty(script, "extract");
+            filter = (Function) fetchObjectOrNull("filter");
+            extract = (Function) fetchObjectOrNull("extract");
+            transform = (Function) fetchObjectOrNull("transform");
 
+            //TODO: null check, invalid configuration, error handling
             sourceIndex = ScriptableObject.getTypedProperty(script, "sourceIndex", String.class);
             sourceType = ScriptableObject.getTypedProperty(script, "sourceType", String.class);
 
             // add the walks
-            final Scriptable walks = (Scriptable)ScriptableObject.getProperty(script, "walks");
-            for(Object id : ScriptableObject.getPropertyIds(walks))
-            {
-                final String walkName = id.toString();
-
-                // get the walk object
-                final Scriptable walk = (Scriptable)ScriptableObject.getProperty(walks, walkName);
-
-                final Direction direction = Direction.valueOf(ScriptableObject.getProperty(walk, "direction").toString());
-
-                final Scriptable properties = (Scriptable)ScriptableObject.getProperty(walk, "properties");
-
-                final JavascriptWalkConfig walkCfg = new JavascriptWalkConfig(walkName, direction, this, scope, properties);
-
-                this.walks.put(walkName, walkCfg);
+            final Scriptable walks = (Scriptable) fetchObjectOrNull("walks");
+            if (walks != null) {
+                for(Object id : ScriptableObject.getPropertyIds(walks))
+                {
+                    final String walkName = id.toString();
+        
+                    // get the walk object
+                    final Scriptable walk = (Scriptable)ScriptableObject.getProperty(walks, walkName);
+        
+                    final Direction direction = Direction.valueOf(ScriptableObject.getProperty(walk, "direction").toString());
+        
+                    final Scriptable properties = (Scriptable)ScriptableObject.getProperty(walk, "properties");
+        
+                    final JavascriptWalkConfig walkCfg = new JavascriptWalkConfig(walkName, direction, this, scope, properties);
+        
+                    this.walks.put(walkName, walkCfg);
+                }
+            }else{
+                log.debug("No walks found in configuration");
             }
         }
         finally
         {
+
             Context.exit();
         }
 	}
+
+    private Object fetchObjectOrNull(String field){
+        Object o = ScriptableObject.getProperty(script, field);
+        return  o == UniqueTag.NOT_FOUND ? null : o;
+    }
+
 
 	@Override
     public String name()
@@ -204,29 +227,32 @@ class JavascriptTypeConfig implements TypeConfig
 	@Override
     public void extract(DegraphmalizeAction job, final Subgraph graphops)
     {
-		final Context cx = Context.enter();
+        if (extract == null) {
+            log.debug("Extraction omitted, no extract configuration");
+            return;
+        }
 
-        // TODO wrap again in JS friendly API
-		// instantie subgraph
-//        final String s = "(new Subgraph(\"" + job.id() + "\"," + job.version() + "))";
-//		final Scriptable subgraph = (Scriptable)cx.evaluateString(script, s, "", 0, null);
+        final Context cx = Context.enter();
 
-		// extract graph components
+        // extract graph components
         final LoggingSubgraph lsg = new LoggingSubgraph("subgraph");
         final CompositeSubgraph csg = new CompositeSubgraph(lsg, graphops);
 
         final JavascriptSubgraph sg = new JavascriptSubgraph(csg, cx, script);
+        extract.call(cx, script, null, new Object[]{job, sg});
 
-        final Object obj = JSONUtilities.toJSONObject(cx, script,  job.document().toString());
+        Context.exit();
 
-		extract.call(cx, script, null, new Object[]{obj, sg});
-		
-		Context.exit();
     }
 
 	@Override
     public boolean filter(JsonNode document)
     {
+        if(filter == null){
+            log.debug("document filtering omitted, no filter configured.");
+            return true;
+        }
+
 		boolean result = false;
 
 		try
@@ -246,8 +272,25 @@ class JavascriptTypeConfig implements TypeConfig
 	@Override
     public JsonNode transform(JsonNode document)
     {
-	    // TODO implement
-	    return document;
+
+	    if(transform == null){
+            log.debug("document transformation omitted, no transformation configured.");
+            return document;
+        }
+        try
+        {
+            final Context cx = Context.enter();
+            final Object doc = JSONUtilities.toJSONObject(cx, script, document.toString());
+
+            final Object result = transform.call(cx, script, null, new Object[]{doc});
+            return JSONUtilities.fromJSONObject(new ObjectMapper(), cx, script, result);
+        } catch (IOException e) {
+            //TODO: and what about error handling???
+            throw new RuntimeException("Could not transform the input document." , e);
+        } finally
+        {
+            Context.exit();
+        }
     }
 
 	@Override
@@ -294,7 +337,8 @@ class JavascriptWalkConfig implements WalkConfig
     final TypeConfig typeCfg;
 
     // TODO use guava immutables
-	final Map<String, JavascriptPropertyConfig> properties = new HashMap<String,JavascriptPropertyConfig>();
+    final Map<String, JavascriptPropertyConfig> properties = new HashMap<String,JavascriptPropertyConfig>();
+
 
     public JavascriptWalkConfig(String walkName, Direction direction, TypeConfig typeCfg, Scriptable scope, Scriptable propertyScriptable)
     {

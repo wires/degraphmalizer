@@ -156,6 +156,8 @@ public class Degraphmalizer implements Degraphmalizr
                     if(!resp.exists())
                         throw new DegraphmalizerException("Document does not exist");
 
+                    //TODO: shouldn't this be: resp.version() > id.version()
+                    log.debug("Request has version " + id.version() + " and current es document has version " + resp.version());
                     if(resp.version() != id.version())
                         throw new DegraphmalizerException("Query expired, current version is " + resp.version());
 
