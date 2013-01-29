@@ -8,36 +8,32 @@ import java.util.concurrent.TimeUnit;
  *
  * @param <T> the type of the thing.
  */
-public class DelayedImpl<T> implements Delayed
-{
+public class DelayedImpl<T> implements Delayed {
     private final T thing;
     private final long delayInMillis;
+    private final long baseMillis;
 
-    public DelayedImpl(T thing, long delayInMillis)
-    {
+    public DelayedImpl(T thing, long delayInMillis) {
         this.thing = thing;
         this.delayInMillis = delayInMillis;
+        this.baseMillis = System.currentTimeMillis();
     }
 
-    public T thing()
-    {
+    public T thing() {
         return thing;
     }
 
     @Override
-    public long getDelay(TimeUnit timeUnit)
-    {
-        return timeUnit.convert(delayInMillis, TimeUnit.MILLISECONDS);
+    public long getDelay(TimeUnit timeUnit) {
+        return timeUnit.convert(delayInMillis - (System.currentTimeMillis() - baseMillis), TimeUnit.MILLISECONDS);
     }
 
     @Override
-    public int compareTo(Delayed other)
-    {
-        return Long.compare(delayInMillis, other.getDelay(TimeUnit.MILLISECONDS));
+    public int compareTo(Delayed other) {
+        return Long.compare(getDelay(TimeUnit.MILLISECONDS), other.getDelay(TimeUnit.MILLISECONDS));
     }
 
-    public static <T> DelayedImpl<T> immediate(T thing)
-    {
+    public static <T> DelayedImpl<T> immediate(T thing) {
         return new DelayedImpl<T>(thing, 0);
     }
 }
