@@ -14,7 +14,6 @@ import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
-import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 
@@ -47,7 +46,7 @@ public class GraphUpdater implements Runnable
         this.uriPort=uriPort;
         this.retryDelayOnFailureInMillis=retryDelayOnFailureInMillis;
 
-        LOG.info("Graph updater instantiated. Updates will be sent to {}://{}:{}. Retry delay on failure is {} milliseconds.", uriScheme, uriHost, uriPort, retryDelayOnFailureInMillis);
+        LOG.info("Graph updater instantiated for index {}. Updates will be sent to {}://{}:{}. Retry delay on failure is {} milliseconds.", index, uriScheme, uriHost, uriPort, retryDelayOnFailureInMillis);
     }
 
     public void start() {

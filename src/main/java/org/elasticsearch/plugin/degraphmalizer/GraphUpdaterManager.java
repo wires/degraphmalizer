@@ -64,7 +64,7 @@ public class GraphUpdaterManager extends AbstractLifecycleComponent<GraphUpdater
 
     public void startGraphUpdater(String index) {
         if (graphUpdaters.containsKey(index)) {
-            LOG.warn("Graph update for index {} already exists",index);
+            LOG.warn("Graph updater for index {} already exists",index);
             return;
         }
         GraphUpdater graphUpdater=new GraphUpdater(index,uriScheme,uriHost,uriPort,retryDelayOnFailureInMillis);
