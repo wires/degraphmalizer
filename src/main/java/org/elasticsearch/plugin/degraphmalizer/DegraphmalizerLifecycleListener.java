@@ -20,12 +20,12 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
     private static final ESLogger LOG = Loggers.getLogger(DegraphmalizerLifecycleListener.class);
 
     private final Map<ShardId, DegraphmalizerIndexListener> listeners = new HashMap<ShardId, DegraphmalizerIndexListener>();
-    private final GraphUpdater graphUpdater;
+    private final GraphUpdaterManager graphUpdaterManager;
 
     @Inject
-    public DegraphmalizerLifecycleListener(IndicesService indicesService, GraphUpdater graphUpdater)
+    public DegraphmalizerLifecycleListener(IndicesService indicesService, GraphUpdaterManager graphUpdaterManager)
     {
-        this.graphUpdater = graphUpdater;
+        this.graphUpdaterManager = graphUpdaterManager;
 
         indicesService.indicesLifecycle().addListener(this);
     }
@@ -51,7 +51,9 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
     private void addIndexShardListener(IndexShard indexShard)
     {
         final String indexName = getIndexName(indexShard);
-        final DegraphmalizerIndexListener listener = new DegraphmalizerIndexListener(graphUpdater, indexName);
+        graphUpdaterManager.startGraphUpdater(indexName);
+
+        final DegraphmalizerIndexListener listener = new DegraphmalizerIndexListener(graphUpdaterManager, indexName);
         final ShardId shardId = indexShard.shardId();
         listeners.put(shardId, listener);
         indexShard.indexingService().addListener(listener);
@@ -61,9 +63,12 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
 
     private void removeIndexShardListener(ShardId shardId, IndexShard indexShard)
     {
+        final String indexName = getIndexName(indexShard);
         final DegraphmalizerIndexListener listener = listeners.get(shardId);
         indexShard.indexingService().removeListener(listener);
         listeners.remove(shardId);
+
+        graphUpdaterManager.stopGraphUpdater(indexName);
 
         LOG.info("Index listener removed for shard {}", shardId);
     }

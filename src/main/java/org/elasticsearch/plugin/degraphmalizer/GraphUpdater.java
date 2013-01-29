@@ -1,13 +1,10 @@
 package org.elasticsearch.plugin.degraphmalizer;
 
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.DelayQueue;
-
-import javax.management.*;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -18,18 +15,15 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.ElasticSearchException;
-import org.elasticsearch.common.component.AbstractLifecycleComponent;
-import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
-import org.elasticsearch.common.settings.Settings;
 
 /**
  * This class handles GraphChange instances. The class can be configured via elasticsearch.yml (see README.md for
  * more information). The GraphUpdater manages a queue of GraphChange objects, executes HTTP requests for these
  * changes and retries changes when HTTP requests fail.
  */
-public class GraphUpdater extends AbstractLifecycleComponent<GraphUpdater> implements Runnable, GraphUpdaterMBean
+public class GraphUpdater implements Runnable
 {
     private static final ESLogger LOG = Loggers.getLogger(GraphUpdater.class);
 
@@ -41,48 +35,37 @@ public class GraphUpdater extends AbstractLifecycleComponent<GraphUpdater> imple
     private final int uriPort;
     private final long retryDelayOnFailureInMillis;
 
+    private String index;
+
     private boolean shutdownInProgress = false;
 
-    @Inject
-    public GraphUpdater(Settings settings)
+    public GraphUpdater(String index, String uriScheme, String uriHost, int uriPort, long retryDelayOnFailureInMillis)
     {
-        super(settings);
-
-        final Settings pluginSettings = settings.getComponentSettings(DegraphmalizerPlugin.class);
-
-        // Please keep this in sync with the documentation in README.md
-        this.uriScheme = pluginSettings.get("DegraphmalizerPlugin.degraphmalizerScheme", "http");
-        this.uriHost = pluginSettings.get("DegraphmalizerPlugin.degraphmalizerHost", "localhost");
-        this.uriPort = pluginSettings.getAsInt("DegraphmalizerPlugin.degraphmalizerPort", 9821);
-        this.retryDelayOnFailureInMillis = pluginSettings.getAsLong("DegraphmalizerPlugin.retryDelayOnFailureInMillis", 10000l);
+        this.index=index;
+        this.uriScheme=uriScheme;
+        this.uriHost=uriHost;
+        this.uriPort=uriPort;
+        this.retryDelayOnFailureInMillis=retryDelayOnFailureInMillis;
 
         LOG.info("Graph updater instantiated. Updates will be sent to {}://{}:{}. Retry delay on failure is {} milliseconds.", uriScheme, uriHost, uriPort, retryDelayOnFailureInMillis);
     }
 
-    @Override
-    protected void doStart() throws ElasticSearchException
-    {
-        registerMBean();
+    public void start() {
         new Thread(this).start();
     }
 
-    @Override
-    protected void doStop() throws ElasticSearchException
-    {
-        // TODO figure out proper semantics for doStop versus doClose, and change this accordingly
-        doClose();
-    }
-
-    @Override
-    protected void doClose() throws ElasticSearchException
+    public void shutdown()
     {
         shutdownInProgress = true;
     }
 
-    @Override
     public int getQueueSize()
     {
         return queue.size();
+    }
+
+    public void flushQueue() {
+        queue.clear();
     }
 
     public void run()
@@ -120,18 +103,6 @@ public class GraphUpdater extends AbstractLifecycleComponent<GraphUpdater> imple
         LOG.debug("Received {}", change);
     }
 
-    private void registerMBean()
-    {
-        try
-        {
-            final MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            final ObjectName name = new ObjectName("org.elasticsearch.plugin.degraphmalizer.GraphUpdater:type=GraphUpdater");
-            mbs.registerMBean(this, name);
-            LOG.info("Registered MBean");
-        } catch (Exception e) {
-            LOG.error("Failed to register MBean", e);
-        }
-    }
 
     private void perform(final GraphChange change)
     {
@@ -189,7 +160,6 @@ public class GraphUpdater extends AbstractLifecycleComponent<GraphUpdater> imple
 
     private URI buildURI(final GraphChange change)
     {
-        final String index = change.index();
         final String type = change.type();
         final String id = change.id();
         final long version = change.version();

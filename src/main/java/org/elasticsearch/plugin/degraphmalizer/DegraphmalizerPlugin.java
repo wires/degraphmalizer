@@ -37,7 +37,7 @@ public class DegraphmalizerPlugin extends AbstractPlugin {
     public Collection<Class<? extends LifecycleComponent>> services()
     {
         final ArrayList<Class<? extends LifecycleComponent>> services = new ArrayList<Class<? extends LifecycleComponent>>();
-        services.add(GraphUpdater.class);
+        services.add(GraphUpdaterManager.class);
         return services;
     }
 }

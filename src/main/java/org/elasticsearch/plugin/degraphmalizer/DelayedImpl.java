@@ -7,6 +7,8 @@ import java.util.concurrent.TimeUnit;
  * A delayed generic thing.
  *
  * @param <T> the type of the thing.
+ *
+ * Note: this class has a natural ordering that is inconsistent with equals.
  */
 public class DelayedImpl<T> implements Delayed {
     private final T thing;

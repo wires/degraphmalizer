@@ -1,6 +1,5 @@
 package org.elasticsearch.plugin.degraphmalizer;
 
-import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.indexing.IndexingOperationListener;
 
@@ -10,13 +9,12 @@ import org.elasticsearch.index.indexing.IndexingOperationListener;
  */
 public class DegraphmalizerIndexListener extends IndexingOperationListener
 {
-    private GraphUpdater graphUpdater;
+    private GraphUpdaterManager graphUpdaterManager;
     private String index;
 
-    @Inject
-    public DegraphmalizerIndexListener(GraphUpdater graphUpdater, String index)
+    public DegraphmalizerIndexListener(GraphUpdaterManager graphUpdaterManager, String index)
     {
-        this.graphUpdater = graphUpdater;
+        this.graphUpdaterManager = graphUpdaterManager;
         this.index = index;
     }
 
@@ -27,7 +25,7 @@ public class DegraphmalizerIndexListener extends IndexingOperationListener
         final String id = createOperation.id();
         final long version = createOperation.version();
 
-        graphUpdater.add(GraphChange.update(index, type, id, version));
+        graphUpdaterManager.add(index, GraphChange.update(type, id, version));
     }
 
     @Override
@@ -36,7 +34,7 @@ public class DegraphmalizerIndexListener extends IndexingOperationListener
         final String id = indexOperation.id();
         final long version = indexOperation.version();
 
-        graphUpdater.add(GraphChange.update(index, type, id, version));
+        graphUpdaterManager.add(index, GraphChange.update(type, id, version));
     }
 
     @Override
@@ -46,6 +44,6 @@ public class DegraphmalizerIndexListener extends IndexingOperationListener
         final String id = deleteOperation.id();
         final long version = deleteOperation.version();
 
-        graphUpdater.add(GraphChange.delete(index, type, id, version));
+        graphUpdaterManager.add(index, GraphChange.delete(type, id, version));
     }
 }
