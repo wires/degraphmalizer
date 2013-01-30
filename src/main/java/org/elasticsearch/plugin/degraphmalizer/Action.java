@@ -1,6 +1,6 @@
 package org.elasticsearch.plugin.degraphmalizer;
 
-public enum GraphAction
+public enum Action
 {
     UPDATE, DELETE
 }

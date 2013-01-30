@@ -29,7 +29,7 @@ public class DegraphmalizerPlugin extends AbstractPlugin {
     public Collection<Class<? extends Module>> modules()
     {
         final ArrayList<Class<? extends Module>> modules = new ArrayList<Class<? extends Module>>();
-        modules.add(DegraphmalizerModule.class);
+        modules.add(DegraphmalizerPluginModule.class);
         return modules;
     }
 
@@ -37,7 +37,7 @@ public class DegraphmalizerPlugin extends AbstractPlugin {
     public Collection<Class<? extends LifecycleComponent>> services()
     {
         final ArrayList<Class<? extends LifecycleComponent>> services = new ArrayList<Class<? extends LifecycleComponent>>();
-        services.add(GraphUpdaterManager.class);
+        services.add(UpdaterManager.class);
         return services;
     }
 }

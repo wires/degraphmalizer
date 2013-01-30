@@ -22,12 +22,12 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
     private static final ESLogger LOG = Loggers.getLogger(DegraphmalizerLifecycleListener.class);
 
     private final Map<ShardId, DegraphmalizerIndexShardListener> listeners = new HashMap<ShardId, DegraphmalizerIndexShardListener>();
-    private final GraphUpdaterManager graphUpdaterManager;
+    private final UpdaterManager updaterManager;
 
     @Inject
-    public DegraphmalizerLifecycleListener(IndicesService indicesService, GraphUpdaterManager graphUpdaterManager)
+    public DegraphmalizerLifecycleListener(IndicesService indicesService, UpdaterManager updaterManager)
     {
-        this.graphUpdaterManager = graphUpdaterManager;
+        this.updaterManager = updaterManager;
 
         indicesService.indicesLifecycle().addListener(this);
     }
@@ -35,16 +35,14 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
     public void afterIndexCreated(IndexService indexService) {
         String indexName=indexService.index().name();
         if (isRelevantForDegraphmalizer(indexName)) {
-            graphUpdaterManager.startGraphUpdater(indexName);
-            LOG.info("Graphupdater started for index {}",indexName);
+            updaterManager.startUpdater(indexName);
         }
     }
 
     public void afterIndexClosed(Index index, boolean delete) {
         String indexName=index.name();
         if (isRelevantForDegraphmalizer(indexName)) {
-            graphUpdaterManager.stopGraphUpdater(indexName);
-            LOG.info("Graphupdater stopped for index {}",indexName);
+            updaterManager.stopUpdater(indexName);
         }
     }
 
@@ -70,7 +68,7 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
     {
         final String indexName = getIndexName(indexShard);
 
-        final DegraphmalizerIndexShardListener shardListener = new DegraphmalizerIndexShardListener(graphUpdaterManager, indexName);
+        final DegraphmalizerIndexShardListener shardListener = new DegraphmalizerIndexShardListener(updaterManager, indexName);
         final ShardId shardId = indexShard.shardId();
         listeners.put(shardId, shardListener);
         indexShard.indexingService().addListener(shardListener);

@@ -7,17 +7,17 @@ import org.elasticsearch.index.indexing.IndexingOperationListener;
 import static org.elasticsearch.index.engine.Engine.Operation.Origin.PRIMARY;
 
 /**
- * This class listens for updates to an indexshard and sends GraphChange objects to the GraphUpdater if the indexshard is primary for processing by the
+ * This class listens for updates to an indexshard and sends Change objects to the Updater if the indexshard is primary for processing by the
  * Degraphmalizer.
  */
 public class DegraphmalizerIndexShardListener extends IndexingOperationListener
 {
     private static final ESLogger LOG = Loggers.getLogger(DegraphmalizerIndexShardListener.class);
 
-    private GraphUpdaterManager graphUpdaterManager;
+    private UpdaterManager graphUpdaterManager;
     private String index;
 
-    public DegraphmalizerIndexShardListener(GraphUpdaterManager graphUpdaterManager, String index)
+    public DegraphmalizerIndexShardListener(UpdaterManager graphUpdaterManager, String index)
     {
         this.graphUpdaterManager = graphUpdaterManager;
         this.index = index;
@@ -30,9 +30,9 @@ public class DegraphmalizerIndexShardListener extends IndexingOperationListener
         final String id = createOperation.id();
         final long version = createOperation.version();
 
-        LOG.trace("Origin {} of create to id {} ",createOperation.origin(),id);
+        LOG.trace("Origin {} of create to id {} ", createOperation.origin(), id);
         if (isFromPrimary(createOperation)) {
-            graphUpdaterManager.add(index, GraphChange.update(type, id, version));
+            graphUpdaterManager.add(index, Change.update(type, id, version));
         }
     }
 
@@ -42,9 +42,9 @@ public class DegraphmalizerIndexShardListener extends IndexingOperationListener
         final String id = indexOperation.id();
         final long version = indexOperation.version();
 
-        LOG.trace("Origin {} of index to id {} ",indexOperation.origin(),id);
+        LOG.trace("Origin {} of index to id {} ", indexOperation.origin(), id);
         if (isFromPrimary(indexOperation)) {
-            graphUpdaterManager.add(index, GraphChange.update(type, id, version));
+            graphUpdaterManager.add(index, Change.update(type, id, version));
         }
     }
 
@@ -55,9 +55,9 @@ public class DegraphmalizerIndexShardListener extends IndexingOperationListener
         final String id = deleteOperation.id();
         final long version = deleteOperation.version();
 
-        LOG.trace("Origin {} of index to id {} ",deleteOperation.origin(),id);
+        LOG.trace("Origin {} of index to id {} ", deleteOperation.origin(), id);
         if (isFromPrimary(deleteOperation)) {
-            graphUpdaterManager.add(index, GraphChange.delete(type, id, version));
+            graphUpdaterManager.add(index, Change.delete(type, id, version));
         }
     }
 
