@@ -69,7 +69,7 @@ public class Handler extends SimpleChannelHandler
         // write the action object
         List<DegraphmalizeAction> degraphmalizeActions = degraphmalizr.degraphmalize(id, callback);
         if (degraphmalizeActions.isEmpty()) {
-            ctx.getChannel().write("{ \"status\": \"ok\" }");
+            ctx.getChannel().write(new NoAction()).addListener(ChannelFutureListener.CLOSE);
         } else {
             for(final DegraphmalizeAction action : degraphmalizeActions)
                 ctx.getChannel().write(action);
