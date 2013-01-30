@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Optional;
-import com.google.inject.Inject;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
@@ -20,6 +19,7 @@ import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.elasticsearch.action.get.GetResponse;
 import org.mozilla.javascript.*;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import trees.Tree;
 import trees.Trees;
 
@@ -33,21 +33,33 @@ import java.util.Map;
  */
 public class JavascriptConfiguration implements Configuration
 {
-    final Map<String,JavascriptIndexConfig> indices = new HashMap<String,JavascriptIndexConfig>();
+    public static final String FIXTURES_DIR_NAME = "fixtures";
+
+    private final Map<String,JavascriptIndexConfig> indices = new HashMap<String,JavascriptIndexConfig>();
+    private FixtureConfiguration fixtureConfig;
+
+    private static final Logger log = LoggerFactory.getLogger(JavascriptConfiguration.class);
 
 
 
     public JavascriptConfiguration(File directory) throws IOException
     {
-        for(File d : directory.listFiles())
+        //todo: directory.listFiles() can return null
+        for(File dir : directory.listFiles())
         {
             // skip non directories
-            if(!d.isDirectory())
+            if(!dir.isDirectory())
                 continue;
 
             // each subdirectory encodes an index
-            final String index = d.getName();
-            indices.put(index, new JavascriptIndexConfig(index, d));
+            final String dirname = dir.getName();
+            if (FIXTURES_DIR_NAME.equals(dirname)) {
+                fixtureConfig = new FixtureConfiguration(dir);
+                log.info("Fixtures found and loaded.");
+                log.debug(fixtureConfig.toString());
+            }else{
+                indices.put(dirname, new JavascriptIndexConfig(dirname, dir));
+            }
         }
     }
 
@@ -58,11 +70,12 @@ public class JavascriptConfiguration implements Configuration
     }
 }
 
+
 class JavascriptIndexConfig implements IndexConfig
 {
 	final String index;
 	final Scriptable scope;
-	
+
 	final Map<String,JavascriptTypeConfig> types = new HashMap<String,JavascriptTypeConfig>();
 	
 	
@@ -73,54 +86,51 @@ class JavascriptIndexConfig implements IndexConfig
 	 * @param directory Directory to watch for files
 	 * @throws IOException
 	 */
-	public JavascriptIndexConfig(String index, File directory) throws IOException
-	{
-		this.index = index;
-		Scriptable scope = null;
-		
-		try
-		{
-			final Context cx = Context.enter();
-	
-			// create standard ECMA scope
-			scope = cx.initStandardObjects(); 
-	
-			// load underscore and the Subgraph class
-			loadLib(cx, scope, "underscore-1.4.0.js");
-			loadLib(cx, scope, "subgraph.js");
-			
-			// close the root scope for modifications
-			cx.seal(scope);
+	public JavascriptIndexConfig(String index, File directory) throws IOException {
 
-			// non recursively load all configuration files
-			final WildcardFileFilter filter = new WildcardFileFilter("*.conf.js");
-			
-			@SuppressWarnings("unchecked")
+        this.index = index;
+        Scriptable scope = null;
+
+        try {
+            final Context cx = Context.enter();
+
+            // create standard ECMA scope
+            scope = cx.initStandardObjects();
+
+            // load underscore and the Subgraph class
+            loadLib(cx, scope, "underscore-1.4.0.js");
+            loadLib(cx, scope, "subgraph.js");
+
+            // close the root scope for modifications
+            cx.seal(scope);
+
+            // non recursively load all configuration files
+            final WildcardFileFilter filter = new WildcardFileFilter("*.conf.js");
+
+            @SuppressWarnings("unchecked")
             final Iterator<File> fi = FileUtils.iterateFiles(directory, filter, null);
-			while(fi.hasNext())
-			{
-				final File file = fi.next();
-				final Reader reader = new FileReader(file);
-				final String fn = file.getCanonicalPath();
-				final String type = file.getName().replaceFirst(".conf.js", "");
+            while (fi.hasNext()) {
+                final File file = fi.next();
+                final Reader reader = new FileReader(file);
+                final String fn = file.getCanonicalPath();
+                final String type = file.getName().replaceFirst(".conf.js", "");
 
-				final Scriptable typeConfig = (Scriptable) compile(cx, scope, reader, fn);
-				
-				types.put(type, new JavascriptTypeConfig(type, scope, typeConfig, this));
-			}
-		}
-        finally
-		{
-			Context.exit();
-		}
-		
-		if(scope == null)
-			throw new RuntimeException("Scope failed to initialize");
-		
-		this.scope = scope;
-	}
+                final Scriptable typeConfig = (Scriptable) compile(cx, scope, reader, fn);
 
-	@Override
+                types.put(type, new JavascriptTypeConfig(type, scope, typeConfig, this));
+            }
+        } finally {
+            Context.exit();
+        }
+
+        if (scope == null)
+            throw new RuntimeException("Scope failed to initialize");
+
+        this.scope = scope;
+    }
+
+
+    @Override
     public String name()
     {
 	    return index;
@@ -149,6 +159,7 @@ class JavascriptIndexConfig implements IndexConfig
 
 class JavascriptTypeConfig implements TypeConfig
 {
+    private static final Logger log = LoggerFactory.getLogger(JavascriptTypeConfig.class);
     final IndexConfig indexConfig;
 	final String type;
 	final Scriptable script;
@@ -200,7 +211,7 @@ class JavascriptTypeConfig implements TypeConfig
                     this.walks.put(walkName, walkCfg);
                 }
             }else{
-                //todo: log.debug("No walks found in configuration");
+                log.debug("No walks found in configuration");
             }
         }
         finally
@@ -226,7 +237,7 @@ class JavascriptTypeConfig implements TypeConfig
     public void extract(DegraphmalizeAction job, final Subgraph graphops)
     {
         if (extract == null) {
-            //todo: log.debug("Extraction omitted, no extract configuration");
+            log.debug("Extraction omitted, no extract configuration");
             return;
         }
 
@@ -247,7 +258,7 @@ class JavascriptTypeConfig implements TypeConfig
     public boolean filter(JsonNode document)
     {
         if(filter == null){
-            //todo: log.debug("document filtering omitted, no filter configured.");
+            log.debug("document filtering omitted, no filter configured.");
             return true;
         }
 
@@ -272,7 +283,7 @@ class JavascriptTypeConfig implements TypeConfig
     {
 
 	    if(transform == null){
-            //todo log.debug("document transformation omitted, no transformation configured.");
+            log.debug("document transformation omitted, no transformation configured.");
             return document;
         }
         try

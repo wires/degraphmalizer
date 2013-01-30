@@ -28,6 +28,9 @@ public class Options
     @Parameter(names = {"-L", "--logback"}, description = "Specify logback configuration file")
     String logbackConf = "logback.xml";
 
+    @Parameter(names = {"-f", "--fixtures"}, description = "Load fixtures on startup")
+    boolean fixtures;
+
     @Parameter(names = {"-?", "--help"}, help = true)
     boolean help;
 
@@ -46,6 +49,7 @@ public class Options
         port = Integer.parseInt(properties.getProperty("degraphmalizer.port", "9821"));
         jmx = Boolean.parseBoolean(properties.getProperty("degraphmalizer.jmx.enabled"));
         reloading = Boolean.parseBoolean(properties.getProperty("degraphmalizer.autoreload"));
+        fixtures = Boolean.parseBoolean(properties.getProperty("degraphmalizer.fixtures"));
 
         // try to set the defaults for a cluster
         transport.add(properties.getProperty("elasticsearch.host", "localhost"));
