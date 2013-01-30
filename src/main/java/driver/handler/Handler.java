@@ -8,6 +8,8 @@ import org.jboss.netty.channel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 public class Handler extends SimpleChannelHandler
 {
     private static final Logger log = LoggerFactory.getLogger(Handler.class);
@@ -65,7 +67,12 @@ public class Handler extends SimpleChannelHandler
         };
 
         // write the action object
-        for(final DegraphmalizeAction action : degraphmalizr.degraphmalize(id, callback))
-            ctx.getChannel().write(action);
+        List<DegraphmalizeAction> degraphmalizeActions = degraphmalizr.degraphmalize(id, callback);
+        if (degraphmalizeActions.isEmpty()) {
+            ctx.getChannel().write("{ \"status\": \"ok\" }");
+        } else {
+            for(final DegraphmalizeAction action : degraphmalizeActions)
+                ctx.getChannel().write(action);
+        }
     }
 }

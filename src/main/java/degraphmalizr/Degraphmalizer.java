@@ -113,9 +113,6 @@ public class Degraphmalizer implements Degraphmalizr
                     configs.add(t);
                 }
 
-        if(configs.size() == 0)
-            throw new DegraphmalizerException("No configuration for index '" + index + "', type '" + type + "'");
-
         return configs;
     }
 
