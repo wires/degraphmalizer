@@ -6,28 +6,44 @@ import java.util.Map;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.index.Index;
+import org.elasticsearch.index.service.IndexService;
 import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.shard.service.IndexShard;
 import org.elasticsearch.indices.IndicesLifecycle;
 import org.elasticsearch.indices.IndicesService;
 
 /**
- * This class is responsible for starting and stopping DegraphmalizerIndexListener instances for all primary index
+ * This class is responsible for starting and stopping DegraphmalizerIndexShardListener instances for all primary index
  * shards.
  */
 public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
 {
     private static final ESLogger LOG = Loggers.getLogger(DegraphmalizerLifecycleListener.class);
 
-    private final Map<ShardId, DegraphmalizerIndexListener> listeners = new HashMap<ShardId, DegraphmalizerIndexListener>();
-    private final GraphUpdater graphUpdater;
+    private final Map<ShardId, DegraphmalizerIndexShardListener> listeners = new HashMap<ShardId, DegraphmalizerIndexShardListener>();
+    private final UpdaterManager updaterManager;
 
     @Inject
-    public DegraphmalizerLifecycleListener(IndicesService indicesService, GraphUpdater graphUpdater)
+    public DegraphmalizerLifecycleListener(IndicesService indicesService, UpdaterManager updaterManager)
     {
-        this.graphUpdater = graphUpdater;
+        this.updaterManager = updaterManager;
 
         indicesService.indicesLifecycle().addListener(this);
+    }
+
+    public void afterIndexCreated(IndexService indexService) {
+        String indexName=indexService.index().name();
+        if (isRelevantForDegraphmalizer(indexName)) {
+            updaterManager.startUpdater(indexName);
+        }
+    }
+
+    public void afterIndexClosed(Index index, boolean delete) {
+        String indexName=index.name();
+        if (isRelevantForDegraphmalizer(indexName)) {
+            updaterManager.stopUpdater(indexName);
+        }
     }
 
     @Override
@@ -51,36 +67,33 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
     private void addIndexShardListener(IndexShard indexShard)
     {
         final String indexName = getIndexName(indexShard);
-        final DegraphmalizerIndexListener listener = new DegraphmalizerIndexListener(graphUpdater, indexName);
-        final ShardId shardId = indexShard.shardId();
-        listeners.put(shardId, listener);
-        indexShard.indexingService().addListener(listener);
 
-        LOG.info("Index listener added for shard {}", shardId);
+        final DegraphmalizerIndexShardListener shardListener = new DegraphmalizerIndexShardListener(updaterManager, indexName);
+        final ShardId shardId = indexShard.shardId();
+        listeners.put(shardId, shardListener);
+        indexShard.indexingService().addListener(shardListener);
+
+        LOG.info("Index shard listener added for shard {}", shardId);
     }
 
     private void removeIndexShardListener(ShardId shardId, IndexShard indexShard)
     {
-        final DegraphmalizerIndexListener listener = listeners.get(shardId);
-        indexShard.indexingService().removeListener(listener);
+        final String indexName = getIndexName(indexShard);
+        final DegraphmalizerIndexShardListener shardListener = listeners.get(shardId);
+        indexShard.indexingService().removeListener(shardListener);
         listeners.remove(shardId);
 
-        LOG.info("Index listener removed for shard {}", shardId);
+        LOG.info("Index shard listener removed for shard {}", shardId);
     }
 
-    private boolean isRelevantForDegraphmalizer(IndexShard indexShard)
+    private boolean isRelevantForDegraphmalizer(String index)
     {
-        // Only add index listeners to primary index shards, to avoid duplicate updates
-        if (!indexShard.routingEntry().primary())
-            return false;
-
-        final String indexName = getIndexName(indexShard);
-
         // Don't add index listeners for 'private' indices
-        if (indexName.startsWith("_"))
-            return false;
+        return !index.startsWith("_");
+    }
 
-        return true;
+    private boolean isRelevantForDegraphmalizer(IndexShard indexShard) {
+        return isRelevantForDegraphmalizer(getIndexName(indexShard));
     }
 
     private String getIndexName(IndexShard indexShard)
