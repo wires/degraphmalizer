@@ -31,7 +31,7 @@ import java.util.concurrent.*;
 
 public class Degraphmalizer implements Degraphmalizr
 {
-	@Inject
+    @Inject
 	Logger log;
 
     protected final Client client;
@@ -277,7 +277,14 @@ public class Degraphmalizer implements Degraphmalizr
         return recomputeActions;
     }
 
-    private Callable<Optional<IndexResponse>> recomputeDocument(final RecomputeAction action)
+    /**
+     * This procuedure actually performes the recompute of individual documents. It performs transformation, applies walks
+     * and inserts/updates the target document.
+     *
+     * @param action represents the source document and recompute configuration.
+     * @return the ES IndexRespons to the insert of the target document.
+     */
+    private final Callable<Optional<IndexResponse>> recomputeDocument(final RecomputeAction action)
     {
         return new Callable<Optional<IndexResponse>>()
         {
@@ -286,64 +293,78 @@ public class Degraphmalizer implements Degraphmalizr
             {
                 try
                 {
-                    // here we collect all the results of the reductions
-                    final HashMap<String, JsonNode> results = new HashMap<String, JsonNode>();
-
-                    // during the traverals, we collect the root document (the one we are expanding)
-                    ResolvedPathElement root = null;
-
                     // ideally, this is handled in a monad, but with this boolean we keep track of failures
                     boolean isAbsent = false;
 
-                    for(Map.Entry<String,WalkConfig> w : action.typeConfig.walks().entrySet())
-                    {
-                        // walk graph
-                        final Tree<Pair<Edge,Vertex>> tree =
-                                GraphQueries.childrenFrom(graph, action.root, w.getValue().direction().opposite());
+                    /*
+                    * Now we are going to iterate over all the walks configured for this input document. For each walk:
+                    * - We fetch a tree of children non-recursively from our document in the inverted direction of the walk, as Graph vertices
+                    * - We convert the tree of vertices to a tree of ElasticSearch documents
+                    * - We call the reduce() method for this walk, with the tree of documents as argument.
+                    * - We collect the result.
+                     */
 
-                        // write size information to log
-                        if(log.isDebugEnabled())
+                    final HashMap<String, JsonNode> walkResults = new HashMap<String, JsonNode>();
+
+                    if (! action.typeConfig.walks().entrySet().isEmpty()) {
+                        for(Map.Entry<String,WalkConfig> walkCfg : action.typeConfig.walks().entrySet())
                         {
-                            final int size = Iterables.size(Trees.bfsWalk(tree));
-                            log.debug("Retrieving {} documents from ES", size);
+                            // walk graph, and fetch all the children in the opposite direction of the walk
+                            final Tree<Pair<Edge,Vertex>> tree =
+                                    GraphQueries.childrenFrom(graph, action.root, walkCfg.getValue().direction().opposite());
+
+                            // write size information to log
+                            if(log.isDebugEnabled())
+                            {
+                                final int size = Iterables.size(Trees.bfsWalk(tree));
+                                log.debug("Retrieving {} documents from ES", size);
+                            }
+
+                            // get all documents in the tree from Elasticsearch (in parallel)
+                            final Tree<Optional<ResolvedPathElement>> docTree = Trees.pmap(fetchQueue, queryFn, tree);
+
+                            // if some value is absent from the tree, abort the computation
+                            final Optional<Tree<ResolvedPathElement>> fullTree = Trees.optional(docTree);
+
+                            // TODO split various failure modes
+                            if(!fullTree.isPresent())
+                            {
+                                isAbsent = true;
+                                break;
+                            }
+
+                            // reduce each property to a value based on the walk result
+                            for(final Map.Entry<String,? extends PropertyConfig> propertyCfg : walkCfg.getValue().properties().entrySet())
+                                walkResults.put(propertyCfg.getKey(), propertyCfg.getValue().reduce(fullTree.get()));
                         }
 
-                        // get all documents in the tree from Elasticsearch (in parallel)
-                        final Tree<Optional<ResolvedPathElement>> docTree =
-                                Trees.pmap(fetchQueue, queryFn, tree);
-
-                        // the tree has Optional.absent values when versions for instance don't match up
-
-                        if(docTree.value().isPresent())
-                            root = docTree.value().get();
-
-                        // if some value is absent from the tree, abort the computation
-                        final Optional<Tree<ResolvedPathElement>> fullTree = Trees.optional(docTree);
-
-                        // TODO split various failure modes
-                        if(!fullTree.isPresent())
+                        // something failed, so we abort the whole re-computation
+                        if(isAbsent)
                         {
-                            isAbsent = true;
-                            break;
+                            // TODO refactor the action, it should have the ID
+                            log.debug("Some results were absent, aborting re-computation for " + GraphQueries.getID(action.root));
+                            return Optional.absent();
                         }
-
-                        // reduce each property to a value based on the walk result
-                        for(final Map.Entry<String,? extends PropertyConfig> p : w.getValue().properties().entrySet())
-                            results.put(p.getKey(), p.getValue().reduce(fullTree.get()));
                     }
 
-                    // something failed, so we abort the whole re-computation
-                    if(isAbsent)
-                    {
-                        // TODO refactor the action, it should have the ID
-                        log.debug("Some results were absent, aborting re-computation for " + GraphQueries.getID(action.root));
-                        return Optional.absent();
-                    }
 
-                    // store the new document
+
+                    /*
+                    * Now we are going to fetch the current ElasticSearch document,
+                    * - Transform it, if transformation is required
+                    * - Add the walk properties
+                    * - Add a reference to the source document.
+                    * - And store it as target document type in target index.
+                     */
+
+                    //todo: what if Optional.absent??
+                    //todo: queryFn.apply may produce null
+                    ResolvedPathElement root  = queryFn.apply(new Pair<Edge, Vertex>(null, action.root) ).get();
+                    // fetch the current ES document
+                    //todo: what if optional absent?
                     final JsonNode rawDocument = objectMapper.readTree(root.getResponse().get().getSourceAsString());
 
-                    // preprocess document using javascript
+                    // pre-process document using javascript
                     final JsonNode doc = action.typeConfig.transform(rawDocument);
 
                     if(!doc.isObject())
@@ -353,7 +374,7 @@ public class Degraphmalizer implements Degraphmalizr
                     }
 
                     // add the results to the document
-                    for(Map.Entry<String,JsonNode> e : results.entrySet())
+                    for(Map.Entry<String,JsonNode> e : walkResults.entrySet())
                         ((ObjectNode)doc).put(e.getKey(), e.getValue());
 
                     // write the result document to the target index
