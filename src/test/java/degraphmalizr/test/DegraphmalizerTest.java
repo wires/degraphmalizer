@@ -132,14 +132,14 @@ public class DegraphmalizerTest
         final ArrayList<DegraphmalizeAction> actions = new ArrayList<DegraphmalizeAction>();
 
         final Fixme callback = new Fixme();
-        actions.addAll(ln.d.degraphmalize(new ID(idx,tp,"1",ir1.version()), callback));
-        actions.addAll(ln.d.degraphmalize(new ID(idx,tp,"2",ir2.version()), callback));
-        actions.addAll(ln.d.degraphmalize(new ID(idx,tp,id,ir.version()), callback));
+        actions.addAll(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(idx,tp,"1",ir1.version()), callback));
+        actions.addAll(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(idx,tp,"2",ir2.version()), callback));
+        actions.addAll(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(idx,tp,id,ir.version()), callback));
 
         for(final DegraphmalizeAction a : actions)
         {
             log.info("Degraphmalize of {}: {}", a.id(), a.resultDocument().get());
-            assertThat(a.resultDocument().get().get("succes").toString().equals("true")).isTrue();
+            assertThat(a.resultDocument().get().get("success").toString().equals("true")).isTrue();
         }
 
         ln.es.close();

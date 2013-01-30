@@ -1,9 +1,12 @@
 package driver.handler;
 
 import degraphmalizr.ID;
+import degraphmalizr.jobs.DegraphmalizeActionType;
+import degraphmalizr.jobs.JobRequest;
 import exceptions.DegraphmalizerException;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
+import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
 
@@ -23,14 +26,23 @@ public class DegraphmalizeDecoder extends OneToOneDecoder
         if (components.length != 4)
             throw new DegraphmalizerException("URL must be of the form '/{index}/{type}/{id}/{version}'");
 
-//        if (request.getMethod() == HttpMethod.DELETE)
-//            return null; // TODO do something
+        final DegraphmalizeActionType actionType;
+
+        final HttpMethod httpMethod = request.getMethod();
+
+        if (HttpMethod.DELETE.equals(httpMethod)) {
+            actionType = DegraphmalizeActionType.DELETE;
+        } else if (HttpMethod.GET.equals(httpMethod)) {
+            actionType = DegraphmalizeActionType.UPDATE;
+        } else {
+            actionType = DegraphmalizeActionType.UPDATE;
+        }
 
         final String index = components[0];
         final String type = components[1];
         final String id = components[2];
         final long v = Long.parseLong(components[3]);
 
-        return new ID(index, type, id, v);
+        return new JobRequest(actionType, new ID(index, type, id, v));
     }
 }

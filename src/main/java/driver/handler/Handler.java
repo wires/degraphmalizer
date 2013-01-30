@@ -2,7 +2,6 @@ package driver.handler;
 
 import com.google.inject.Inject;
 import degraphmalizr.Degraphmalizr;
-import degraphmalizr.ID;
 import degraphmalizr.jobs.*;
 import org.jboss.netty.channel.*;
 import org.slf4j.Logger;
@@ -26,10 +25,10 @@ public class Handler extends SimpleChannelHandler
     public final void messageReceived(final ChannelHandlerContext ctx, MessageEvent e) throws Exception
     {
 
-        if(!ID.class.isAssignableFrom(e.getMessage().getClass()))
+        if(!JobRequest.class.isAssignableFrom(e.getMessage().getClass()))
             return;
 
-        final ID id = (ID)e.getMessage();
+        final JobRequest jobRequest = (JobRequest)e.getMessage();
 
         final DegraphmalizeStatus callback = new DegraphmalizeStatus()
         {
@@ -67,7 +66,7 @@ public class Handler extends SimpleChannelHandler
         };
 
         // write the action object
-        List<DegraphmalizeAction> degraphmalizeActions = degraphmalizr.degraphmalize(id, callback);
+        List<DegraphmalizeAction> degraphmalizeActions = degraphmalizr.degraphmalize(jobRequest.actionType(), jobRequest.id(), callback);
         if (degraphmalizeActions.isEmpty()) {
             ctx.getChannel().write(new NoAction()).addListener(ChannelFutureListener.CLOSE);
         } else {

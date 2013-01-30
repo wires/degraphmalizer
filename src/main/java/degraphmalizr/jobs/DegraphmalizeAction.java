@@ -17,6 +17,8 @@ public class DegraphmalizeAction
     public final long salt;
     public final HashCode hash;
 
+    protected final DegraphmalizeActionType actionType;
+
     protected final TypeConfig typeCfg;
     protected final ID id;
 
@@ -26,11 +28,11 @@ public class DegraphmalizeAction
     // TODO fix in Degraphmalizer.degraphmalizeJob
     public Future<JsonNode> result;
 
-    public DegraphmalizeAction(TypeConfig typeCfg, ID id, DegraphmalizeStatus callback)
+    public DegraphmalizeAction(DegraphmalizeActionType actionType, ID id, TypeConfig typeCfg, DegraphmalizeStatus callback)
     {
-        this.typeCfg = typeCfg;
+        this.actionType = actionType;
         this.id = id;
-
+        this.typeCfg = typeCfg;
         this.status = callback;
 
         this.salt = ids.incrementAndGet();
@@ -49,7 +51,11 @@ public class DegraphmalizeAction
         return id;
     }
 
-    public final TypeConfig type()
+    public DegraphmalizeActionType type() {
+        return actionType;
+    }
+
+    public final TypeConfig typeConfig()
     {
         return typeCfg;
     }
