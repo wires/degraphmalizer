@@ -160,8 +160,6 @@ class JavascriptTypeConfig implements TypeConfig
     final String sourceIndex;
     final String sourceType;
 
-    @Inject
-    Logger log;
 
     final Map<String,WalkConfig> walks = new HashMap<String, WalkConfig>();
 
@@ -202,7 +200,7 @@ class JavascriptTypeConfig implements TypeConfig
                     this.walks.put(walkName, walkCfg);
                 }
             }else{
-                log.debug("No walks found in configuration");
+                //todo: log.debug("No walks found in configuration");
             }
         }
         finally
@@ -228,7 +226,7 @@ class JavascriptTypeConfig implements TypeConfig
     public void extract(DegraphmalizeAction job, final Subgraph graphops)
     {
         if (extract == null) {
-            log.debug("Extraction omitted, no extract configuration");
+            //todo: log.debug("Extraction omitted, no extract configuration");
             return;
         }
 
@@ -249,7 +247,7 @@ class JavascriptTypeConfig implements TypeConfig
     public boolean filter(JsonNode document)
     {
         if(filter == null){
-            log.debug("document filtering omitted, no filter configured.");
+            //todo: log.debug("document filtering omitted, no filter configured.");
             return true;
         }
 
@@ -274,7 +272,7 @@ class JavascriptTypeConfig implements TypeConfig
     {
 
 	    if(transform == null){
-            log.debug("document transformation omitted, no transformation configured.");
+            //todo log.debug("document transformation omitted, no transformation configured.");
             return document;
         }
         try
