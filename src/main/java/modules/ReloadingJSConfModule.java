@@ -37,6 +37,7 @@ class CachedProvider<T> implements Provider<T>
         final T d = sourceProvider.get();
 
         // return old config if loading failed
+        //todo makes no sense: c == null
         if (d == null)
             return c;
 
@@ -86,7 +87,6 @@ public class ReloadingJSConfModule extends AbstractModule implements Configurati
     }
 	
     @Provides
-    @Singleton
     public final Configuration provideConfiguration() throws IOException
 	{
         return cachedProvider.get();
