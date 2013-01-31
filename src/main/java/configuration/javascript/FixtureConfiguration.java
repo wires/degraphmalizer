@@ -1,19 +1,19 @@
 package configuration.javascript;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.JsonProcessingException;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A Fixture config contains a number of mappings of index names to index configurations.
@@ -214,7 +214,7 @@ class FixtureConfigurationException extends RuntimeException
 
 class FixtureUtil
 {
-    public static final FileFilter onlyDirsFilter()
+    public static FileFilter onlyDirsFilter()
     {
         return new FileFilter()
         {
