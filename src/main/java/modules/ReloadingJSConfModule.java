@@ -78,7 +78,7 @@ public class ReloadingJSConfModule extends AbstractModule implements Configurati
             }
         };
 
-        this.cachedProvider = new CachedProvider(confLoader);
+        this.cachedProvider = new CachedProvider<Configuration> (confLoader);
         this.scriptFolder = scriptFolder;
         this.poller = new PollingConfigurationMonitor(scriptFolder, 200, this);
 
