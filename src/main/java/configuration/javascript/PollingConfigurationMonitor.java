@@ -2,13 +2,19 @@ package configuration.javascript;
 
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
-import com.google.common.hash.*;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hasher;
+import com.google.common.hash.Hashing;
 import configuration.ConfigurationMonitor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Monitor the configuration directory for changes in the index configurations.
@@ -57,14 +63,14 @@ public class PollingConfigurationMonitor implements Runnable
 
             // compute the state of each index
             final Map<String, HashCode> newState = new HashMap<String, HashCode>();
-            for(File d : directory.listFiles())
+            for(File d : nullSafeFileList(directory.listFiles()))
             {
                 // skip non directories
                 if(!d.isDirectory())
                     continue;
 
                 // skip empty directories
-                if(d.listFiles().length == 0)
+                if(nullSafeFileList(d.listFiles()).length == 0)
                     continue;
 
                 // each subdirectory encodes an index, so compute it's state hash
@@ -102,17 +108,18 @@ public class PollingConfigurationMonitor implements Runnable
         }
     }
 
+    File[] nullSafeFileList(File[] input){
+        return input != null ? input : new File[] {};
+    }
+
 
     /**
-     * Return a hashcode representing the subdirectory state.
-     *
      * The hash is computed based on the modification times, file size and file names of all files recursively.
      * The order in which the files are listed doesn't matter.
      *
      * If the returned hash changed between calls, this means that something in the subdirectory has changed.
      *
-     * @param directory
-     * @return
+     * @return a hashcode representing the subdirectory state.
      */
     protected static HashCode subdirState(File directory)
     {
