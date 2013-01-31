@@ -1,5 +1,13 @@
 package graphs;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -9,14 +17,6 @@ import degraphmalizr.EdgeID;
 import degraphmalizr.ID;
 import trees.Pair;
 import trees.Tree;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class GraphQueries
 {
@@ -419,5 +419,24 @@ public final class GraphQueries
         }
 
         log.trace("Graph dump done");
+    }
+
+    public static void makeSymbolic(Vertex vertex)
+    {
+        final ID symbolicID = getSymbolicID(getID(vertex));
+        setID(vertex, symbolicID);
+        setOwner(vertex, symbolicID);
+
+        for (Edge edge : vertex.getEdges(Direction.IN)) {
+            EdgeID id = getEdgeID(edge);
+            EdgeID idWithSymbolicHead = new EdgeID(id.tail(), id.label(), symbolicID);
+            setEdgeId(idWithSymbolicHead, edge);
+        }
+
+        for (Edge edge : vertex.getEdges(Direction.OUT)) {
+            EdgeID id = getEdgeID(edge);
+            EdgeID idWithSymbolicHead = new EdgeID(symbolicID, id.label(), id.head());
+            setEdgeId(idWithSymbolicHead, edge);
+        }
     }
 }

@@ -1,33 +1,48 @@
 package degraphmalizr;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+
+import javax.inject.Inject;
+
+import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.client.Client;
+import org.slf4j.Logger;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Optional;
 import com.google.common.collect.Iterables;
 import com.google.inject.Provider;
-import com.tinkerpop.blueprints.*;
+import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.Vertex;
+
 import configuration.*;
 import configuration.javascript.JSONUtilities;
 import degraphmalizr.jobs.*;
-import elasticsearch.ResolvedPathElement;
 import elasticsearch.QueryFunction;
+import elasticsearch.ResolvedPathElement;
 import exceptions.DegraphmalizerException;
 import graphs.GraphQueries;
 import graphs.ops.Subgraph;
 import graphs.ops.SubgraphManager;
-import modules.bindingannotations.*;
-import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.client.Client;
-import org.slf4j.Logger;
-import trees.*;
-
-import javax.inject.Inject;
-
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.*;
+import modules.bindingannotations.Degraphmalizes;
+import modules.bindingannotations.Fetches;
+import modules.bindingannotations.Recomputes;
+import trees.Pair;
+import trees.Tree;
+import trees.Trees;
 
 public class Degraphmalizer implements Degraphmalizr
 {
@@ -139,7 +154,8 @@ public class Degraphmalizer implements Degraphmalizr
 
             generateSubgraph(action);
 
-            final List<Future<Optional<IndexResponse>>> results = recomputeAffectedDocuments(action);
+            final List<RecomputeAction> recomputeActions = determineRecomputeActions(action);
+            final List<Future<Optional<IndexResponse>>> results = recomputeAffectedDocuments(recomputeActions);
 
             // TODO refactor action class
             action.status().complete(DegraphmalizeResult.success(action));
@@ -165,12 +181,38 @@ public class Degraphmalizer implements Degraphmalizr
         }
     }
 
-    // TODO (DGM-44)
-    private JsonNode doDelete(DegraphmalizeAction action) throws DegraphmalizerException, InterruptedException {
+    // TODO refactor (dubbeling met doUpdate) (DGM-44)
+    private JsonNode doDelete(DegraphmalizeAction action) throws Exception {
+        try {
+            List<RecomputeAction> recomputeActions = determineRecomputeActions(action);
 
-        List<Future<Optional<IndexResponse>>> results = recomputeAffectedDocuments(action);
+            final Subgraph sg = subgraphmanager.createSubgraph(action.id());
+            subgraphmanager.deleteSubgraph(sg);
 
-        return null;
+            final List<Future<Optional<IndexResponse>>> results = recomputeAffectedDocuments(recomputeActions);
+
+            // TODO refactor action class
+            action.status().complete(DegraphmalizeResult.success(action));
+
+            return getStatusJsonNode(results);
+        } catch (final DegraphmalizerException e) {
+            final DegraphmalizeResult result = DegraphmalizeResult.failure(action, e);
+
+            // report failure
+            action.status().exception(result);
+
+            // rethrow, this will captured by Future<>.get()
+            throw e;
+        } catch (final Exception e) {
+            final DegraphmalizerException ex = new DegraphmalizerException("Unknown exception occurred", e);
+            final DegraphmalizeResult result = DegraphmalizeResult.failure(action, ex);
+
+            // report failure
+            action.status().exception(result);
+
+            // rethrow, this will captured by Future<>.get()
+            throw e;
+        }
     }
 
     private void setDocument(DegraphmalizeAction action) throws InterruptedException, ExecutionException, DegraphmalizerException, IOException {
@@ -211,11 +253,11 @@ public class Degraphmalizer implements Degraphmalizr
         log.debug("Committed subgraph to graph");
     }
 
-    private List<Future<Optional<IndexResponse>>> recomputeAffectedDocuments(DegraphmalizeAction action) throws DegraphmalizerException, InterruptedException {
+    private List<Future<Optional<IndexResponse>>> recomputeAffectedDocuments(List<RecomputeAction> recomputeActions) throws DegraphmalizerException, InterruptedException {
         // create Callable from the actions
         // TODO call 'recompute started' for each action to update the status
         final ArrayList<Callable<Optional<IndexResponse>>> jobs = new ArrayList<Callable<Optional<IndexResponse>>>();
-        for(RecomputeAction r : determineRecomputeActions(action))
+        for(RecomputeAction r : recomputeActions)
             jobs.add(recomputeDocument(r));
 
         // recompute all affected documents and wait for results
@@ -284,7 +326,7 @@ public class Degraphmalizer implements Degraphmalizr
      * @param action represents the source document and recompute configuration.
      * @return the ES IndexRespons to the insert of the target document.
      */
-    private final Callable<Optional<IndexResponse>> recomputeDocument(final RecomputeAction action)
+    private Callable<Optional<IndexResponse>> recomputeDocument(final RecomputeAction action)
     {
         return new Callable<Optional<IndexResponse>>()
         {

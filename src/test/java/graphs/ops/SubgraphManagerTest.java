@@ -1,20 +1,24 @@
 package graphs.ops;
 
+import java.io.IOException;
+import java.util.*;
+
+import org.neo4j.helpers.collection.Iterables;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tinkerpop.blueprints.*;
+
 import degraphmalizr.EdgeID;
 import degraphmalizr.ID;
 import exceptions.DegraphmalizerException;
-
-import org.neo4j.helpers.collection.Iterables;
-import org.testng.annotations.*;
+import graphs.GraphQueries;
 
 import static graphs.GraphQueries.*;
 import static org.fest.assertions.Assertions.assertThat;
-
-import java.io.IOException;
-import java.util.*;
 
 public class SubgraphManagerTest
 {
@@ -346,22 +350,22 @@ public class SubgraphManagerTest
     {
         //first create a subgraph with a bunch of edges
         ID rootId = new ID("a", "b", "c0", 1);
-        final ID realVertexIncomming = new ID("a", "c", "c1", 3);
+        final ID realVertexIncoming = new ID("a", "c", "c1", 3);
         final ID realVertexOutgoing = new ID("a", "d", "c2", 3);
-        final ID symbolicVertexIncomming = new ID("a", "c", "c3", 0); /* symbolic nodes can be claimed by the subgraph. */
+        final ID symbolicVertexIncoming = new ID("a", "c", "c3", 0); /* symbolic nodes can be claimed by the subgraph. */
         final ID symbolicVertexOutGoing = new ID("a", "c", "c4", 0);
 
         addEdgeAndVertices(rootId, realVertexOutgoing, "e1", Direction.OUT);
         addEdgeAndVertices(rootId, symbolicVertexOutGoing, "e2", Direction.OUT);
-        addEdgeAndVertices(rootId, realVertexIncomming,  "e3", Direction.IN);
-        addEdgeAndVertices(rootId, symbolicVertexIncomming, "e4", Direction.IN);
+        addEdgeAndVertices(rootId, realVertexIncoming,  "e3", Direction.IN);
+        addEdgeAndVertices(rootId, symbolicVertexIncoming, "e4", Direction.IN);
 
         lg.G.stopTransaction(TransactionalGraph.Conclusion.SUCCESS);
 
         //let's check we actually have the edges.
         final Vertex v1 = findVertex(lg.G, rootId);
-        assertThat(Iterables.toList(v1.getEdges(Direction.OUT)).size()).isEqualTo(2);
-        assertThat(Iterables.toList(v1.getEdges(Direction.IN)).size()).isEqualTo(2);
+        assertThat(Iterables.toList(v1.getEdges(Direction.OUT))).hasSize(2);
+        assertThat(Iterables.toList(v1.getEdges(Direction.IN))).hasSize(2);
 
         //and now update the subgraph to a version without edges.
         rootId = updateIDVersion(rootId, 2);
@@ -370,25 +374,63 @@ public class SubgraphManagerTest
 
         //assert that the new subgraph has no edges,
         final Vertex v2 = findVertex(lg.G, rootId);
-        assertThat(Iterables.toList(v2.getEdges(Direction.BOTH)).size()).isEqualTo(0);
-
+        assertThat(Iterables.toList(v2.getEdges(Direction.BOTH))).isEmpty();
 
         //the two symbolic vertices are gone,
-        assertThat(findVertex(lg.G, symbolicVertexIncomming)).isNull();
+        assertThat(findVertex(lg.G, symbolicVertexIncoming)).isNull();
         assertThat(findVertex(lg.G, symbolicVertexOutGoing)).isNull();
 
         //and the two versioned vertices are still there.
-        assertThat(findVertex(lg.G, realVertexIncomming)).isNotNull();
+        assertThat(findVertex(lg.G, realVertexIncoming)).isNotNull();
         assertThat(findVertex(lg.G, realVertexOutgoing)).isNotNull();
     }
 
-    /**
-     * With bananas, Bananas!!!
-     */
     @Test
-    void testDeleteSubgraph()
+    void testDeleteSubgraph() throws DegraphmalizerException
     {
-        // TODO: create this test for an upcoming release
+        // Setup first subgraph
+        final ID v0 = new ID("a", "b", "v0", 1);
+        final ID v1s = new ID("a", "b", "v1", 0);
+        final EdgeID e0 = new EdgeID(v0, "e0", v1s);
+        final Subgraph sg0 = lg.sgm.createSubgraph(v0);
+        sg0.addEdge(e0.label(), v1s, Direction.OUT, Collections.<String, JsonNode>emptyMap());
+        lg.sgm.commitSubgraph(sg0);
+
+        // Setup second subgraph
+        final ID v1 = new ID("a", "b", "v1", 1);
+        final ID v2s = new ID("a", "b", "v2", 0);
+        final EdgeID e1 = new EdgeID(v1, "e1", v2s);
+        final Subgraph sg1 = lg.sgm.createSubgraph(v1);
+        sg1.addEdge(e1.label(), v2s, Direction.OUT, Collections.<String, JsonNode>emptyMap());
+        lg.sgm.commitSubgraph(sg1);
+
+        // Setup third subgraph
+        final ID v2 = new ID("a", "b", "v2", 1);
+        final Subgraph sg2 = lg.sgm.createSubgraph(v2);
+        lg.sgm.commitSubgraph(sg2);
+
+        // DELETE second subgraph!
+        lg.sgm.deleteSubgraph(sg1);
+
+        // Check vertices
+        Vertex vertex0 = findVertex(lg.G, v0);
+        Vertex vertex1 = findVertex(lg.G, v1s);
+        Vertex vertex2 = findVertex(lg.G, v2);
+
+        assertThat(vertex0).isNotNull();
+        assertThat(vertex1).isNotNull();
+        assertThat(vertex2).isNotNull();
+
+        assertThat(GraphQueries.isSymbolic(vertex0)).isFalse();
+        assertThat(GraphQueries.isSymbolic(vertex1)).isTrue();
+        assertThat(GraphQueries.isSymbolic(vertex2)).isFalse();
+
+        // Check edges
+        final Edge edge0 = findEdge(lg.G, e0);
+        final Edge edge1 = findEdge(lg.G, e1);
+
+        assertThat(edge0).isNotNull();
+        assertThat(edge1).isNull();
     }
 
     private Vertex addVertexWithId(ID id, boolean isSymbolic)

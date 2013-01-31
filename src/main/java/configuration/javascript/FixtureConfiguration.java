@@ -214,6 +214,8 @@ class FixtureConfigurationException extends RuntimeException
 
 class FixtureUtil
 {
+    private FixtureUtil() {}
+
     public static FileFilter onlyDirsFilter()
     {
         return new FileFilter()

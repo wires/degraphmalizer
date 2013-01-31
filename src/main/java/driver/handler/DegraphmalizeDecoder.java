@@ -1,14 +1,15 @@
 package driver.handler;
 
-import degraphmalizr.ID;
-import degraphmalizr.jobs.DegraphmalizeActionType;
-import degraphmalizr.jobs.JobRequest;
-import exceptions.DegraphmalizerException;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
+
+import degraphmalizr.ID;
+import degraphmalizr.jobs.DegraphmalizeActionType;
+import degraphmalizr.jobs.JobRequest;
+import exceptions.DegraphmalizerException;
 
 /**
  * Transform a HttpRequest into
@@ -32,8 +33,6 @@ public class DegraphmalizeDecoder extends OneToOneDecoder
 
         if (HttpMethod.DELETE.equals(httpMethod)) {
             actionType = DegraphmalizeActionType.DELETE;
-        } else if (HttpMethod.GET.equals(httpMethod)) {
-            actionType = DegraphmalizeActionType.UPDATE;
         } else {
             actionType = DegraphmalizeActionType.UPDATE;
         }

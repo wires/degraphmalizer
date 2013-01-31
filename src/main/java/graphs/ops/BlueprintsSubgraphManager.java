@@ -1,13 +1,18 @@
 package graphs.ops;
 
+import java.util.*;
+
 import com.fasterxml.jackson.databind.JsonNode;
-import com.tinkerpop.blueprints.*;
+import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.TransactionalGraph;
+import com.tinkerpop.blueprints.Vertex;
+
 import degraphmalizr.EdgeID;
 import degraphmalizr.ID;
 import exceptions.DegraphmalizerException;
+import graphs.GraphQueries;
 import trees.Pair;
-
-import java.util.*;
 
 import static graphs.GraphQueries.*;
 
@@ -36,13 +41,9 @@ public class BlueprintsSubgraphManager implements SubgraphManager
         try
         {
             // create a list of all elements owned by any version of this subgraph
-            final List<Vertex> verticesToDelete = new ArrayList<Vertex>();
-            for (Vertex v : findOwnedVertices(graph, sg.id()))
-                verticesToDelete.add(v);
-
-            final List<Edge> edgesToDelete = new ArrayList<Edge>();
-            for (Edge e : findOwnedEdges(graph, sg.id()))
-                edgesToDelete.add(e);
+            final Pair<List<Vertex>, List<Edge>> elementsToDelete = findOwnedElements(sg.id());
+            List<Vertex> verticesToDelete = elementsToDelete.a;
+            List<Edge> edgesToDelete = elementsToDelete.b;
 
             // do stuff needed for central vertex...
             final Vertex center = createOrUpdateCentralVertex(sg);
@@ -55,22 +56,10 @@ public class BlueprintsSubgraphManager implements SubgraphManager
             verticesToDelete.removeAll(nextVersionElts.a);
             edgesToDelete.removeAll(nextVersionElts.b);
 
-            // handle the edges we can delete: We check if they connect vertices that can be deleted too.
-            for(Edge e: edgesToDelete)
-            {
-                // it is possible that a vertex turned symbolic and we are the last edge pointing to it, then remove it
-                final Vertex v = e.getVertex(directionOppositeTo(getEdgeID(e), sg.id()));
-                if(canDeleteVertex(v, sg.id(), edgesToDelete))
-                    verticesToDelete.add(v);
+            List<Vertex> danglingVertices = findDanglingVertices(sg, edgesToDelete);
+            verticesToDelete.addAll(danglingVertices);
 
-                graph.removeEdge(e);
-            }
-
-            // Now remove the vertices.
-            for(final Vertex v: verticesToDelete)
-                if (canDeleteVertex(v, sg.id(), edgesToDelete))
-                    graph.removeVertex(v);
-
+            removeGraphElements(sg, verticesToDelete, edgesToDelete);
 
             // commit changes to graph
             success = true;
@@ -82,6 +71,79 @@ public class BlueprintsSubgraphManager implements SubgraphManager
             if(! success)
                 graph.stopTransaction(TransactionalGraph.Conclusion.FAILURE);
         }
+    }
+
+    @Override
+    public void deleteSubgraph(Subgraph subgraph) throws DegraphmalizerException {
+        final SG sg = (SG) subgraph;
+        boolean success = false;
+        try
+        {
+            // create a list of all elements owned by any version of this subgraph
+            final Pair<List<Vertex>, List<Edge>> elementsToDelete = findOwnedElements(sg.id());
+            List<Vertex> verticesToDelete = elementsToDelete.a;
+            List<Edge> edgesToDelete = elementsToDelete.b;
+
+            List<Vertex> danglingVertices = findDanglingVertices(sg, edgesToDelete);
+            verticesToDelete.addAll(danglingVertices);
+
+            removeGraphElements(sg, verticesToDelete, edgesToDelete);
+
+            // commit changes to graph
+            success = true;
+            graph.stopTransaction(TransactionalGraph.Conclusion.SUCCESS);
+        }
+        finally
+        {
+            // rollback if something failed
+            if(! success)
+                graph.stopTransaction(TransactionalGraph.Conclusion.FAILURE);
+        }
+    }
+
+    private List<Vertex> findDanglingVertices(SG sg, List<Edge> edgesToDelete) {
+        final List<Vertex> danglingVertices = new ArrayList<Vertex>();
+
+        // handle the edges we can delete: We check if they connect vertices that can be deleted too.
+        for(Edge e: edgesToDelete)
+        {
+            // it is possible that a vertex turned symbolic and we are the last edge pointing to it, then remove it
+            final Vertex v = e.getVertex(directionOppositeTo(getEdgeID(e), sg.id()));
+            if(canDeleteVertex(v, sg.id(), edgesToDelete))
+                danglingVertices.add(v);
+        }
+
+        return danglingVertices;
+    }
+
+    private void removeGraphElements(SG sg, List<Vertex> verticesToDelete, List<Edge> edgesToDelete) {
+        // Remove the edges
+        for (Edge e: edgesToDelete)
+            graph.removeEdge(e);
+
+        // Remove the vertices
+        for (final Vertex v: verticesToDelete)
+            if (canDeleteVertex(v, sg.id(), edgesToDelete))
+            {
+                graph.removeVertex(v);
+            }
+            else
+            {
+                GraphQueries.makeSymbolic(v);
+            }
+    }
+
+    private Pair<List<Vertex>, List<Edge>> findOwnedElements(ID id) {
+        // create a list of all elements owned by any version of this subgraph
+        final List<Vertex> vertexList = new ArrayList<Vertex>();
+        for (Vertex v : findOwnedVertices(graph, id))
+            vertexList.add(v);
+
+        final List<Edge> edgeList = new ArrayList<Edge>();
+        for (Edge e : findOwnedEdges(graph, id))
+            edgeList.add(e);
+
+        return new Pair<List<Vertex>, List<Edge>>(vertexList, edgeList);
     }
 
     /**

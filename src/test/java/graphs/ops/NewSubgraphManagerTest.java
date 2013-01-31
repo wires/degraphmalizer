@@ -1,15 +1,22 @@
 package graphs.ops;
 
+import java.util.Collections;
+import java.util.Random;
+
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
 import com.fasterxml.jackson.databind.JsonNode;
-import com.tinkerpop.blueprints.*;
+import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.Vertex;
+
 import degraphmalizr.EdgeID;
 import degraphmalizr.ID;
 import exceptions.DegraphmalizerException;
 import graphs.GraphQueries;
-import org.testng.annotations.*;
-
-import java.util.Collections;
-import java.util.Random;
 
 import static org.fest.assertions.Assertions.assertThat;
 
