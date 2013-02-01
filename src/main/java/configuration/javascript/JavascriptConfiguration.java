@@ -221,9 +221,15 @@ class JavascriptTypeConfig implements TypeConfig
         }
 	}
 
-    private Object fetchObjectOrNull(String field){
-        Object o = ScriptableObject.getProperty(script, field);
-        return  o == UniqueTag.NOT_FOUND ? null : o;
+    private Object fetchObjectOrNull(String field)
+    {
+        final Object obj = ScriptableObject.getProperty(script, field);
+
+        // field not specified in script
+        if(obj == UniqueTag.NOT_FOUND)
+            return null;
+
+        return obj;
     }
 
 
@@ -236,8 +242,9 @@ class JavascriptTypeConfig implements TypeConfig
 	@Override
     public void extract(DegraphmalizeAction job, final Subgraph graphops)
     {
-        if (extract == null) {
-            log.debug("Extraction omitted, no extract configuration");
+        if (extract == null)
+        {
+            log.debug("Not extracting subgraph because no extract() function is configured");
             return;
         }
 
@@ -246,9 +253,9 @@ class JavascriptTypeConfig implements TypeConfig
         // extract graph components
         final LoggingSubgraph lsg = new LoggingSubgraph("subgraph");
         final CompositeSubgraph csg = new CompositeSubgraph(lsg, graphops);
-
         final JavascriptSubgraph sg = new JavascriptSubgraph(csg, cx, script);
-        extract.call(cx, script, null, new Object[]{job, sg});
+        final Object obj = JSONUtilities.toJSONObject(cx, script,  job.document().toString());
+        extract.call(cx, script, null, new Object[]{obj, sg});
 
         Context.exit();
 
@@ -257,10 +264,8 @@ class JavascriptTypeConfig implements TypeConfig
 	@Override
     public boolean filter(JsonNode document)
     {
-        if(filter == null){
-            log.debug("document filtering omitted, no filter configured.");
+        if(filter == null)
             return true;
-        }
 
 		boolean result = false;
 
@@ -282,21 +287,25 @@ class JavascriptTypeConfig implements TypeConfig
     public JsonNode transform(JsonNode document)
     {
 
-	    if(transform == null){
-            log.debug("document transformation omitted, no transformation configured.");
+	    if(transform == null)
+        {
+            log.trace("Passing document as is because no transformation function is configured.");
             return document;
         }
+
         try
         {
             final Context cx = Context.enter();
             final Object doc = JSONUtilities.toJSONObject(cx, script, document.toString());
-
             final Object result = transform.call(cx, script, null, new Object[]{doc});
             return JSONUtilities.fromJSONObject(new ObjectMapper(), cx, script, result);
-        } catch (IOException e) {
+        }
+        catch (IOException e)
+        {
             //TODO: and what about error handling???
             throw new RuntimeException("Could not transform the input document." , e);
-        } finally
+        }
+        finally
         {
             Context.exit();
         }
