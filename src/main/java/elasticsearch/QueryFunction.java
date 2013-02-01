@@ -59,6 +59,13 @@ public class QueryFunction implements Function<Pair<Edge,Vertex>, Optional<Resol
             return Optional.of(new ResolvedPathElement(Optional.<GetResponse>absent(), pair.a, pair.b));
         }
 
+        // this document should not exist in elastic search, otherwise the vertex would have a version > 0
+        if(id.version() == 0)
+        {
+            log.debug("Document {} is symbolic, so we won't attempt to find it in elasticsearch", id);
+            return Optional.of(new ResolvedPathElement(Optional.<GetResponse>absent(), pair.a, pair.b));
+        }
+
         // query ES for the document
         final GetResponse r = searchIndex.prepareGet(id.index(), id.type(), id.id())
                 .execute().actionGet();
