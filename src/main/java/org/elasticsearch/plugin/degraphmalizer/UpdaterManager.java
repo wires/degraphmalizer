@@ -32,7 +32,7 @@ public class UpdaterManager extends AbstractLifecycleComponent<UpdaterManager> i
     private final long retryDelayOnFailureInMillis;
 
     @Inject
-    public UpdaterManager(Settings settings) {
+    public UpdaterManager(final Settings settings) {
         super(settings);
 
         final Settings pluginSettings = settings.getComponentSettings(DegraphmalizerPlugin.class);
@@ -61,19 +61,19 @@ public class UpdaterManager extends AbstractLifecycleComponent<UpdaterManager> i
     protected void doClose() throws ElasticSearchException {
     }
 
-    public void startUpdater(String index) {
+    public void startUpdater(final String index) {
         if (updaters.containsKey(index)) {
             LOG.warn("Updater for index {} already exists", index);
             return;
         }
-        Updater updater = new Updater(index, uriScheme, uriHost, uriPort, retryDelayOnFailureInMillis);
+        final Updater updater = new Updater(index, uriScheme, uriHost, uriPort, retryDelayOnFailureInMillis);
         updaters.put(index, updater);
         updater.start();
         LOG.info("Updater started for index {}",index);
     }
 
-    public void stopUpdater(String index) {
-        Updater updater = updaters.get(index);
+    public void stopUpdater(final String index) {
+        final Updater updater = updaters.get(index);
         if (updater != null) {
             updater.shutdown();
             updaters.remove(index);
@@ -83,8 +83,8 @@ public class UpdaterManager extends AbstractLifecycleComponent<UpdaterManager> i
         }
     }
 
-    public void add(String index, final Change change) {
-        Updater updater = updaters.get(index);
+    public void add(final String index, final Change change) {
+        final Updater updater = updaters.get(index);
         if (updater != null) {
             updater.add(change);
         } else {
@@ -94,7 +94,7 @@ public class UpdaterManager extends AbstractLifecycleComponent<UpdaterManager> i
 
     @Override
     public Map<String, Integer> getQueueSizes() {
-        Map<String, Integer> indexQueueSizes = new HashMap<String, Integer>(updaters.size());
+        final Map<String, Integer> indexQueueSizes = new HashMap<String, Integer>(updaters.size());
         for (Map.Entry<String, Updater> entry : updaters.entrySet()) {
             indexQueueSizes.put(entry.getKey(), entry.getValue().getQueueSize());
         }
@@ -102,8 +102,8 @@ public class UpdaterManager extends AbstractLifecycleComponent<UpdaterManager> i
     }
 
     @Override
-    public boolean flushQueue(String indexName) {
-        Updater updater = updaters.get(indexName);
+    public boolean flushQueue(final String indexName) {
+        final Updater updater = updaters.get(indexName);
         if (updater != null) {
             LOG.info("Flushing queue for index {} with {} entries", indexName, updater.getQueueSize());
             updater.flushQueue();

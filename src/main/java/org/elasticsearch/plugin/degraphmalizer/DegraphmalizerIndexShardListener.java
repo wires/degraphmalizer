@@ -17,14 +17,14 @@ public class DegraphmalizerIndexShardListener extends IndexingOperationListener
     private UpdaterManager graphUpdaterManager;
     private String index;
 
-    public DegraphmalizerIndexShardListener(UpdaterManager graphUpdaterManager, String index)
+    public DegraphmalizerIndexShardListener(final UpdaterManager graphUpdaterManager, final String index)
     {
         this.graphUpdaterManager = graphUpdaterManager;
         this.index = index;
     }
 
     @Override
-    public void postCreate(Engine.Create createOperation)
+    public void postCreate(final Engine.Create createOperation)
     {
         final String type = createOperation.type();
         final String id = createOperation.id();
@@ -37,31 +37,35 @@ public class DegraphmalizerIndexShardListener extends IndexingOperationListener
     }
 
     @Override
-    public void postIndex(Engine.Index indexOperation) {
+    public void postIndex(final Engine.Index indexOperation)
+    {
         final String type = indexOperation.type();
         final String id = indexOperation.id();
         final long version = indexOperation.version();
 
         LOG.trace("Origin {} of index to id {} ", indexOperation.origin(), id);
-        if (isFromPrimary(indexOperation)) {
+        if (isFromPrimary(indexOperation))
+        {
             graphUpdaterManager.add(index, Change.update(type, id, version));
         }
     }
 
     @Override
-    public void postDelete(Engine.Delete deleteOperation)
+    public void postDelete(final Engine.Delete deleteOperation)
     {
         final String type = deleteOperation.type();
         final String id = deleteOperation.id();
         final long version = deleteOperation.version();
 
         LOG.trace("Origin {} of index to id {} ", deleteOperation.origin(), id);
-        if (isFromPrimary(deleteOperation)) {
+        if (isFromPrimary(deleteOperation))
+        {
             graphUpdaterManager.add(index, Change.delete(type, id, version));
         }
     }
 
-    private boolean isFromPrimary(Engine.Operation operation) {
+    private boolean isFromPrimary(final Engine.Operation operation)
+    {
         return PRIMARY.equals(operation.origin());
     }
 }

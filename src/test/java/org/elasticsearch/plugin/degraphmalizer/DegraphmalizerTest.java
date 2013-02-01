@@ -60,14 +60,14 @@ public class DegraphmalizerTest
     @Test
     public void testCreateDocument() throws IOException
     {
-        IndexResponse indexResponse = node.client().index(indexRequest("test").type("person").source(
+        final IndexResponse indexResponse = node.client().index(indexRequest("test").type("person").source(
                 jsonBuilder().startObject().field("jelle", "was here").endObject())).actionGet();
 
-        String id = indexResponse.getId();
+        final String id = indexResponse.getId();
 
         node.client().admin().indices().refresh(refreshRequest()).actionGet();
 
-        GetResponse getResponse = node.client().get(getRequest("test").id(id)).actionGet();
+        final GetResponse getResponse = node.client().get(getRequest("test").id(id)).actionGet();
 
         assertThat(getResponse.isExists(), is(true));
     }

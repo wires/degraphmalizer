@@ -37,7 +37,7 @@ public class Updater implements Runnable {
 
     private boolean shutdownInProgress = false;
 
-    public Updater(String index, String uriScheme, String uriHost, int uriPort, long retryDelayOnFailureInMillis) {
+    public Updater(final String index, final String uriScheme, final String uriHost, final int uriPort, final long retryDelayOnFailureInMillis) {
         this.index = index;
         this.uriScheme = uriScheme;
         this.uriHost = uriHost;

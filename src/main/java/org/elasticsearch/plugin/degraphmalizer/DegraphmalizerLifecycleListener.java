@@ -32,23 +32,23 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
     }
 
     @Override
-    public void afterIndexCreated(IndexService indexService) {
-        String indexName = indexService.index().name();
+    public void afterIndexCreated(final IndexService indexService) {
+        final String indexName = indexService.index().name();
         if (isRelevantForDegraphmalizer(indexName)) {
             updaterManager.startUpdater(indexName);
         }
     }
 
     @Override
-    public void afterIndexClosed(Index index, boolean delete) {
-        String indexName = index.name();
+    public void afterIndexClosed(final Index index, final boolean delete) {
+        final String indexName = index.name();
         if (isRelevantForDegraphmalizer(indexName)) {
             updaterManager.stopUpdater(indexName);
         }
     }
 
     @Override
-    public void afterIndexShardStarted(IndexShard indexShard)
+    public void afterIndexShardStarted(final IndexShard indexShard)
     {
         if (isRelevantForDegraphmalizer(indexShard))
         {
@@ -57,7 +57,7 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
     }
 
     @Override
-    public void beforeIndexShardClosed(ShardId shardId, IndexShard indexShard, boolean delete)
+    public void beforeIndexShardClosed(final ShardId shardId, final IndexShard indexShard, final boolean delete)
     {
         if (isRelevantForDegraphmalizer(indexShard))
         {
@@ -65,7 +65,7 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
         }
     }
 
-    private void addIndexShardListener(IndexShard indexShard)
+    private void addIndexShardListener(final IndexShard indexShard)
     {
         final String indexName = getIndexName(indexShard);
 
@@ -77,7 +77,7 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
         LOG.info("Index shard listener added for shard {}", shardId);
     }
 
-    private void removeIndexShardListener(ShardId shardId, IndexShard indexShard)
+    private void removeIndexShardListener(final ShardId shardId, final IndexShard indexShard)
     {
         final DegraphmalizerIndexShardListener shardListener = listeners.get(shardId);
         indexShard.indexingService().removeListener(shardListener);
@@ -86,17 +86,17 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
         LOG.info("Index shard listener removed for shard {}", shardId);
     }
 
-    private boolean isRelevantForDegraphmalizer(String index)
+    private boolean isRelevantForDegraphmalizer(final String index)
     {
         // Don't add index listeners for 'private' indices
         return !index.startsWith("_");
     }
 
-    private boolean isRelevantForDegraphmalizer(IndexShard indexShard) {
+    private boolean isRelevantForDegraphmalizer(final IndexShard indexShard) {
         return isRelevantForDegraphmalizer(getIndexName(indexShard));
     }
 
-    private String getIndexName(IndexShard indexShard)
+    private String getIndexName(final IndexShard indexShard)
     {
         return indexShard.shardId().index().name();
     }
