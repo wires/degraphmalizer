@@ -1,33 +1,12 @@
 package degraphmalizr;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
-
-import javax.inject.Inject;
-
-import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.client.Client;
-import org.slf4j.Logger;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Optional;
 import com.google.common.collect.Iterables;
 import com.google.inject.Provider;
-import com.tinkerpop.blueprints.Direction;
-import com.tinkerpop.blueprints.Edge;
-import com.tinkerpop.blueprints.Graph;
-import com.tinkerpop.blueprints.Vertex;
-
+import com.tinkerpop.blueprints.*;
 import configuration.*;
 import configuration.javascript.JSONUtilities;
 import degraphmalizr.jobs.*;
@@ -37,12 +16,17 @@ import exceptions.DegraphmalizerException;
 import graphs.GraphQueries;
 import graphs.ops.Subgraph;
 import graphs.ops.SubgraphManager;
-import modules.bindingannotations.Degraphmalizes;
-import modules.bindingannotations.Fetches;
-import modules.bindingannotations.Recomputes;
-import trees.Pair;
-import trees.Tree;
-import trees.Trees;
+import modules.bindingannotations.*;
+import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.client.Client;
+import org.slf4j.Logger;
+import trees.*;
+
+import javax.inject.Inject;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.*;
 
 public class Degraphmalizer implements Degraphmalizr
 {
@@ -129,39 +113,53 @@ public class Degraphmalizer implements Degraphmalizr
 			{
                 final JsonNode result;
                 final DegraphmalizeActionType actionType = action.type();
+
                 switch(actionType) {
                     case UPDATE:
-                        result = doUpdate(action);
-                        break;
+                        return doUpdate(action);
+
                     case DELETE:
-                        result = doDelete(action);
-                        break;
+                        return doDelete(action);
+
                     default:
                         throw new DegraphmalizerException("Don't know how to handle action type " + actionType + " for action " + action);
                 }
-
-                return result;
             }
 		};
 	}
 
-    private JsonNode doUpdate(DegraphmalizeAction action) throws Exception {
-        try {
+    private JsonNode doUpdate(DegraphmalizeAction action) throws Exception
+    {
+        try
+        {
             log.info("Processing request '{}', for id={}", action.hash().toString(), action.id());
 
             // Get document from elasticsearch
-            setDocument(action);
+            final JsonNode jsonNode = getDocument(action.id());
 
-            generateSubgraph(action);
+            // couldn't find source document, so we are done
+            if (jsonNode == null)
+            {
+                // TODO cleanup status/result/action objects.
+                action.status().complete(DegraphmalizeResult.success(action));
+                return objectMapper.createObjectNode().put("success",true);
+            }
+            else
+            {
+                action.setDocument(jsonNode);
 
-            final List<RecomputeAction> recomputeActions = determineRecomputeActions(action);
-            final List<Future<Optional<IndexResponse>>> results = recomputeAffectedDocuments(recomputeActions);
+                generateSubgraph(action);
 
-            // TODO refactor action class
-            action.status().complete(DegraphmalizeResult.success(action));
+                final List<RecomputeAction> recomputeActions = determineRecomputeActions(action);
+                final List<Future<Optional<Pair<IndexResponse, ObjectNode>>>> results = recomputeAffectedDocuments(recomputeActions);
 
-            return getStatusJsonNode(results);
-        } catch (final DegraphmalizerException e) {
+                // TODO refactor action class
+                action.status().complete(DegraphmalizeResult.success(action));
+                return getStatusJsonNode(results);
+            }
+        }
+        catch (final DegraphmalizerException e)
+        {
             final DegraphmalizeResult result = DegraphmalizeResult.failure(action, e);
 
             // report failure
@@ -169,7 +167,9 @@ public class Degraphmalizer implements Degraphmalizr
 
             // rethrow, this will captured by Future<>.get()
             throw e;
-        } catch (final Exception e) {
+        }
+        catch (final Exception e)
+        {
             final DegraphmalizerException ex = new DegraphmalizerException("Unknown exception occurred", e);
             final DegraphmalizeResult result = DegraphmalizeResult.failure(action, ex);
 
@@ -182,14 +182,16 @@ public class Degraphmalizer implements Degraphmalizr
     }
 
     // TODO refactor (dubbeling met doUpdate) (DGM-44)
-    private JsonNode doDelete(DegraphmalizeAction action) throws Exception {
-        try {
+    private JsonNode doDelete(DegraphmalizeAction action) throws Exception
+    {
+        try
+        {
             List<RecomputeAction> recomputeActions = determineRecomputeActions(action);
 
             final Subgraph sg = subgraphmanager.createSubgraph(action.id());
             subgraphmanager.deleteSubgraph(sg);
 
-            final List<Future<Optional<IndexResponse>>> results = recomputeAffectedDocuments(recomputeActions);
+            final List<Future<Optional<Pair<IndexResponse, ObjectNode>>>> results = recomputeAffectedDocuments(recomputeActions);
 
             // TODO refactor action class
             action.status().complete(DegraphmalizeResult.success(action));
@@ -215,32 +217,26 @@ public class Degraphmalizer implements Degraphmalizr
         }
     }
 
-    private void setDocument(DegraphmalizeAction action) throws InterruptedException, ExecutionException, DegraphmalizerException, IOException {
-        final ID id = action.id();
+    private JsonNode getDocument(ID id) throws InterruptedException, ExecutionException, DegraphmalizerException, IOException {
 
         // get the source document from Elasticsearch
         final GetResponse resp = client.prepareGet(id.index(), id.type(), id.id()).execute().get();
 
-        if(!resp.exists())
-            throw new DegraphmalizerException("Document does not exist");
+        if (!resp.exists())
+            return null;
 
         //TODO: shouldn't this be: resp.version() > id.version()
         log.debug("Request has version " + id.version() + " and current es document has version " + resp.version());
-        if(resp.version() != id.version())
+        if (resp.version() != id.version())
             throw new DegraphmalizerException("Query expired, current version is " + resp.version());
 
-        // alright, we have the right source document, so let's start processing.
-
-        // first we parse the document into a JsonNode tree
-        final JsonNode jsonNode = objectMapper.readTree(resp.getSourceAsString());
-
-        action.setDocument(jsonNode);
+        return objectMapper.readTree(resp.getSourceAsString());
     }
 
     private void generateSubgraph(DegraphmalizeAction action) throws DegraphmalizerException {
         final ID id = action.id();
 
-        if(log.isTraceEnabled())
+//        if(log.isTraceEnabled())
             GraphQueries.dumpGraph(graph);
 
         // extract the graph elements
@@ -254,15 +250,15 @@ public class Degraphmalizer implements Degraphmalizr
         subgraphmanager.commitSubgraph(sg);
         log.debug("Committed subgraph to graph");
         
-        if(log.isTraceEnabled())
+//        if(log.isTraceEnabled())
             GraphQueries.dumpGraph(graph);
 
     }
 
-    private List<Future<Optional<IndexResponse>>> recomputeAffectedDocuments(List<RecomputeAction> recomputeActions) throws DegraphmalizerException, InterruptedException {
+    private List<Future<Optional<Pair<IndexResponse, ObjectNode>>>> recomputeAffectedDocuments(List<RecomputeAction> recomputeActions) throws DegraphmalizerException, InterruptedException {
         // create Callable from the actions
         // TODO call 'recompute started' for each action to update the status
-        final ArrayList<Callable<Optional<IndexResponse>>> jobs = new ArrayList<Callable<Optional<IndexResponse>>>();
+        final ArrayList<Callable<Optional<Pair<IndexResponse, ObjectNode>>>> jobs = new ArrayList<Callable<Optional<Pair<IndexResponse, ObjectNode>>>>();
         for(RecomputeAction r : recomputeActions)
             jobs.add(recomputeDocument(r));
 
@@ -332,12 +328,12 @@ public class Degraphmalizer implements Degraphmalizr
      * @param action represents the source document and recompute configuration.
      * @return the ES IndexRespons to the insert of the target document.
      */
-    private Callable<Optional<IndexResponse>> recomputeDocument(final RecomputeAction action)
+    private Callable<Optional<Pair<IndexResponse,ObjectNode>>> recomputeDocument(final RecomputeAction action)
     {
-        return new Callable<Optional<IndexResponse>>()
+        return new Callable<Optional<Pair<IndexResponse,ObjectNode>>>()
         {
             @Override
-            public Optional<IndexResponse> call() throws DegraphmalizerException
+            public Optional<Pair<IndexResponse,ObjectNode>> call() throws DegraphmalizerException
             {
                 try
                 {
@@ -359,7 +355,7 @@ public class Degraphmalizer implements Degraphmalizr
                         {
                             // walk graph, and fetch all the children in the opposite direction of the walk
                             final Tree<Pair<Edge,Vertex>> tree =
-                                    GraphQueries.childrenFrom(graph, action.root, walkCfg.getValue().direction().opposite());
+                                    GraphQueries.childrenFrom(graph, action.root, walkCfg.getValue().direction());
 
                             // write size information to log
                             if(log.isDebugEnabled())
@@ -413,17 +409,19 @@ public class Degraphmalizer implements Degraphmalizr
                     final JsonNode rawDocument = objectMapper.readTree(root.getResponse().get().getSourceAsString());
 
                     // pre-process document using javascript
-                    final JsonNode doc = action.typeConfig.transform(rawDocument);
+                    final JsonNode transformed = action.typeConfig.transform(rawDocument);
 
-                    if(!doc.isObject())
+                    if(!transformed.isObject())
                     {
                         log.debug("Root of processed document is not a JSON object (ie. it's a value), we are not adding the reduced properties");
                         return Optional.absent();
                     }
 
+                    final ObjectNode document = (ObjectNode)transformed;
+
                     // add the results to the document
                     for(Map.Entry<String,JsonNode> e : walkResults.entrySet())
-                        ((ObjectNode)doc).put(e.getKey(), e.getValue());
+                        document.put(e.getKey(), e.getValue());
 
                     // write the result document to the target index
                     final String targetIndex = action.typeConfig.targetIndex();
@@ -432,17 +430,17 @@ public class Degraphmalizer implements Degraphmalizr
                     final String idString = id.id();
 
                     // write the source version to the document
-                    ((ObjectNode)doc).put("_fromSource", JSONUtilities.toJSON(objectMapper, id));
+                    document.put("_fromSource", JSONUtilities.toJSON(objectMapper, id));
 
                     // write document to Elasticsearch
-                    final String documentSource = doc.toString();
+                    final String documentSource = document.toString();
                     final IndexResponse ir = client.prepareIndex(targetIndex, targetType, idString).setSource(documentSource)
                             .execute().actionGet();
 
                     log.debug("Written /{}/{}/{}, version={}", new Object[]{targetIndex, targetType, idString, ir.version()});
 
                     log.debug("Content: {}", documentSource);
-                    return Optional.of(ir);
+                    return Optional.of(new Pair<IndexResponse, ObjectNode>(ir, document));
                 }
                 catch (Exception e)
                 {
@@ -457,13 +455,16 @@ public class Degraphmalizer implements Degraphmalizr
         };
     }
 
-    private ObjectNode getStatusJsonNode(List<Future<Optional<IndexResponse>>> results) throws InterruptedException, ExecutionException {
-        final Optional<IndexResponse> ourResult = results.get(0).get();
+    private ObjectNode getStatusJsonNode(List<Future<Optional<Pair<IndexResponse, ObjectNode>>>> results) throws InterruptedException, ExecutionException
+    {
+        final Optional<Pair<IndexResponse, ObjectNode>> ourResult = results.get(0).get();
         final ObjectNode n = objectMapper.createObjectNode();
+
         if(ourResult.isPresent())
         {
             n.put("success", true);
-            n.put("version", ourResult.get().version());
+            n.put("version", ourResult.get().a.version());
+            n.put("result", ourResult.get().b);
         }
         else
             n.put("success", false);
