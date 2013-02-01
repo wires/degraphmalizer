@@ -11,12 +11,14 @@
 
 	extract: (function(doc, subgraph)
 	{
-	    if (doc._id != "1234")
-	        return;
+	    if (doc.children && doc.children.length)
+	    {
+	       doc.children.forEach(function(n){
+	            subgraph.addEdge("child", "test-index", "test-type", n, true, {"test": [1,3,5,7]});
+	       });
+	    }
 
         subgraph.setProperty("test", [1,2,3]);
-        subgraph.addEdge("label", "test-index", "test-type", "1", true, {"test": [1,3,5,7]});
-        subgraph.addEdge("label", "test-index", "test-type", "2", false, {"test": [1,3,5,7]});
 	}),
 
     "walks":{
