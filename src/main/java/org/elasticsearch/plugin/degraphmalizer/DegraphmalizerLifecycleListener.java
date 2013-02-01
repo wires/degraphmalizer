@@ -14,8 +14,7 @@ import org.elasticsearch.indices.IndicesLifecycle;
 import org.elasticsearch.indices.IndicesService;
 
 /**
- * This class is responsible for starting and stopping DegraphmalizerIndexShardListener instances for all primary index
- * shards.
+ * This class is responsible for starting and stopping DegraphmalizerIndexShardListener instances.
  */
 public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
 {
@@ -32,15 +31,17 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
         indicesService.indicesLifecycle().addListener(this);
     }
 
+    @Override
     public void afterIndexCreated(IndexService indexService) {
-        String indexName=indexService.index().name();
+        String indexName = indexService.index().name();
         if (isRelevantForDegraphmalizer(indexName)) {
             updaterManager.startUpdater(indexName);
         }
     }
 
+    @Override
     public void afterIndexClosed(Index index, boolean delete) {
-        String indexName=index.name();
+        String indexName = index.name();
         if (isRelevantForDegraphmalizer(indexName)) {
             updaterManager.stopUpdater(indexName);
         }
@@ -78,7 +79,6 @@ public class DegraphmalizerLifecycleListener extends IndicesLifecycle.Listener
 
     private void removeIndexShardListener(ShardId shardId, IndexShard indexShard)
     {
-        final String indexName = getIndexName(indexShard);
         final DegraphmalizerIndexShardListener shardListener = listeners.get(shardId);
         indexShard.indexingService().removeListener(shardListener);
         listeners.remove(shardId);

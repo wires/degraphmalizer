@@ -6,7 +6,7 @@ import java.util.Map;
  * MBean interface for JMX monitoring.
  */
 public interface UpdaterManagerMBean {
-    public Map<String, Integer> getQueueSizes();
+    Map<String, Integer> getQueueSizes();
 
-    public boolean flushQueue(String indexName);
+    boolean flushQueue(String indexName);
 }
