@@ -1,23 +1,24 @@
 package graphs.ops;
 
-import java.util.*;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import com.tinkerpop.blueprints.Direction;
-import com.tinkerpop.blueprints.Edge;
-import com.tinkerpop.blueprints.TransactionalGraph;
-import com.tinkerpop.blueprints.Vertex;
-
+import com.tinkerpop.blueprints.*;
 import degraphmalizr.EdgeID;
 import degraphmalizr.ID;
 import exceptions.DegraphmalizerException;
 import graphs.GraphQueries;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import trees.Pair;
 
+import java.util.*;
+
+import static com.tinkerpop.blueprints.TransactionalGraph.Conclusion.*;
 import static graphs.GraphQueries.*;
 
 public class BlueprintsSubgraphManager implements SubgraphManager
 {
+    private final Logger log = LoggerFactory.getLogger(BlueprintsSubgraphManager.class);
+
     private final TransactionalGraph graph;
 
     public BlueprintsSubgraphManager(TransactionalGraph graph)
@@ -91,13 +92,11 @@ public class BlueprintsSubgraphManager implements SubgraphManager
 
             // commit changes to graph
             success = true;
-            graph.stopTransaction(TransactionalGraph.Conclusion.SUCCESS);
         }
         finally
         {
-            // rollback if something failed
-            if(! success)
-                graph.stopTransaction(TransactionalGraph.Conclusion.FAILURE);
+            // commit or rollback if something failed
+            graph.stopTransaction(success ? SUCCESS : FAILURE);
         }
     }
 
@@ -176,7 +175,11 @@ public class BlueprintsSubgraphManager implements SubgraphManager
         Vertex center = resolveVertex(graph, sg.id());
 
         if (center == null)
-           center = createVertex(graph, sg.id());
+        {
+            log.trace("Couldn't find central vertex with id {}, create new vertex", sg.id());
+            center = createVertex(graph, sg.id());
+            log.trace("Created central vertex");
+        }
 
         if (isOlder(sg.id(), getID(center)))
             throw new DegraphmalizerException("Cannot override older vertex");
