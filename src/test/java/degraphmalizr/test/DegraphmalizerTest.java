@@ -1,13 +1,14 @@
 package degraphmalizr.test;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.*;
 import com.google.inject.matcher.Matchers;
 import com.tinkerpop.blueprints.Graph;
-import exceptions.DegraphmalizerException;
-import modules.*;
 import degraphmalizr.*;
 import degraphmalizr.jobs.*;
 import elasticsearch.LocalES;
+import exceptions.DegraphmalizerException;
+import modules.*;
 import neo4j.CommonNeo4j;
 import neo4j.EphemeralEmbeddedNeo4J;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
@@ -18,10 +19,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-import static org.fest.assertions.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
+
+import static org.fest.assertions.Assertions.assertThat;
 
 class LocalNode
 {
@@ -132,17 +134,45 @@ public class DegraphmalizerTest
         final ArrayList<DegraphmalizeAction> actions = new ArrayList<DegraphmalizeAction>();
 
         final Fixme callback = new Fixme();
-        actions.addAll(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(idx,tp,"1",ir1.version()), callback));
-        actions.addAll(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(idx,tp,"2",ir2.version()), callback));
-        actions.addAll(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(idx,tp,id,ir.version()), callback));
+        actions.addAll(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(idx, tp, id, ir.version()), callback));
+        actions.addAll(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(idx, tp, "1", ir1.version()), callback));
+        actions.addAll(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(idx, tp, "2", ir2.version()), callback));
 
         for(final DegraphmalizeAction a : actions)
         {
             log.info("Degraphmalize of {}: {}", a.id(), a.resultDocument().get());
-            assertThat(a.resultDocument().get().get("success").toString().equals("true")).isTrue();
+        }
+
+        for(final DegraphmalizeAction a : actions)
+        {
+            final JsonNode result = a.resultDocument().get();
+
+            assertThat(result.get("success").toString()).isEqualTo("true");
+            System.err.println(result.toString());
+
+            assertThat(result.get("result").has("nodes-in")).isTrue();
+            assertThat(result.get("result").has("nodes-out")).isTrue();
+
+            if(a.id().id().equals("1234"))
+            {
+                assertThat(aantalKinderen(result, "nodes-out")).isZero();
+                assertThat(aantalKinderen(result, "nodes-in")).isEqualTo(3);
+            }
+
+            if(a.id().id().equals("1"))
+            {
+                assertThat(aantalKinderen(result, "nodes-out")).isEqualTo(1);
+                assertThat(aantalKinderen(result, "nodes-in")).isZero();
+            }
         }
 
         ln.es.close();
         ln.G.shutdown();
 	}
+
+
+    private int aantalKinderen(JsonNode result, String property)
+    {
+        return result.get("result").get(property).get("full_tree").get("_children").size();
+    }
 }
