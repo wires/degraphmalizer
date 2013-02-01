@@ -240,17 +240,23 @@ public class Degraphmalizer implements Degraphmalizr
     private void generateSubgraph(DegraphmalizeAction action) throws DegraphmalizerException {
         final ID id = action.id();
 
-        // extract the graph elements
-        log.debug("Extracting graph elements");
-        final Subgraph sg = subgraphmanager.createSubgraph(id);
-        action.typeConfig().extract(action, sg);
-        log.debug("Completed extraction of graph elements");
-        subgraphmanager.commitSubgraph(sg);
-
         if(log.isTraceEnabled())
             GraphQueries.dumpGraph(graph);
 
+        // extract the graph elements
+        log.debug("Extracting graph elements");
+        
+        final Subgraph sg = subgraphmanager.createSubgraph(id);
+        action.typeConfig().extract(action, sg);
+        
+        log.debug("Completed extraction of graph elements");
+        
+        subgraphmanager.commitSubgraph(sg);
         log.debug("Committed subgraph to graph");
+        
+        if(log.isTraceEnabled())
+            GraphQueries.dumpGraph(graph);
+
     }
 
     private List<Future<Optional<IndexResponse>>> recomputeAffectedDocuments(List<RecomputeAction> recomputeActions) throws DegraphmalizerException, InterruptedException {
