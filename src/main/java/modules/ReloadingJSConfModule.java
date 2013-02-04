@@ -4,50 +4,42 @@ import com.google.inject.*;
 import configuration.*;
 import configuration.javascript.JavascriptConfiguration;
 import configuration.javascript.PollingConfigurationMonitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 class CachedProvider<T> implements Provider<T>
 {
     final Provider<T> sourceProvider;
 
-    // current cached is cached here
+    // current value is cached here
     T cached = null;
 
     public CachedProvider(Provider<T> sourceProvider)
     {
         this.sourceProvider = sourceProvider;
-        this.cached = sourceProvider.get();
+
+        invalidate();
     }
 
     public T get()
     {
-        // (for thread safety)
-        final T c = cached;
+        return cached;
+    }
 
-        // still up to date
-        if (c != null)
-            return c;
-
+    public boolean invalidate()
+    {
         // create new cached
         final T d = sourceProvider.get();
 
         // return old config if loading failed
-        //todo makes no sense: c == null
         if (d == null)
-            return c;
+            return false;
 
         cached = d;
-        return d;
-    }
-
-    public void invalidate()
-    {
-        cached = null;
+        return true;
     }
 }
 
@@ -96,7 +88,10 @@ public class ReloadingJSConfModule extends AbstractModule implements Configurati
     public final void configurationChanged(String index)
     {
         log.info("Configuration change detected for target-index {}", index);
-        cachedProvider.invalidate();
+
+        // try to reload the configuration
+        if(!cachedProvider.invalidate())
+            log.info("Failed to reload configuration");
 
         // print configuration if debugging is enabled
         if(!log.isDebugEnabled())
