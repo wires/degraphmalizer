@@ -72,8 +72,11 @@ public class Degraphmalizer implements Degraphmalizr
     {
         final ArrayList<DegraphmalizeAction> actions = new ArrayList<DegraphmalizeAction>();
 
-        for(TypeConfig cfg : configsFor(id.index(), id.type()))
+        for(TypeConfig cfg : Configurations.configsFor(cfgProvider.get(), id.index(), id.type()))
         {
+            log.debug("Matching to request for /{}/{} --> /{}/{}",
+                    new Object[]{cfg.sourceIndex(), cfg.sourceType(), cfg.targetIndex(), cfg.targetType()});
+
             // construct the action object
             final DegraphmalizeAction action = new DegraphmalizeAction(actionType, id, cfg, callback);
 
@@ -84,24 +87,6 @@ public class Degraphmalizer implements Degraphmalizr
         }
 
         return actions;
-    }
-
-    private List<TypeConfig> configsFor(String index, String type) throws DegraphmalizerException
-    {
-        final ArrayList<TypeConfig> configs = new ArrayList<TypeConfig>();
-
-        // TODO refactor
-        for(IndexConfig i : cfgProvider.get().indices().values())
-            for(TypeConfig t : i.types().values())
-                if(index.equals(t.sourceIndex()) && type.equals(t.sourceType()))
-                {
-                    log.debug("Matching to request for /{}/{} --> /{}/{}",
-                            new Object[]{t.sourceIndex(), t.sourceType(), i.name(), t.name()});
-
-                    configs.add(t);
-                }
-
-        return configs;
     }
 
     private Callable<JsonNode> degraphmalizeJob(final DegraphmalizeAction action) throws DegraphmalizerException
@@ -279,7 +264,8 @@ public class Degraphmalizer implements Degraphmalizr
         final ArrayList<RecomputeAction> recomputeActions = new ArrayList<RecomputeAction>();
 
         // we add ourselves as the first job in the list
-        recomputeActions.add(new RecomputeAction(action, action.typeConfig(), root));
+        final VID vid = new VID(root, id);
+        recomputeActions.add(new RecomputeAction(vid, action.typeConfig()));
 
         for(WalkConfig walkCfg : action.typeConfig().walks().values())
         {
@@ -305,15 +291,14 @@ public class Degraphmalizer implements Degraphmalizr
                 if(v.equals(root))
                     continue;
 
-                // TODO add ID to action object, avoid graph queries at some later point
-                final ID v_id = GraphQueries.getID(v);
+                final VID v_id = new VID(v);
 
                 // we already know this document does not exist in ES, skip
-                if(v_id.version() == 0)
+                if(v_id.ID().version() == 0)
                     continue;
 
                 // alright, mark for computation
-                recomputeActions.add(new RecomputeAction(action, action.typeConfig(), v));
+                recomputeActions.add(new RecomputeAction(v_id, action.typeConfig()));
             }
         }
 
@@ -330,10 +315,10 @@ public class Degraphmalizer implements Degraphmalizr
      */
     private Callable<Optional<Pair<IndexResponse,ObjectNode>>> recomputeDocument(final RecomputeAction action)
     {
-        return new Callable<Optional<Pair<IndexResponse,ObjectNode>>>()
+        return new Callable<Optional<Pair<IndexResponse, ObjectNode>>>()
         {
             @Override
-            public Optional<Pair<IndexResponse,ObjectNode>> call() throws DegraphmalizerException
+            public Optional<Pair<IndexResponse, ObjectNode>> call() throws DegraphmalizerException
             {
                 try
                 {
@@ -350,15 +335,16 @@ public class Degraphmalizer implements Degraphmalizr
 
                     final HashMap<String, JsonNode> walkResults = new HashMap<String, JsonNode>();
 
-                    if (! action.typeConfig.walks().entrySet().isEmpty()) {
-                        for(Map.Entry<String,WalkConfig> walkCfg : action.typeConfig.walks().entrySet())
+                    if (!action.typeConfig.walks().entrySet().isEmpty())
+                    {
+                        for (Map.Entry<String, WalkConfig> walkCfg : action.typeConfig.walks().entrySet())
                         {
                             // walk graph, and fetch all the children in the opposite direction of the walk
-                            final Tree<Pair<Edge,Vertex>> tree =
-                                    GraphQueries.childrenFrom(graph, action.root, walkCfg.getValue().direction());
+                            final Tree<Pair<Edge, Vertex>> tree =
+                                    GraphQueries.childrenFrom(graph, action.root.vertex(), walkCfg.getValue().direction());
 
                             // write size information to log
-                            if(log.isDebugEnabled())
+                            if (log.isDebugEnabled())
                             {
                                 final int size = Iterables.size(Trees.bfsWalk(tree));
                                 log.debug("Retrieving {} documents from ES", size);
@@ -371,22 +357,22 @@ public class Degraphmalizer implements Degraphmalizr
                             final Optional<Tree<ResolvedPathElement>> fullTree = Trees.optional(docTree);
 
                             // TODO split various failure modes
-                            if(!fullTree.isPresent())
+                            if (!fullTree.isPresent())
                             {
                                 isAbsent = true;
                                 break;
                             }
 
                             // reduce each property to a value based on the walk result
-                            for(final Map.Entry<String,? extends PropertyConfig> propertyCfg : walkCfg.getValue().properties().entrySet())
+                            for (final Map.Entry<String, ? extends PropertyConfig> propertyCfg : walkCfg.getValue().properties().entrySet())
                                 walkResults.put(propertyCfg.getKey(), propertyCfg.getValue().reduce(fullTree.get()));
                         }
 
                         // something failed, so we abort the whole re-computation
-                        if(isAbsent)
+                        if (isAbsent)
                         {
                             // TODO refactor the action, it should have the ID
-                            log.debug("Some results were absent, aborting re-computation for " + GraphQueries.getID(action.root));
+                            log.debug("Some results were absent, aborting re-computation for {}", action.root.ID());
                             return Optional.absent();
                         }
                     }
@@ -403,7 +389,7 @@ public class Degraphmalizer implements Degraphmalizr
 
                     //todo: what if Optional.absent??
                     //todo: queryFn.apply may produce null
-                    ResolvedPathElement root  = queryFn.apply(new Pair<Edge, Vertex>(null, action.root) ).get();
+                    ResolvedPathElement root = queryFn.apply(new Pair<Edge, Vertex>(null, action.root.vertex())).get();
                     // fetch the current ES document
                     //todo: what if optional absent?
                     final JsonNode rawDocument = objectMapper.readTree(root.getResponse().get().getSourceAsString());
@@ -411,22 +397,22 @@ public class Degraphmalizer implements Degraphmalizr
                     // pre-process document using javascript
                     final JsonNode transformed = action.typeConfig.transform(rawDocument);
 
-                    if(!transformed.isObject())
+                    if (!transformed.isObject())
                     {
                         log.debug("Root of processed document is not a JSON object (ie. it's a value), we are not adding the reduced properties");
                         return Optional.absent();
                     }
 
-                    final ObjectNode document = (ObjectNode)transformed;
+                    final ObjectNode document = (ObjectNode) transformed;
 
                     // add the results to the document
-                    for(Map.Entry<String,JsonNode> e : walkResults.entrySet())
+                    for (Map.Entry<String, JsonNode> e : walkResults.entrySet())
                         document.put(e.getKey(), e.getValue());
 
                     // write the result document to the target index
                     final String targetIndex = action.typeConfig.targetIndex();
                     final String targetType = action.typeConfig.targetType();
-                    final ID id = GraphQueries.getID(action.root);
+                    final ID id = action.root.ID();
                     final String idString = id.id();
 
                     // write the source version to the document
@@ -445,8 +431,7 @@ public class Degraphmalizer implements Degraphmalizr
                 catch (Exception e)
                 {
                     // TODO store and retrieve from action object, see TODO above line 215, at time of this commit ;^)
-                    final ID id = GraphQueries.getID(action.root);
-                    final String msg = "Exception in recomputation phase for id " + id;
+                    final String msg = "Exception in recomputation phase for id " + action.root.ID();
                     log.error(msg, e);
 
                     throw new DegraphmalizerException(msg, e);
