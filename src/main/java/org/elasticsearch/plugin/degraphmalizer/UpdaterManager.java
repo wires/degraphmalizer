@@ -31,6 +31,9 @@ public class UpdaterManager extends AbstractLifecycleComponent<UpdaterManager> i
     private final int uriPort;
     private final long retryDelayOnFailureInMillis;
 
+    private int queueLimit;
+    private String overflowPath;
+
     @Inject
     public UpdaterManager(Settings settings) {
         super(settings);
@@ -42,6 +45,9 @@ public class UpdaterManager extends AbstractLifecycleComponent<UpdaterManager> i
         this.uriHost = pluginSettings.get("DegraphmalizerPlugin.degraphmalizerHost", "localhost");
         this.uriPort = pluginSettings.getAsInt("DegraphmalizerPlugin.degraphmalizerPort", 9821);
         this.retryDelayOnFailureInMillis = pluginSettings.getAsLong("DegraphmalizerPlugin.retryDelayOnFailureInMillis", 10000l);
+
+        this.queueLimit = pluginSettings.getAsInt("DegraphmalizerPlugin.queueLimit", 1000000);
+        this.overflowPath = pluginSettings.get("DegraphmalizerPlugin.overflowPath", "/export/elasticsearch/overflow");
    }
 
     @Override

@@ -35,6 +35,24 @@ public class Change
         return version;
     }
 
+    public static String toValue(Change change) {
+        String value="";
+
+        return value=change.action().name()+","+change.type()+","+change.version()+","+change.id();
+    }
+
+    public static Change fromValue(String value) {
+        Change change;
+
+        String[] values=value.split(",",4);
+        Action action=Action.valueOf(values[0]);
+        String type = values[1];
+        Long version = Long.valueOf(values[2]);
+        String id = values[3];
+
+        return new Change(action,type,id,version);
+    }
+
     public static Change update(final String type, final String id, final long version)
     {
         return new Change(Action.UPDATE, type, id, version);
