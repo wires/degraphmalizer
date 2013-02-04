@@ -7,6 +7,9 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import configuration.FixtureConfiguration;
+import configuration.FixtureIndexConfiguration;
+import configuration.FixtureTypeConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jackson.JsonNode;
@@ -32,19 +35,19 @@ import org.slf4j.LoggerFactory;
  *
  * @author Ernst Bunders
  */
-public class FixtureConfiguration
+public class JavascriptFixtureConfiguration implements FixtureConfiguration
 {
     public static final String MAPPING_FILE_NAME = "mapping.json";
-    private Map<String, FixtureIndexConfig> indexConfigs = new LinkedHashMap<String, FixtureIndexConfig>();
-    private static final Logger log = LoggerFactory.getLogger(FixtureConfiguration.class);
+    private Map<String, JavascriptFixtureIndexConfiguration> indexConfigs = new LinkedHashMap<String, JavascriptFixtureIndexConfiguration>();
+    private static final Logger log = LoggerFactory.getLogger(JavascriptFixtureConfiguration.class);
 
-    public FixtureConfiguration(File configDir) throws IOException
+    public JavascriptFixtureConfiguration(File configDir) throws IOException
     {
         try
         {
             for (File indexDir : configDir.listFiles(FixtureUtil.onlyDirsFilter()))
             {
-                indexConfigs.put(indexDir.getName(), new FixtureIndexConfig(indexDir));
+                indexConfigs.put(indexDir.getName(), new JavascriptFixtureIndexConfiguration(indexDir));
             }
         } catch (FixtureConfigurationException e)
         {
@@ -58,7 +61,7 @@ public class FixtureConfiguration
         return indexConfigs.keySet();
     }
 
-    public FixtureIndexConfig getIndexConfig(String name)
+    public FixtureIndexConfiguration getIndexConfig(String name)
     {
         return indexConfigs.get(name);
     }
@@ -74,15 +77,15 @@ public class FixtureConfiguration
 /**
  * An index config contains a number of mappings of type names to type configurations.
  */
-class FixtureIndexConfig
+class JavascriptFixtureIndexConfiguration implements FixtureIndexConfiguration
 {
-    private Map<String, FixtureTypeConfig> typeConfigs = new LinkedHashMap<String, FixtureTypeConfig>();
+    private Map<String, JavascriptFixtureTypeConfiguration> typeConfigs = new LinkedHashMap<String, JavascriptFixtureTypeConfiguration>();
 
-    FixtureIndexConfig(File configDir) throws IOException
+    JavascriptFixtureIndexConfiguration(File configDir) throws IOException
     {
         for (File typeDir : configDir.listFiles(FixtureUtil.onlyDirsFilter()))
         {
-            typeConfigs.put(typeDir.getName(), new FixtureTypeConfig(typeDir));
+            typeConfigs.put(typeDir.getName(), new JavascriptFixtureTypeConfiguration(typeDir));
         }
     }
 
@@ -91,7 +94,7 @@ class FixtureIndexConfig
         return typeConfigs.keySet();
     }
 
-    public FixtureTypeConfig getTypeConfig(String name)
+    public FixtureTypeConfiguration getTypeConfig(String name)
     {
         return typeConfigs.get(name);
     }
@@ -108,12 +111,12 @@ class FixtureIndexConfig
  * The type config contains a number of documents, and
  * optionally an ElasticSearch index mapping for this type.
  */
-class FixtureTypeConfig
+class JavascriptFixtureTypeConfiguration implements FixtureTypeConfiguration
 {
     private final JsonNode mapping;
     private final Map<String, JsonNode> documentsById = new LinkedHashMap<String, JsonNode>();
 
-    FixtureTypeConfig(File configDir) throws IOException
+    JavascriptFixtureTypeConfiguration(File configDir) throws IOException
     {
         mapping = resolveMapping(configDir);
         readDocuments(configDir);
@@ -150,7 +153,7 @@ class FixtureTypeConfig
             @Override
             public boolean accept(File dir, String name)
             {
-                return (!FixtureConfiguration.MAPPING_FILE_NAME.equals(name)) && name.endsWith(".json");
+                return (!JavascriptFixtureConfiguration.MAPPING_FILE_NAME.equals(name)) && name.endsWith(".json");
             }
         }))
         {
@@ -176,7 +179,7 @@ class FixtureTypeConfig
      */
     private JsonNode resolveMapping(File configDir) throws IOException
     {
-        File mf = new File(configDir, FixtureConfiguration.MAPPING_FILE_NAME);
+        File mf = new File(configDir, JavascriptFixtureConfiguration.MAPPING_FILE_NAME);
         if (mf.exists() && mf.canRead())
             try
             {

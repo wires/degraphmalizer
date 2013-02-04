@@ -36,7 +36,7 @@ public class JavascriptConfiguration implements Configuration
     public static final String FIXTURES_DIR_NAME = "fixtures";
 
     private final Map<String,JavascriptIndexConfig> indices = new HashMap<String,JavascriptIndexConfig>();
-    private FixtureConfiguration fixtureConfig;
+    private JavascriptFixtureConfiguration fixtureConfig;
 
     private static final Logger log = LoggerFactory.getLogger(JavascriptConfiguration.class);
 
@@ -54,7 +54,7 @@ public class JavascriptConfiguration implements Configuration
             // each subdirectory encodes an index
             final String dirname = dir.getName();
             if (FIXTURES_DIR_NAME.equals(dirname)) {
-                fixtureConfig = new FixtureConfiguration(dir);
+                fixtureConfig = new JavascriptFixtureConfiguration(dir);
                 log.info("Fixtures found and loaded.");
                 log.debug(fixtureConfig.toString());
             }else{
@@ -67,6 +67,12 @@ public class JavascriptConfiguration implements Configuration
     public Map<String, ? extends IndexConfig> indices()
     {
         return indices;
+    }
+
+    @Override
+    public FixtureConfiguration getFixtureConfiguration()
+    {
+        return fixtureConfig;
     }
 }
 
