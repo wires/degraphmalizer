@@ -306,7 +306,7 @@ class JavascriptTypeConfig implements TypeConfig
 
 	    if(transform == null)
         {
-            log.trace("Passing document as is because no transformation function is configured.");
+            log.trace("No transformation function is configured, processing document as-is.");
             return document;
         }
 
