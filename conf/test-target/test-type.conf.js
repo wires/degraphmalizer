@@ -16,6 +16,8 @@
 	       doc.children.forEach(function(n){
 	            subgraph.addEdge("child", "test-index", "test-type", n, true, {"test": [1,3,5,7]});
 	       });
+
+
 	    }
 
         subgraph.setProperty("test", [1,2,3]);

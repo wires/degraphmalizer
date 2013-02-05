@@ -1,8 +1,11 @@
 package degraphmalizr.jobs;
 
+import degraphmalizr.recompute.RecomputeRequest;
+import degraphmalizr.recompute.RecomputeResult;
+
 public interface DegraphmalizeStatus
 {
-    void recomputeStarted(RecomputeAction action);
+    void recomputeStarted(RecomputeRequest action);
     void recomputeComplete(RecomputeResult result);
 
     /**

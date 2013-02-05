@@ -6,6 +6,8 @@ import com.google.inject.matcher.Matchers;
 import com.tinkerpop.blueprints.Graph;
 import degraphmalizr.*;
 import degraphmalizr.jobs.*;
+import degraphmalizr.recompute.RecomputeRequest;
+import degraphmalizr.recompute.RecomputeResult;
 import elasticsearch.LocalES;
 import exceptions.DegraphmalizerException;
 import modules.*;
@@ -65,7 +67,7 @@ public class DegraphmalizerTest
     class Fixme implements DegraphmalizeStatus
     {
         @Override
-        public void recomputeStarted(RecomputeAction action)
+        public void recomputeStarted(RecomputeRequest action)
         {
             log.info("restart");
         }

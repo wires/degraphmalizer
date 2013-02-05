@@ -10,6 +10,7 @@ import com.tinkerpop.blueprints.*;
 import configuration.*;
 import configuration.javascript.JSONUtilities;
 import degraphmalizr.jobs.*;
+import degraphmalizr.recompute.RecomputeRequest;
 import elasticsearch.QueryFunction;
 import elasticsearch.ResolvedPathElement;
 import exceptions.DegraphmalizerException;
@@ -135,8 +136,8 @@ public class Degraphmalizer implements Degraphmalizr
 
                 generateSubgraph(action);
 
-                final List<RecomputeAction> recomputeActions = determineRecomputeActions(action);
-                final List<Future<Optional<Pair<IndexResponse, ObjectNode>>>> results = recomputeAffectedDocuments(recomputeActions);
+                final List<RecomputeRequest> recomputeRequests = determineRecomputeActions(action);
+                final List<Future<Optional<Pair<IndexResponse, ObjectNode>>>> results = recomputeAffectedDocuments(recomputeRequests);
 
                 // TODO refactor action class
                 action.status().complete(DegraphmalizeResult.success(action));
@@ -171,12 +172,12 @@ public class Degraphmalizer implements Degraphmalizr
     {
         try
         {
-            List<RecomputeAction> recomputeActions = determineRecomputeActions(action);
+            List<RecomputeRequest> recomputeRequests = determineRecomputeActions(action);
 
             final Subgraph sg = subgraphmanager.createSubgraph(action.id());
             subgraphmanager.deleteSubgraph(sg);
 
-            final List<Future<Optional<Pair<IndexResponse, ObjectNode>>>> results = recomputeAffectedDocuments(recomputeActions);
+            final List<Future<Optional<Pair<IndexResponse, ObjectNode>>>> results = recomputeAffectedDocuments(recomputeRequests);
 
             // TODO refactor action class
             action.status().complete(DegraphmalizeResult.success(action));
@@ -240,11 +241,11 @@ public class Degraphmalizer implements Degraphmalizr
 
     }
 
-    private List<Future<Optional<Pair<IndexResponse, ObjectNode>>>> recomputeAffectedDocuments(List<RecomputeAction> recomputeActions) throws DegraphmalizerException, InterruptedException {
+    private List<Future<Optional<Pair<IndexResponse, ObjectNode>>>> recomputeAffectedDocuments(List<RecomputeRequest> recomputeRequests) throws DegraphmalizerException, InterruptedException {
         // create Callable from the actions
         // TODO call 'recompute started' for each action to update the status
         final ArrayList<Callable<Optional<Pair<IndexResponse, ObjectNode>>>> jobs = new ArrayList<Callable<Optional<Pair<IndexResponse, ObjectNode>>>>();
-        for(RecomputeAction r : recomputeActions)
+        for(RecomputeRequest r : recomputeRequests)
             jobs.add(recomputeDocument(r));
 
         // recompute all affected documents and wait for results
@@ -252,7 +253,7 @@ public class Degraphmalizer implements Degraphmalizr
         return recomputeQueue.invokeAll(jobs);
     }
 
-    private ArrayList<RecomputeAction> determineRecomputeActions(DegraphmalizeAction action) throws DegraphmalizerException {
+    private ArrayList<RecomputeRequest> determineRecomputeActions(DegraphmalizeAction action) throws DegraphmalizerException {
         final ID id = action.id();
 
         // we now start traversals for each walk to find documents affected by this change
@@ -261,11 +262,11 @@ public class Degraphmalizer implements Degraphmalizr
             // TODO this shouldn't occur, because the subgraph implicitly commits a vertex to the graph
             throw new DegraphmalizerException("No node for document " + id);
 
-        final ArrayList<RecomputeAction> recomputeActions = new ArrayList<RecomputeAction>();
+        final ArrayList<RecomputeRequest> recomputeRequests = new ArrayList<RecomputeRequest>();
 
         // we add ourselves as the first job in the list
         final VID vid = new VID(root, id);
-        recomputeActions.add(new RecomputeAction(vid, action.typeConfig()));
+        recomputeRequests.add(new RecomputeRequest(vid, action.typeConfig()));
 
         for(WalkConfig walkCfg : action.typeConfig().walks().values())
         {
@@ -298,12 +299,12 @@ public class Degraphmalizer implements Degraphmalizr
                     continue;
 
                 // alright, mark for computation
-                recomputeActions.add(new RecomputeAction(v_id, action.typeConfig()));
+                recomputeRequests.add(new RecomputeRequest(v_id, action.typeConfig()));
             }
         }
 
-        log.debug("Action {} caused recompute for {} documents", action.hash(), recomputeActions.size());
-        return recomputeActions;
+        log.debug("Action {} caused recompute for {} documents", action.hash(), recomputeRequests.size());
+        return recomputeRequests;
     }
 
     /**
@@ -313,7 +314,7 @@ public class Degraphmalizer implements Degraphmalizr
      * @param action represents the source document and recompute configuration.
      * @return the ES IndexRespons to the insert of the target document.
      */
-    private Callable<Optional<Pair<IndexResponse,ObjectNode>>> recomputeDocument(final RecomputeAction action)
+    private Callable<Optional<Pair<IndexResponse,ObjectNode>>> recomputeDocument(final RecomputeRequest action)
     {
         return new Callable<Optional<Pair<IndexResponse, ObjectNode>>>()
         {
@@ -335,9 +336,9 @@ public class Degraphmalizer implements Degraphmalizr
 
                     final HashMap<String, JsonNode> walkResults = new HashMap<String, JsonNode>();
 
-                    if (!action.typeConfig.walks().entrySet().isEmpty())
+                    if (!action.config.walks().entrySet().isEmpty())
                     {
-                        for (Map.Entry<String, WalkConfig> walkCfg : action.typeConfig.walks().entrySet())
+                        for (Map.Entry<String, WalkConfig> walkCfg : action.config.walks().entrySet())
                         {
                             // walk graph, and fetch all the children in the opposite direction of the walk
                             final Tree<Pair<Edge, Vertex>> tree =
@@ -395,7 +396,7 @@ public class Degraphmalizer implements Degraphmalizr
                     final JsonNode rawDocument = objectMapper.readTree(root.getResponse().get().getSourceAsString());
 
                     // pre-process document using javascript
-                    final JsonNode transformed = action.typeConfig.transform(rawDocument);
+                    final JsonNode transformed = action.config.transform(rawDocument);
 
                     if (!transformed.isObject())
                     {
@@ -410,8 +411,8 @@ public class Degraphmalizer implements Degraphmalizr
                         document.put(e.getKey(), e.getValue());
 
                     // write the result document to the target index
-                    final String targetIndex = action.typeConfig.targetIndex();
-                    final String targetType = action.typeConfig.targetType();
+                    final String targetIndex = action.config.targetIndex();
+                    final String targetType = action.config.targetType();
                     final ID id = action.root.ID();
                     final String idString = id.id();
 

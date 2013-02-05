@@ -2,7 +2,7 @@
  * Copyright (C) 2013 All rights reserved
  * VPRO The Netherlands
  */
-package degraphmalizr.jobs;
+package degraphmalizr.recompute;
 
 /**
  * User: rico

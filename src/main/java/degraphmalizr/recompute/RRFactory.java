@@ -1,10 +1,9 @@
-package degraphmalizr.impl;
+package degraphmalizr.recompute;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Optional;
 import degraphmalizr.ID;
-import degraphmalizr.jobs.*;
 import org.elasticsearch.action.index.IndexResponse;
 
 import java.util.List;
@@ -26,8 +25,8 @@ public class RRFactory implements RecomputeResultFactory
      * @param properties The computed properties
      */
     @Override
-    public RecomputeResult recomputeSuccess(RecomputeAction parent, IndexResponse indexResponse,
-                                            ObjectNode sourceDocument, ObjectNode resultDocument,
+    public RecomputeResult recomputeSuccess(RecomputeRequest parent, IndexResponse indexResponse,
+                                            JsonNode sourceDocument, ObjectNode resultDocument,
                                             Map<String, JsonNode> properties)
     {
         final RecomputeSuccess success = new RecomputeSuccess(indexResponse, sourceDocument, resultDocument,
@@ -43,7 +42,7 @@ public class RRFactory implements RecomputeResultFactory
      * @param exception The exception causing the failure.
      */
     @Override
-    public RecomputeResult recomputeException(RecomputeAction parent, Throwable exception)
+    public RecomputeResult recomputeException(RecomputeRequest parent, Throwable exception)
     {
         return new RecomputeResultImpl(parent, exception);
     }
@@ -60,7 +59,7 @@ public class RRFactory implements RecomputeResultFactory
      * @return
      */
     @Override
-    public RecomputeResult recomputeExpired(RecomputeAction parent, List<ID> expired)
+    public RecomputeResult recomputeExpired(RecomputeRequest parent, List<ID> expired)
     {
         return new RecomputeResultImpl(parent, expired);
     }
@@ -72,7 +71,7 @@ public class RRFactory implements RecomputeResultFactory
      * @param status Reason why it failed
      */
     @Override
-    public RecomputeResult recomputeFailed(RecomputeAction parent, RecomputeResult.Status status)
+    public RecomputeResult recomputeFailed(RecomputeRequest parent, RecomputeResult.Status status)
     {
         return new RecomputeResultImpl(parent, status);
     }
@@ -81,11 +80,11 @@ public class RRFactory implements RecomputeResultFactory
     private class RecomputeSuccess implements RecomputeResult.Success
     {
         final IndexResponse ir;
-        final ObjectNode source;
+        final JsonNode source;
         final ObjectNode result;
         final Map<String, JsonNode> properties;
 
-        public RecomputeSuccess(IndexResponse ir, ObjectNode source, ObjectNode result, Map<String, JsonNode> properties)
+        public RecomputeSuccess(IndexResponse ir, JsonNode source, ObjectNode result, Map<String, JsonNode> properties)
         {
             this.ir = ir;
             this.source = source;
@@ -100,7 +99,7 @@ public class RRFactory implements RecomputeResultFactory
         }
 
         @Override
-        public ObjectNode sourceDocument()
+        public JsonNode sourceDocument()
         {
             return source;
         }
@@ -121,14 +120,14 @@ public class RRFactory implements RecomputeResultFactory
     // immutable container class that holds a recompute result
     private class RecomputeResultImpl implements RecomputeResult
     {
-        final RecomputeAction action;
+        final RecomputeRequest action;
         final Optional<Throwable> exception;
         final Optional<Success> success;
         final Optional<List<ID>> expired;
         final Optional<Status> status;
 
         // Recompute was successful
-        private RecomputeResultImpl(RecomputeAction parent, Success success)
+        private RecomputeResultImpl(RecomputeRequest parent, Success success)
         {
             this.action = parent;
             this.success = Optional.of(success);
@@ -138,7 +137,7 @@ public class RRFactory implements RecomputeResultFactory
         }
 
         // Recompute failed with an unknown exception
-        private RecomputeResultImpl(RecomputeAction parent, Throwable ex)
+        private RecomputeResultImpl(RecomputeRequest parent, Throwable ex)
         {
             this.action = parent;
             this.exception = Optional.of(ex);
@@ -153,7 +152,7 @@ public class RRFactory implements RecomputeResultFactory
          * @param parent
          * @param expired
          */
-        private RecomputeResultImpl(RecomputeAction parent, List<ID> expired)
+        private RecomputeResultImpl(RecomputeRequest parent, List<ID> expired)
         {
             this.action = parent;
             this.expired = Optional.of(expired);
@@ -162,16 +161,16 @@ public class RRFactory implements RecomputeResultFactory
             this.status = Optional.absent();
         }
 
-        private RecomputeResultImpl(RecomputeAction parent, Status status)
+        private RecomputeResultImpl(RecomputeRequest parent, Status status)
         {
             if(status == Status.SUCCESS)
-                throw new IllegalArgumentException("Please use the constructor (RecomputeAction, RecomputeSuccess)");
+                throw new IllegalArgumentException("Please use the constructor (RecomputeRequest, RecomputeSuccess)");
 
             if(status == Status.EXPIRED)
-                throw new IllegalArgumentException("Please use the constructor (RecomputeAction, List<ID> expired)");
+                throw new IllegalArgumentException("Please use the constructor (RecomputeRequest, List<ID> expired)");
 
             if(status == Status.EXCEPTION)
-                throw new IllegalArgumentException("Please use the constructor (RecomputeAction, Throwable exception)");
+                throw new IllegalArgumentException("Please use the constructor (RecomputeRequest, Throwable exception)");
 
             this.action = parent;
 
@@ -182,7 +181,7 @@ public class RRFactory implements RecomputeResultFactory
         }
 
         @Override
-        public RecomputeAction action()
+        public RecomputeRequest action()
         {
             return action;
         }

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Charsets;
 import degraphmalizr.jobs.*;
+import degraphmalizr.recompute.*;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
@@ -17,7 +18,7 @@ public class DegraphmalizeResultEncoder extends OneToOneEncoder
 {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private final Class[] acceptedMessages = new Class[]{DegraphmalizeAction.class, DegraphmalizeResult.class, RecomputeAction.class, RecomputeResult.class, NoAction.class};
+    private final Class[] acceptedMessages = new Class[]{DegraphmalizeAction.class, DegraphmalizeResult.class, RecomputeRequest.class, RecomputeResult.class, NoAction.class};
 
     @Override
     protected final Object encode(ChannelHandlerContext ctx, Channel channel, Object o)

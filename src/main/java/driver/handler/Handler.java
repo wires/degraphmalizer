@@ -3,6 +3,7 @@ package driver.handler;
 import com.google.inject.Inject;
 import degraphmalizr.Degraphmalizr;
 import degraphmalizr.jobs.*;
+import degraphmalizr.recompute.*;
 import org.jboss.netty.channel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,7 @@ public class Handler extends SimpleChannelHandler
         final DegraphmalizeStatus callback = new DegraphmalizeStatus()
         {
             @Override
-            public void recomputeStarted(RecomputeAction action)
+            public void recomputeStarted(RecomputeRequest action)
             {
                 log.info("recompute started");
 //                ctx.getChannel().write(action);

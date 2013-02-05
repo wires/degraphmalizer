@@ -1,4 +1,4 @@
-package degraphmalizr.jobs;
+package degraphmalizr.recompute;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -13,7 +13,7 @@ public interface RecomputeResult
     public static interface Success
     {
         IndexResponse indexResponse();
-        ObjectNode sourceDocument();
+        JsonNode sourceDocument();
         ObjectNode resultDocument();
         Map<String,JsonNode> properties();
     }
@@ -25,10 +25,11 @@ public interface RecomputeResult
         EXPIRED,
 
         SOURCE_DOCUMENT_ABSENT,
+        SOURCE_NOT_OBJECT, // source is not a json object, e.g array or value
         TARGET_INDEX_ABSENT
     }
 
-    RecomputeAction action();
+    RecomputeRequest action();
 
     Status status();
 
