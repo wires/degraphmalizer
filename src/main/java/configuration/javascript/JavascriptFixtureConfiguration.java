@@ -1,4 +1,4 @@
-package configuration.javascript;
+ package configuration.javascript;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -14,7 +14,9 @@ import configuration.FixtureConfiguration;
 import configuration.FixtureIndexConfiguration;
 import configuration.FixtureTypeConfiguration;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.JsonProcessingException;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +51,8 @@ public class JavascriptFixtureConfiguration implements FixtureConfiguration
             {
                 indexConfigs.put(indexDir.getName(), new JavascriptFixtureIndexConfiguration(indexDir));
             }
-        } catch (FixtureConfigurationException e)
+        }
+        catch (FixtureConfigurationException e)
         {
             log.error("Could not parse fixture data. Illegal json: " + e.getMessage());
             throw e.getJpe();
@@ -84,9 +87,7 @@ class JavascriptFixtureIndexConfiguration implements FixtureIndexConfiguration
     JavascriptFixtureIndexConfiguration(File configDir) throws IOException
     {
         for (File typeDir : configDir.listFiles(FixtureUtil.onlyDirsFilter()))
-        {
             typeConfigs.put(typeDir.getName(), new JavascriptFixtureTypeConfiguration(typeDir));
-        }
     }
 
     public Iterable<String> getTypeNames()
@@ -172,10 +173,11 @@ class JavascriptFixtureTypeConfiguration implements FixtureTypeConfiguration
             try
             {
                 documentsById.put(
-                        StringUtils.substringBefore(file.getName(), ".json"),
+                        file.getName().replaceFirst(".json", ""),
                         FixtureUtil.mapper.readTree(FileUtils.readFileToString(file))
                 );
-            } catch (JsonProcessingException e)
+            }
+            catch (JsonProcessingException e)
             {
                 throw new FixtureConfigurationException(e, file);
             }
