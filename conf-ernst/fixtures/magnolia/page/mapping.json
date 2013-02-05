@@ -1,5 +1,5 @@
-{
-    "page": {
+{"page":
+    {
         "properties": {
             "body": {
                 "type": "string"
@@ -43,10 +43,12 @@
                 "type": "string"
             },
             "id": {
-                "type": "string"
+                "type": "string",
+                "index": "not_analyzed"
             },
             "poms_urn": {
-                "type": "string"
+                "type": "string",
+                "index": "not_analyzed"
             },
             "publishers": {
                 "type": "string"

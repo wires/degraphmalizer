@@ -55,7 +55,6 @@ public class JavascriptConfiguration implements Configuration
             final String dirname = dir.getName();
             if (FIXTURES_DIR_NAME.equals(dirname)) {
                 fixtureConfig = new JavascriptFixtureConfiguration(dir);
-                log.info("Fixtures found and loaded.");
                 log.debug(fixtureConfig.toString());
             }else{
                 indices.put(dirname, new JavascriptIndexConfig(dirname, dir));
@@ -79,9 +78,10 @@ public class JavascriptConfiguration implements Configuration
 
 class JavascriptIndexConfig implements IndexConfig
 {
+    private static final Logger log = LoggerFactory.getLogger(JavascriptIndexConfig.class);
+
 	final String index;
 	final Scriptable scope;
-
 	final Map<String,JavascriptTypeConfig> types = new HashMap<String,JavascriptTypeConfig>();
 	
 	
@@ -117,6 +117,7 @@ class JavascriptIndexConfig implements IndexConfig
             final Iterator<File> fi = FileUtils.iterateFiles(directory, filter, null);
             while (fi.hasNext()) {
                 final File file = fi.next();
+                log.debug("Found config file [{}] for index [{}]", file.getCanonicalFile(), index);
                 final Reader reader = new FileReader(file);
                 final String fn = file.getCanonicalPath();
                 final String type = file.getName().replaceFirst(".conf.js", "");
@@ -185,6 +186,8 @@ class JavascriptTypeConfig implements TypeConfig
 		this.type = type;
 		this.script = script;
 		this.indexConfig = indexConfig;
+
+        log.debug("Creating config for type [{}] in index [{}]", type, indexConfig.name());
 
         try{
 		    Context.enter();

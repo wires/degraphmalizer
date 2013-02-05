@@ -7,14 +7,14 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import configuration.FixtureConfiguration;
 import configuration.FixtureIndexConfiguration;
 import configuration.FixtureTypeConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,7 +79,7 @@ public class JavascriptFixtureConfiguration implements FixtureConfiguration
  */
 class JavascriptFixtureIndexConfiguration implements FixtureIndexConfiguration
 {
-    private Map<String, JavascriptFixtureTypeConfiguration> typeConfigs = new LinkedHashMap<String, JavascriptFixtureTypeConfiguration>();
+    private Map<String, FixtureTypeConfiguration> typeConfigs = new LinkedHashMap<String, FixtureTypeConfiguration>();
 
     JavascriptFixtureIndexConfiguration(File configDir) throws IOException
     {
@@ -97,6 +97,12 @@ class JavascriptFixtureIndexConfiguration implements FixtureIndexConfiguration
     public FixtureTypeConfiguration getTypeConfig(String name)
     {
         return typeConfigs.get(name);
+    }
+
+    @Override
+    public Iterable<FixtureTypeConfiguration> getTypeConfigurations()
+    {
+        return (Iterable<FixtureTypeConfiguration>) typeConfigs.values();
     }
 
     @Override
@@ -138,6 +144,12 @@ class JavascriptFixtureTypeConfiguration implements FixtureTypeConfiguration
     public JsonNode getDocumentById(String id)
     {
         return documentsById.get(id);
+    }
+
+    @Override
+    public boolean hasDocuments()
+    {
+        return documentsById.size() > 0;
     }
 
     /**

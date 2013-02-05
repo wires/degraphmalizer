@@ -9,6 +9,7 @@ import driver.handler.HandlerModule;
 import driver.server.Server;
 import driver.server.ServerModule;
 import elasticsearch.TransportES;
+import fixutures.FixturesLoader;
 import jmx.GraphBuilder;
 import modules.*;
 import neo4j.*;
@@ -20,6 +21,7 @@ import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.List;
@@ -127,6 +129,19 @@ public final class Main
             {
                 // TODO log errors
                 e.printStackTrace();
+            }
+        }
+
+        //fixtures?
+        if (opt.fixtures)
+        {
+            FixturesLoader fl = injector.getInstance(FixturesLoader.class);
+            try
+            {
+                fl.loadFixtures();
+            } catch (Exception e)
+            {
+                log.error("Could not load fixtures. reason: {}", e.getMessage());
             }
         }
 

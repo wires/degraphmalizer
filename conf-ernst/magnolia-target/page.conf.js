@@ -7,9 +7,10 @@
         d.title = doc.title;
         d.summary=doc.summary;
         d.url = doc.deeplink;
-        d.eentje = "vijf";
+        d.eentje = "zes";
         return d;
     }),
+
 
     "filter": (function(doc){
         return true;
@@ -27,20 +28,20 @@
                     })
                 }
             }
-        },
+        }}
 
 
-        "forward":{
-            "direction": "OUT",
-            "properties": {
-                "nodes-out": {
-                    nested: true,
-                    reduce: (function(doc_tree) {
-                        return doc_tree;
-                    })
-                }
-            }
-        }
-    }
+    //     "forward":{
+    //         "direction": "OUT",
+    //         "properties": {
+    //             "nodes-out": {
+    //                 nested: true,
+    //                 reduce: (function(doc_tree) {
+    //                     return doc_tree;
+    //                 })
+    //             }
+    //         }
+    //     }
+    // }
 
 })
