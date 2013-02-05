@@ -88,7 +88,7 @@ class JavascriptIndexConfig implements IndexConfig
 	/**
 	 * Scan, filter and watch a directory for correct javascript files.
 	 *
-     * @param index The elastic search index
+     * @param index The elastic search index to write to
 	 * @param directory Directory to watch for files
 	 * @throws IOException
 	 */
@@ -111,12 +111,20 @@ class JavascriptIndexConfig implements IndexConfig
             cx.seal(scope);
 
             // non recursively load all configuration files
-            final WildcardFileFilter filter = new WildcardFileFilter("*.conf.js");
+            final FilenameFilter filenameFilter = new FilenameFilter()
+            {
+                @Override
+                public boolean accept(File dir, String name)
+                {
+                    if(name.endsWith(".conf.js"))
+                        return true;
+                    log.error("File [{}] in config dir [{}] has wrong name format and is ignored. Proper format: [target type].conf.js", name, dir.getAbsolutePath());
+                    return false;
+                }
+            };
 
-            @SuppressWarnings("unchecked")
-            final Iterator<File> fi = FileUtils.iterateFiles(directory, filter, null);
-            while (fi.hasNext()) {
-                final File file = fi.next();
+            for(File file: directory.listFiles(filenameFilter))
+            {
                 log.debug("Found config file [{}] for index [{}]", file.getCanonicalFile(), index);
                 final Reader reader = new FileReader(file);
                 final String fn = file.getCanonicalPath();
