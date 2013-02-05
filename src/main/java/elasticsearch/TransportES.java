@@ -35,6 +35,8 @@ public class TransportES extends AbstractModule
     @Singleton
     final Client providesClient()
     {
+        log.info("Connecting to ES on host {}, port {}, cluster {}", new Object[]{host, port, cluster});
+
         final Settings s = settingsBuilder().put("cluster.name", cluster).build();
 
         final TransportClient client = new TransportClient(s);
