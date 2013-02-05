@@ -3,11 +3,13 @@
 # recompile
 #mvn --quiet package
 
-# detect color terminals
-OPTION=''
-COLORS=$(tput colors 2> /dev/null)
-if [ $? = 0 ] && [ $COLORS -gt 2 ]; then
-    OPTION='-L logback-ansi.xml'
-fi
+## detect color terminals
+#OPTION=''
+#COLORS=$(tput colors 2> /dev/null)
+#if [ $? = 0 ] && [ $COLORS -gt 2 ]; then
+#    OPTION='-L logback-ansi.xml'
+#fi
 
-mvn -DskipTests=true --quiet exec:java -Dexec.args="$OPTION $*"
+#mvn -DskipTests=true --quiet exec:java -Dexec.args=\"$OPTION $*\"
+
+java -cp target/degraphmalizer-0.1-SNAPSHOT-jar-with-dependencies.jar driver.Main $*
