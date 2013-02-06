@@ -57,8 +57,8 @@ public class Updater implements Runnable {
         this.queueLimit = queueLimit;
         this.maxRetries = maxRetries;
 
-        overflowFile = new DiskQueue(logPath + File.pathSeparator + index + "-overflow.log");
-        errorFile = new DiskQueue(logPath + File.pathSeparator + index + "-error.log");
+        overflowFile = new DiskQueue(logPath + File.separator + index + "-overflow.log");
+        errorFile = new DiskQueue(logPath + File.separator + index + "-error.log");
 
         LOG.info("Updater instantiated for index {}. Updates will be sent to {}://{}:{}. Retry delay on failure is {} milliseconds.", index, uriScheme, uriHost, uriPort, retryDelayOnFailureInMillis);
         LOG.info("Updater will overflow in {} after limit of {} has been reached, messages will be retried {} times ", logPath, queueLimit, maxRetries);
