@@ -1,11 +1,5 @@
 package org.elasticsearch.plugin.degraphmalizer;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.DelayQueue;
-
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpDelete;
@@ -16,6 +10,14 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This class handles Change instances. The class can be configured via elasticsearch.yml (see README.md for
@@ -32,19 +34,34 @@ public class Updater implements Runnable {
     private final String uriHost;
     private final int uriPort;
     private final long retryDelayOnFailureInMillis;
+    private final String logPath;
+    private final int queueLimit;
+    private final int maxRetries;
 
-    private String index;
+    private final String index;
+
+    private DiskQueue overflowFile;
+    private DiskQueue errorFile;
+    // Signals if the memory queue is not available and that changes are written to disk.
+    private volatile boolean overflowActive = false;
 
     private boolean shutdownInProgress = false;
 
-    public Updater(final String index, final String uriScheme, final String uriHost, final int uriPort, final long retryDelayOnFailureInMillis) {
+    public Updater(final String index, final String uriScheme, final String uriHost, final int uriPort, final long retryDelayOnFailureInMillis, final String logPath, final int queueLimit, final int maxRetries) {
         this.index = index;
         this.uriScheme = uriScheme;
         this.uriHost = uriHost;
         this.uriPort = uriPort;
         this.retryDelayOnFailureInMillis = retryDelayOnFailureInMillis;
+        this.logPath = logPath;
+        this.queueLimit = queueLimit;
+        this.maxRetries = maxRetries;
+
+        overflowFile = new DiskQueue(logPath + File.separator + index + "-overflow.log");
+        errorFile = new DiskQueue(logPath + File.separator + index + "-error.log");
 
         LOG.info("Updater instantiated for index {}. Updates will be sent to {}://{}:{}. Retry delay on failure is {} milliseconds.", index, uriScheme, uriHost, uriPort, retryDelayOnFailureInMillis);
+        LOG.info("Updater will overflow in {} after limit of {} has been reached, messages will be retried {} times ", logPath, queueLimit, maxRetries);
     }
 
     public void start() {
@@ -66,11 +83,23 @@ public class Updater implements Runnable {
     public void run() {
         try {
             boolean done = false;
+            overflowFile.readFromDiskIntoQueue(queue);
             while (!done) {
-                final Change change = queue.take().thing();
-                perform(change);
+                if (queue.isEmpty()) {
+                    overflowFile.readFromDiskIntoQueue(queue);
+                    overflowActive = false;
+                }
 
-                if (shutdownInProgress && queue.isEmpty()) {
+                final DelayedImpl<Change> delayed = queue.poll(2, TimeUnit.SECONDS);
+                if (delayed!=null) {
+                    Change change=delayed.thing();
+                    perform(change);
+                }
+
+                if (shutdownInProgress) {
+                    if (!queue.isEmpty()) {
+                        overflowFile.writeToDisk(queue, Integer.MAX_VALUE);
+                    }
                     done = true;
                 }
             }
@@ -85,7 +114,19 @@ public class Updater implements Runnable {
     }
 
     public void add(final Change change) {
-        queue.add(DelayedImpl.immediate(change));
+        if (!overflowActive) {
+            if (queue.size() >= queueLimit) {
+                overflowActive = true;
+            } else {
+                queue.add(DelayedImpl.immediate(change));
+            }
+        } else {
+            try {
+                overflowFile.writeToDisk(change);
+            } catch (IOException e) {
+                LOG.error("Can't write change {} to overflow file {} ",change,overflowFile.name());
+            }
+        }
         LOG.trace("Received {}", change);
     }
 
@@ -100,7 +141,7 @@ public class Updater implements Runnable {
 
             if (!isSuccessful(response)) {
                 LOG.warn("Request {} {} was not successful. Response status code: {}.", request.getMethod(), request.getURI(), response.getStatusLine().getStatusCode());
-                retry(change); // TODO: retry until infinity? (DGM-23)
+                retry(change);
             } else {
                 LOG.debug("Change performed: {}", change);
             }
@@ -112,7 +153,7 @@ public class Updater implements Runnable {
             }
         } catch (IOException e) {
             LOG.warn("Error executing request {} {}: {}", request.getMethod(), request.getURI(), e.getMessage());
-            retry(change); // TODO: retry until infinity? (DGM-23)
+            retry(change);
         }
     }
 
@@ -159,8 +200,20 @@ public class Updater implements Runnable {
     }
 
     private void retry(final Change change) {
-        final DelayedImpl<Change> delayedChange = new DelayedImpl<Change>(change, retryDelayOnFailureInMillis);
-        queue.add(delayedChange);
-        LOG.debug("Retrying change {} on index {} in {} milliseconds", change, index, retryDelayOnFailureInMillis);
+        if (change.retries()<maxRetries) {
+            change.retried();
+            final DelayedImpl<Change> delayedChange = new DelayedImpl<Change>(change, change.retries()*retryDelayOnFailureInMillis);
+            queue.add(delayedChange);
+            LOG.debug("Retrying change {} on index {} in {} milliseconds", change, index, retryDelayOnFailureInMillis);
+        } else {
+            try {
+                LOG.warn("Writing failed change {} to error log {}", change,errorFile.name());
+                errorFile.writeToDisk(change);
+            } catch (IOException e) {
+                LOG.warn("Can't write failed change {} to error log {}",change,errorFile.name());
+            }
+        }
     }
+
+
 }
