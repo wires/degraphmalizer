@@ -32,7 +32,8 @@ public class UpdaterManager extends AbstractLifecycleComponent<UpdaterManager> i
     private final long retryDelayOnFailureInMillis;
 
     private int queueLimit;
-    private String overflowPath;
+    private String logPath;
+    private int maxRetries;
 
     @Inject
     public UpdaterManager(Settings settings) {
@@ -46,9 +47,10 @@ public class UpdaterManager extends AbstractLifecycleComponent<UpdaterManager> i
         this.uriPort = pluginSettings.getAsInt("DegraphmalizerPlugin.degraphmalizerPort", 9821);
         this.retryDelayOnFailureInMillis = pluginSettings.getAsLong("DegraphmalizerPlugin.retryDelayOnFailureInMillis", 10000l);
 
-        this.queueLimit = pluginSettings.getAsInt("DegraphmalizerPlugin.queueLimit", 1000000);
-        this.overflowPath = pluginSettings.get("DegraphmalizerPlugin.overflowPath", "/export/elasticsearch/overflow");
-   }
+        this.queueLimit = pluginSettings.getAsInt("DegraphmalizerPlugin.queueLimit", 100000);
+        this.logPath = pluginSettings.get("DegraphmalizerPlugin.logPath", "/export/elasticsearch/degraphmalizer");
+        this.maxRetries = pluginSettings.getAsInt("DegraphmalizerPlugin.maxRetries", 10);
+    }
 
     @Override
     protected void doStart() throws ElasticSearchException {
@@ -72,10 +74,10 @@ public class UpdaterManager extends AbstractLifecycleComponent<UpdaterManager> i
             LOG.warn("Updater for index {} already exists", index);
             return;
         }
-        Updater updater = new Updater(index, uriScheme, uriHost, uriPort, retryDelayOnFailureInMillis);
+        Updater updater = new Updater(index, uriScheme, uriHost, uriPort, retryDelayOnFailureInMillis, logPath, queueLimit, maxRetries);
         updaters.put(index, updater);
         updater.start();
-        LOG.info("Updater started for index {}",index);
+        LOG.info("Updater started for index {}", index);
     }
 
     public void stopUpdater(String index) {
@@ -83,7 +85,7 @@ public class UpdaterManager extends AbstractLifecycleComponent<UpdaterManager> i
         if (updater != null) {
             updater.shutdown();
             updaters.remove(index);
-            LOG.info("Updater stopped for index {}",index);
+            LOG.info("Updater stopped for index {}", index);
         } else {
             LOG.warn("No updater found for index {}", index);
         }

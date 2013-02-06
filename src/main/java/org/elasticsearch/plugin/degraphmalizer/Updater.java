@@ -11,6 +11,7 @@ import org.apache.http.util.EntityUtils;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -32,19 +33,34 @@ public class Updater implements Runnable {
     private final String uriHost;
     private final int uriPort;
     private final long retryDelayOnFailureInMillis;
+    private final String logPath;
+    private final int queueLimit;
+    private final int maxRetries;
 
-    private String index;
+    private final String index;
+
+    private DiskQueue overflowFile;
+    private DiskQueue errorFile;
+    // Signals if the memory queue is not available and that changes are written to disk.
+    private volatile boolean overflowActive = false;
 
     private boolean shutdownInProgress = false;
 
-    public Updater(String index, String uriScheme, String uriHost, int uriPort, long retryDelayOnFailureInMillis) {
+    public Updater(String index, String uriScheme, String uriHost, int uriPort, long retryDelayOnFailureInMillis, String logPath, int queueLimit, int maxRetries) {
         this.index = index;
         this.uriScheme = uriScheme;
         this.uriHost = uriHost;
         this.uriPort = uriPort;
         this.retryDelayOnFailureInMillis = retryDelayOnFailureInMillis;
+        this.logPath = logPath;
+        this.queueLimit = queueLimit;
+        this.maxRetries = maxRetries;
+
+        overflowFile = new DiskQueue(logPath + File.pathSeparator + index + "-overflow.log");
+        errorFile = new DiskQueue(logPath + File.pathSeparator + index + "-error.log");
 
         LOG.info("Updater instantiated for index {}. Updates will be sent to {}://{}:{}. Retry delay on failure is {} milliseconds.", index, uriScheme, uriHost, uriPort, retryDelayOnFailureInMillis);
+        LOG.info("Updater will overflow in {} after limit of {} has been reached, messages will be retried {} times ", logPath, queueLimit, maxRetries);
     }
 
     public void start() {
@@ -66,11 +82,19 @@ public class Updater implements Runnable {
     public void run() {
         try {
             boolean done = false;
+            overflowFile.readFromDiskIntoQueue(queue);
             while (!done) {
+                if (queue.size() == 0) {
+                    overflowFile.readFromDiskIntoQueue(queue);
+                    overflowActive = false;
+                }
                 final Change change = queue.take().thing();
                 perform(change);
 
-                if (shutdownInProgress && queue.isEmpty()) {
+                if (shutdownInProgress) {
+                    if (!queue.isEmpty()) {
+                        overflowFile.writeToDisk(queue, Integer.MAX_VALUE);
+                    }
                     done = true;
                 }
             }
@@ -85,7 +109,19 @@ public class Updater implements Runnable {
     }
 
     public void add(final Change change) {
-        queue.add(DelayedImpl.immediate(change));
+        if (!overflowActive) {
+            if (queue.size() >= queueLimit) {
+                overflowActive = true;
+            } else {
+                queue.add(DelayedImpl.immediate(change));
+            }
+        } else {
+            try {
+                overflowFile.writeToDisk(change);
+            } catch (IOException e) {
+                LOG.error("Can't write change {} to overflow file {} ",change,overflowFile.name());
+            }
+        }
         LOG.trace("Received {}", change);
     }
 

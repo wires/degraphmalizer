@@ -7,12 +7,9 @@ package org.elasticsearch.plugin.degraphmalizer;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.file.*;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 
@@ -29,42 +26,90 @@ public class DiskQueue {
         this.name = name;
     }
 
-    public void writeToDisk(BlockingQueue<DelayedImpl<Change>> queue, int limit) throws IOException, InterruptedException {
-        int count=0;
-        Path queueFile = FileSystems.getDefault().getPath(name);
-        if (!Files.exists(queueFile) || Files.isRegularFile(queueFile)) {
-            BufferedWriter writer = Files.newBufferedWriter(queueFile, Charset.forName("UTF-8"), StandardOpenOption.APPEND);
-            while (queue.size()>0 && count < limit) {
-                Change change = queue.take().thing();
-                writer.write(Change.toValue(change));
-                writer.newLine();
-                count++;
+    public synchronized void writeToDisk(BlockingQueue<DelayedImpl<Change>> queue, int limit) throws IOException {
+        int count = 0;
+        File queueFile = new File(name);
+        if (!queueFile.exists() || queueFile.isFile()) {
+            PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(queueFile, true)));
+            while (queue.size() > 0 && count < limit) {
+                try {
+                    Change change = queue.take().thing();
+                    writer.println(Change.toValue(change));
+                    count++;
+                } catch (InterruptedException e) {
+                    LOG.warn("Take from queue interrupted " + e.getMessage());
+                }
             }
             writer.flush();
             writer.close();
         } else {
-            LOG.error("Queue file {} is not available or is a directory",name);
+            LOG.error("Queue file {} is not available or is a directory", name);
         }
     }
 
-    public List<Change> readFromDisk() throws IOException {
+    public synchronized void writeToDisk(List<Change> changes) throws IOException {
+        File queueFile = new File(name);
+        if (!queueFile.exists() || queueFile.isFile()) {
+            PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(queueFile, true)));
+            for (Change change : changes) {
+                writer.println(Change.toValue(change));
+            }
+            writer.flush();
+            writer.close();
+        } else {
+            LOG.error("Queue file {} is not available or is a directory", name);
+        }
+    }
+
+    public void writeToDisk(Change change) throws IOException {
+        writeToDisk(Arrays.asList(change));
+    }
+
+    public synchronized List<Change> readFromDisk() throws IOException {
         List<Change> changes = new ArrayList<Change>();
-        Path queueFile = FileSystems.getDefault().getPath(name);
-        if (Files.exists(queueFile)) {
-            if (Files.isRegularFile(queueFile)) {
-                BufferedReader reader = Files.newBufferedReader(queueFile,Charset.forName("UTF-8"));
+        File queueFile = new File(name);
+        if (queueFile.exists()) {
+            if (queueFile.isFile()) {
+                BufferedReader reader = new BufferedReader(new FileReader(queueFile));
                 String line = reader.readLine();
                 do {
-                   Change change = Change.fromValue(line);
-                   changes.add(change);
-                   line = reader.readLine();
-                } while (line!=null);
+                    Change change = Change.fromValue(line);
+                    changes.add(change);
+                    line = reader.readLine();
+                } while (line != null);
                 reader.close();
-                Files.delete(queueFile);
+                queueFile.delete();
             } else {
-                LOG.error("Queue file {} is not a file",name);
+                LOG.error("Queue file {} is not a file", name);
             }
         }
         return changes;
+    }
+
+    public synchronized void readFromDiskIntoQueue(BlockingQueue<DelayedImpl<Change>> queue) throws IOException {
+        File queueFile = new File(name);
+        if (queueFile.exists()) {
+            if (queueFile.isFile()) {
+                BufferedReader reader = new BufferedReader(new FileReader(queueFile));
+                String line = reader.readLine();
+                do {
+                    Change change = Change.fromValue(line);
+                    try {
+                        queue.put(DelayedImpl.immediate(change));
+                    } catch (InterruptedException e) {
+                        LOG.warn("Put into queue was interrupted: {}", e.getMessage());
+                    }
+                    line = reader.readLine();
+                } while (line != null);
+                reader.close();
+                queueFile.delete();
+            } else {
+                LOG.error("Queue file {} is not a file", name);
+            }
+        }
+    }
+
+    public String name() {
+        return name;
     }
 }
