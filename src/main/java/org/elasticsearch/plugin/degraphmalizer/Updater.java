@@ -17,6 +17,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.DelayQueue;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This class handles Change instances. The class can be configured via elasticsearch.yml (see README.md for
@@ -84,12 +85,16 @@ public class Updater implements Runnable {
             boolean done = false;
             overflowFile.readFromDiskIntoQueue(queue);
             while (!done) {
-                if (queue.size() == 0) {
+                if (queue.isEmpty()) {
                     overflowFile.readFromDiskIntoQueue(queue);
                     overflowActive = false;
                 }
-                final Change change = queue.take().thing();
-                perform(change);
+
+                final DelayedImpl<Change> delayed = queue.poll(2, TimeUnit.SECONDS);
+                if (delayed!=null) {
+                    Change change=delayed.thing();
+                    perform(change);
+                }
 
                 if (shutdownInProgress) {
                     if (!queue.isEmpty()) {
@@ -197,7 +202,7 @@ public class Updater implements Runnable {
     private void retry(final Change change) {
         if (change.retries()<maxRetries) {
             change.retried();
-            final DelayedImpl<Change> delayedChange = new DelayedImpl<Change>(change, retryDelayOnFailureInMillis);
+            final DelayedImpl<Change> delayedChange = new DelayedImpl<Change>(change, change.retries()*retryDelayOnFailureInMillis);
             queue.add(delayedChange);
             LOG.debug("Retrying change {} on index {} in {} milliseconds", change, index, retryDelayOnFailureInMillis);
         } else {
