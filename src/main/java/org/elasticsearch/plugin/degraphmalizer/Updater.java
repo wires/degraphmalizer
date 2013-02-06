@@ -15,9 +15,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.DelayQueue;
-import java.util.concurrent.TimeUnit;
 
 /**
  * This class handles Change instances. The class can be configured via elasticsearch.yml (see README.md for
@@ -27,24 +24,19 @@ import java.util.concurrent.TimeUnit;
 public class Updater implements Runnable {
     private static final ESLogger LOG = Loggers.getLogger(Updater.class);
 
-    private final BlockingQueue<DelayedImpl<Change>> queue = new DelayQueue<DelayedImpl<Change>>();
     private final HttpClient httpClient = new DefaultHttpClient();
 
     private final String uriScheme;
     private final String uriHost;
     private final int uriPort;
     private final long retryDelayOnFailureInMillis;
-    private final String logPath;
-    private final int queueLimit;
     private final int maxRetries;
 
     private final String index;
 
-    private DiskQueue overflowFile;
-    private DiskQueue errorFile;
-    // Signals if the memory queue is not available and that changes are written to disk.
-    private volatile boolean overflowActive = false;
+    private DiskQueue errorFile; // TODO: File?
 
+    private UpdaterQueue queue;
     private boolean shutdownInProgress = false;
 
     public Updater(final String index, final String uriScheme, final String uriHost, final int uriPort, final long retryDelayOnFailureInMillis, final String logPath, final int queueLimit, final int maxRetries) {
@@ -53,11 +45,10 @@ public class Updater implements Runnable {
         this.uriHost = uriHost;
         this.uriPort = uriPort;
         this.retryDelayOnFailureInMillis = retryDelayOnFailureInMillis;
-        this.logPath = logPath;
-        this.queueLimit = queueLimit;
         this.maxRetries = maxRetries;
 
-        overflowFile = new DiskQueue(logPath + File.separator + index + "-overflow.log");
+        queue = new UpdaterQueue(index, queueLimit, logPath);
+
         errorFile = new DiskQueue(logPath + File.separator + index + "-error.log");
 
         LOG.info("Updater instantiated for index {}. Updates will be sent to {}://{}:{}. Retry delay on failure is {} milliseconds.", index, uriScheme, uriHost, uriPort, retryDelayOnFailureInMillis);
@@ -83,53 +74,28 @@ public class Updater implements Runnable {
     public void run() {
         try {
             boolean done = false;
-            overflowFile.readFromDiskIntoQueue(queue);
             while (!done) {
-                if (queue.isEmpty()) {
-                    overflowFile.readFromDiskIntoQueue(queue);
-                    overflowActive = false;
-                }
 
-                final DelayedImpl<Change> delayed = queue.poll(2, TimeUnit.SECONDS);
-                if (delayed!=null) {
-                    Change change=delayed.thing();
-                    perform(change);
-                }
+                final Change change = queue.take().thing();
+                perform(change);
 
                 if (shutdownInProgress) {
-                    if (!queue.isEmpty()) {
-                        overflowFile.writeToDisk(queue, Integer.MAX_VALUE);
-                    }
+                    queue.shutdown();
                     done = true;
                 }
             }
 
             httpClient.getConnectionManager().shutdown();
             LOG.info("Updater stopped for index {}.", index);
-        } catch (InterruptedException e) {
-            LOG.warn("Interrupted while waiting!"); // TODO: ??? (DGM-23)
         } catch (Exception e) {
             LOG.error("Updater for index {} stopped with exception: {}", index, e);
         }
     }
 
     public void add(final Change change) {
-        if (!overflowActive) {
-            if (queue.size() >= queueLimit) {
-                overflowActive = true;
-            } else {
-                queue.add(DelayedImpl.immediate(change));
-            }
-        } else {
-            try {
-                overflowFile.writeToDisk(change);
-            } catch (IOException e) {
-                LOG.error("Can't write change {} to overflow file {} ",change,overflowFile.name());
-            }
-        }
+        queue.add(DelayedImpl.immediate(change));
         LOG.trace("Received {}", change);
     }
-
 
     private void perform(final Change change) {
         LOG.debug("Attempting to perform {}", change);
@@ -214,6 +180,4 @@ public class Updater implements Runnable {
             }
         }
     }
-
-
 }
