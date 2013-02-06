@@ -4,27 +4,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Iterables;
 import com.google.inject.Provider;
-import configuration.Configuration;
-import configuration.FixtureConfiguration;
-import configuration.FixtureIndexConfiguration;
-import configuration.FixtureTypeConfiguration;
-import org.elasticsearch.action.ActionFuture;
+import configuration.*;
 import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
-import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.admin.indices.delete.DeleteIndexRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.xcontent.XContentBuilder;
-import org.elasticsearch.common.xcontent.XContentFactory;
-import org.elasticsearch.common.xcontent.XContentType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -38,18 +33,21 @@ import java.util.concurrent.ExecutionException;
  *
  * @author Ernst Bunders
  */
-public class FixturesLoader
+public class FixturesLoader implements ConfigurationMonitor
 {
     protected final Client client;
     protected final Provider<Configuration> cfgProvider;
     protected final ObjectMapper mapper = new ObjectMapper();
+    private final PostProcessor postProcessor;
+
     private static final Logger log = LoggerFactory.getLogger(FixturesLoader.class);
 
     @Inject
-    public FixturesLoader(Client client, Provider<Configuration> cfgProvider)
+    public FixturesLoader(Client client, Provider<Configuration> cfgProvider, PostProcessor postProcessor)
     {
         this.client = client;
         this.cfgProvider = cfgProvider;
+        this.postProcessor = postProcessor;
     }
 
     /**
@@ -92,6 +90,12 @@ public class FixturesLoader
                 throw new Exception("something went wrong creating index [" + indexName + "]", e);
             }
         }
+
+        //now trigger the post processor
+        if(postProcessor != null){
+            log.debug("Running post processor: {}", postProcessor);
+            postProcessor.run();
+        }
     }
 
     private void insertDocuments(String indexName, FixtureIndexConfiguration indexConfig) throws UnsupportedEncodingException, ExecutionException, InterruptedException
@@ -104,8 +108,9 @@ public class FixturesLoader
                 int c = 0;
                 for (String id : typeConfig.getDocumentIds())
                 {
-                    IndexRequest request = new IndexRequest(indexName, typeName, id);
-                    request.source(typeConfig.getDocumentById(id).toString().getBytes("UTF-8"));
+                    IndexRequest request = new IndexRequest(indexName, typeName, id)
+                        .source(typeConfig.getDocumentById(id).toString().getBytes("UTF-8"))
+                        .refresh(true);
                     client.index(request).get();
                     c++;
                 }
@@ -138,5 +143,31 @@ public class FixturesLoader
             }
         }
         return request;
+    }
+
+    @Override
+    public void configurationChanged(String index)
+    {
+        //when the index that was just reloaded is the source index for one of the index configurations, we reinsert the
+        //fixtures.
+        List<String> fixtureIndexs = Arrays.asList(Iterables.toArray(cfgProvider.get().getFixtureConfiguration().getIndexNames(), String.class));
+
+        for(IndexConfig indexConfig: cfgProvider.get().indices().values())
+        {
+            for (TypeConfig typeConfig : indexConfig.types().values())
+            {
+                if (fixtureIndexs.contains(typeConfig.sourceIndex()))
+                {
+                    try
+                    {
+                        loadFixtures();
+                        return;
+                    } catch (Exception e)
+                    {
+                        log.error("Something went wrong inserting the fixtures after a configurationChanged event.", e);
+                    }
+                }
+            }
+        }
     }
 }

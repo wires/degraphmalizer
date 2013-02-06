@@ -9,6 +9,7 @@ import driver.handler.HandlerModule;
 import driver.server.Server;
 import driver.server.ServerModule;
 import elasticsearch.TransportES;
+import fixutures.FixtureLoaderModule;
 import fixutures.FixturesLoader;
 import jmx.GraphBuilder;
 import modules.*;
@@ -21,7 +22,6 @@ import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import java.io.File;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,6 +85,7 @@ public final class Main
         modules.add(new LogconfModule());
         modules.add(new DegraphmalizerModule());
         modules.add(new ThreadpoolModule());
+        modules.add(new FixtureLoaderModule(createRunMode(opt)));
 
         // automatic reloading
         if(opt.reloading)
@@ -174,4 +175,16 @@ public final class Main
         log.info("Starting server at {}", opt.port);
         server.startAndWait();
     }
+
+    private static RunMode createRunMode(Options options)
+    {
+        if(options.reloading && options.fixtures){
+            return RunMode.DEVELOPMENT;
+        }else if(options.reloading){
+            return RunMode.TEST;
+        }
+        return RunMode.PRODUCTION;
+    }
+
+
 }
