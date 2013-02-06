@@ -18,7 +18,6 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -30,6 +29,8 @@ import java.util.concurrent.ExecutionException;
  * - build an index configuration with composite type configuration (use default index shard/backup values for testing purposes)
  * - create the index
  * - insert the documents.
+ *
+ * //todo: Should this be an ConfigurationMonitor instance? How are we going to itegrate this with the ReloadingJSConfig module.
  *
  * @author Ernst Bunders
  */

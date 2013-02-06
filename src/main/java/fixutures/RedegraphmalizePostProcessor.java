@@ -6,15 +6,11 @@ import configuration.Configuration;
 import degraphmalizr.Degraphmalizr;
 import degraphmalizr.ID;
 import degraphmalizr.jobs.DegraphmalizeActionType;
-import degraphmalizr.jobs.DegraphmalizeStatus;
 import degraphmalizr.jobs.LoggingDegraphmalizeStatus;
-import exceptions.DegraphmalizerException;
 import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
-import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.MatchAllQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.search.SearchHit;
@@ -50,6 +46,7 @@ public class RedegraphmalizePostProcessor implements PostProcessor
     @Override
     public void run()
     {
+        //todo: The first query does not give the document version, but -1. We need a second query for each document. Is this necessary
         try
         {
             QueryBuilder qb = new MatchAllQueryBuilder();

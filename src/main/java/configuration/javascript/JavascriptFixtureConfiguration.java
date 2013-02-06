@@ -1,24 +1,21 @@
  package configuration.javascript;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.Map;
+ import com.fasterxml.jackson.core.JsonProcessingException;
+ import com.fasterxml.jackson.databind.JsonNode;
+ import com.fasterxml.jackson.databind.ObjectMapper;
+ import configuration.FixtureConfiguration;
+ import configuration.FixtureIndexConfiguration;
+ import configuration.FixtureTypeConfiguration;
+ import org.apache.commons.io.FileUtils;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import configuration.FixtureConfiguration;
-import configuration.FixtureIndexConfiguration;
-import configuration.FixtureTypeConfiguration;
-import org.apache.commons.io.FileUtils;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonProcessingException;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+ import java.io.File;
+ import java.io.FileFilter;
+ import java.io.FilenameFilter;
+ import java.io.IOException;
+ import java.util.LinkedHashMap;
+ import java.util.Map;
 
 /**
  * A Fixture config contains a number of mappings of index names to index configurations.

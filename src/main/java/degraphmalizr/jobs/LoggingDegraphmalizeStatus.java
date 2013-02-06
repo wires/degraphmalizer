@@ -1,5 +1,7 @@
 package degraphmalizr.jobs;
 
+import degraphmalizr.recompute.RecomputeRequest;
+import degraphmalizr.recompute.RecomputeResult;
 import org.slf4j.Logger;
 
 /**
@@ -14,8 +16,9 @@ public class LoggingDegraphmalizeStatus implements DegraphmalizeStatus
         this.logger = logger;
     }
 
+
     @Override
-    public void recomputeStarted(RecomputeAction action)
+    public void recomputeStarted(RecomputeRequest action)
     {
         logger.debug("Recompute started: {}", action);
     }
@@ -29,7 +32,7 @@ public class LoggingDegraphmalizeStatus implements DegraphmalizeStatus
     @Override
     public void complete(DegraphmalizeResult result)
     {
-        logger.debug("Degraphmalize complete: {}", result);
+        logger.debug("Complete: {}", result);
     }
 
     @Override
