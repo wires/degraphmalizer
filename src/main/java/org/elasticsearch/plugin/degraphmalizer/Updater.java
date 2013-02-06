@@ -136,7 +136,7 @@ public class Updater implements Runnable {
 
             if (!isSuccessful(response)) {
                 LOG.warn("Request {} {} was not successful. Response status code: {}.", request.getMethod(), request.getURI(), response.getStatusLine().getStatusCode());
-                retry(change); // TODO: retry until infinity? (DGM-23)
+                retry(change);
             } else {
                 LOG.debug("Change performed: {}", change);
             }
@@ -148,7 +148,7 @@ public class Updater implements Runnable {
             }
         } catch (IOException e) {
             LOG.warn("Error executing request {} {}: {}", request.getMethod(), request.getURI(), e.getMessage());
-            retry(change); // TODO: retry until infinity? (DGM-23)
+            retry(change);
         }
     }
 
@@ -195,9 +195,19 @@ public class Updater implements Runnable {
     }
 
     private void retry(final Change change) {
-        final DelayedImpl<Change> delayedChange = new DelayedImpl<Change>(change, retryDelayOnFailureInMillis);
-        queue.add(delayedChange);
-        LOG.debug("Retrying change {} on index {} in {} milliseconds", change, index, retryDelayOnFailureInMillis);
+        if (change.retries()<maxRetries) {
+            change.retried();
+            final DelayedImpl<Change> delayedChange = new DelayedImpl<Change>(change, retryDelayOnFailureInMillis);
+            queue.add(delayedChange);
+            LOG.debug("Retrying change {} on index {} in {} milliseconds", change, index, retryDelayOnFailureInMillis);
+        } else {
+            try {
+                LOG.warn("Writing failed change {} to error log {}", change,errorFile.name());
+                errorFile.writeToDisk(change);
+            } catch (IOException e) {
+                LOG.warn("Can't write failed change {} to error log {}",change,errorFile.name());
+            }
+        }
     }
 
 
