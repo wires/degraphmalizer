@@ -78,7 +78,9 @@ public class DiskQueue {
                     line = reader.readLine();
                 } while (line != null);
                 reader.close();
-                queueFile.delete();
+                if (!queueFile.delete()) {
+                    LOG.error("Can not remove file {}", name);
+                }
             } else {
                 LOG.error("Queue file {} is not a file", name);
             }
@@ -102,7 +104,9 @@ public class DiskQueue {
                     line = reader.readLine();
                 } while (line != null);
                 reader.close();
-                queueFile.delete();
+                if (!queueFile.delete()) {
+                    LOG.error("Can not remove file {}", name);
+                }
             } else {
                 LOG.error("Queue file {} is not a file", name);
             }
