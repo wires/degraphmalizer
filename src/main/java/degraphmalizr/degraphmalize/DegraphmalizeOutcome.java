@@ -1,4 +1,4 @@
-package degraphmalizr.jobs;
+package degraphmalizr.degraphmalize;
 
 public enum DegraphmalizeOutcome {
 

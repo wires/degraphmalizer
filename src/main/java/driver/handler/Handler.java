@@ -2,7 +2,7 @@ package driver.handler;
 
 import com.google.inject.Inject;
 import degraphmalizr.Degraphmalizr;
-import degraphmalizr.jobs.*;
+import degraphmalizr.degraphmalize.*;
 import degraphmalizr.recompute.*;
 import org.jboss.netty.channel.*;
 import org.slf4j.Logger;

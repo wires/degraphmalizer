@@ -9,13 +9,11 @@ import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
 import configuration.*;
-import degraphmalizr.jobs.DegraphmalizeAction;
+import degraphmalizr.degraphmalize.DegraphmalizeAction;
 import elasticsearch.ResolvedPathElement;
 import graphs.ops.CompositeSubgraph;
 import graphs.ops.LoggingSubgraph;
 import graphs.ops.Subgraph;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.elasticsearch.action.get.GetResponse;
 import org.mozilla.javascript.*;
 import org.slf4j.Logger;
@@ -25,7 +23,6 @@ import trees.Trees;
 
 import java.io.*;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 /**

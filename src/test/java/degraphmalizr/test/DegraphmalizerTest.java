@@ -5,10 +5,10 @@ import com.google.inject.*;
 import com.google.inject.matcher.Matchers;
 import com.tinkerpop.blueprints.Graph;
 import degraphmalizr.*;
-import degraphmalizr.jobs.*;
+import degraphmalizr.degraphmalize.*;
 import degraphmalizr.recompute.RecomputeRequest;
 import degraphmalizr.recompute.RecomputeResult;
-import elasticsearch.LocalES;
+import elasticsearch.EmphemeralES;
 import exceptions.DegraphmalizerException;
 import modules.*;
 import neo4j.CommonNeo4j;
@@ -37,7 +37,7 @@ class LocalNode
         modules.add(new BlueprintsSubgraphManagerModule());
         modules.add(new DegraphmalizerModule());
         modules.add(new ThreadpoolModule());
-        modules.add(new LocalES());
+        modules.add(new EmphemeralES());
         modules.add(new CommonNeo4j());
         modules.add(new EphemeralEmbeddedNeo4J());
         modules.add(new StaticJSConfModule("conf/"));
@@ -152,8 +152,8 @@ public class DegraphmalizerTest
             assertThat(result.get("success").toString()).isEqualTo("true");
             System.err.println(result.toString());
 
-            assertThat(result.get("result").has("nodes-in")).isTrue();
-            assertThat(result.get("result").has("nodes-out")).isTrue();
+            assertThat(result.get("properties").has("nodes-in")).isTrue();
+            assertThat(result.get("properties").has("nodes-out")).isTrue();
 
             if(a.id().id().equals("1234"))
             {
@@ -175,6 +175,6 @@ public class DegraphmalizerTest
 
     private int aantalKinderen(JsonNode result, String property)
     {
-        return result.get("result").get(property).get("full_tree").get("_children").size();
+        return result.get("properties").get(property).get("full_tree").get("_children").size();
     }
 }

@@ -2,7 +2,7 @@ package configuration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import graphs.ops.Subgraph;
-import degraphmalizr.jobs.DegraphmalizeAction;
+import degraphmalizr.degraphmalize.DegraphmalizeAction;
 
 import java.util.Map;
 

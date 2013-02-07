@@ -1,22 +1,18 @@
 package graphs;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.tinkerpop.blueprints.*;
-
+import configuration.javascript.JSONUtilities;
 import degraphmalizr.EdgeID;
 import degraphmalizr.ID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import trees.Pair;
 import trees.Tree;
+
+import java.io.IOException;
+import java.util.*;
 
 public final class GraphQueries
 {
@@ -166,18 +162,21 @@ public final class GraphQueries
     private static String getStringRepresentation(final EdgeID edgeID)
     {
         final StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(toJsonStringRepresentation(edgeID.tail()))
+        final ObjectMapper om = new ObjectMapper();
+        stringBuilder.append(JSONUtilities.toJSON(om, edgeID.tail()).toString())
                      .append("--")
                      .append(edgeID.label())
                      .append("->")
-                     .append(toJsonStringRepresentation(edgeID.head()));
+                     .append(JSONUtilities.toJSON(om, edgeID.head()).toString());
         return stringBuilder.toString();
     }
 
 
     private static Vertex findVertexOnProperty(Graph G, ID id, String propertyName)
     {
-        final Iterator<Vertex> vi = G.getVertices(propertyName, toJsonStringRepresentation(id)).iterator();
+        final ObjectMapper om = new ObjectMapper();
+        final String idStr = JSONUtilities.toJSON(om, id).toString();
+        final Iterator<Vertex> vi = G.getVertices(propertyName, idStr).iterator();
         if(!vi.hasNext())
             return null;
 
@@ -200,7 +199,8 @@ public final class GraphQueries
      */
     public static Iterable<Vertex> findOwnedVertices(Graph G, ID owner)
     {
-        return G.getVertices(SYMBOLIC_OWNER, toJsonStringRepresentation(getSymbolicID(owner)));
+        final ObjectMapper om = new ObjectMapper();
+        return G.getVertices(SYMBOLIC_OWNER, JSONUtilities.toJSON(om, getSymbolicID(owner)).toString());
     }
 
     /**
@@ -208,7 +208,8 @@ public final class GraphQueries
      */
     public static Iterable<Edge> findOwnedEdges(Graph G, ID owner)
     {
-        return G.getEdges(SYMBOLIC_OWNER, toJsonStringRepresentation(getSymbolicID(owner)));
+        final ObjectMapper om = new ObjectMapper();
+        return G.getEdges(SYMBOLIC_OWNER, JSONUtilities.toJSON(om, getSymbolicID(owner)).toString());
     }
 
     /**
@@ -217,42 +218,6 @@ public final class GraphQueries
     public static Vertex resolveVertex(Graph G, ID id)
     {
         return findVertexOnProperty(G, getSymbolicID(id), SYMBOLIC_IDENTIFER);
-    }
-
-    public static String toJsonStringRepresentation(ID id)
-    {
-        final ObjectMapper objectMapper = new ObjectMapper();
-        final ArrayNode n = objectMapper.createArrayNode();
-        n.add(id.index()).add(id.type()).add(id.id()).add(id.version());
-        return n.toString();
-    }
-
-
-
-    private static ID fromJsonStringRepresentation(String json)
-    {
-        try
-        {
-            final ObjectMapper objectMapper = new ObjectMapper();
-            final JsonNode n = objectMapper.readTree(json);
-
-            if(!n.isArray())
-                return null;
-
-            final ArrayNode a = (ArrayNode)n;
-            final String index = a.get(0).textValue();
-            final String type = a.get(1).textValue();
-            final String id = a.get(2).textValue();
-            final long version = a.get(3).longValue();
-
-            return new ID(index,type,id,version);
-
-        }
-        catch (IOException e)
-        {
-            // log.trace("Failed to deserialize '" + json + "' into an ID");
-            return null;
-        }
     }
 
     public static EdgeID getEdgeID(Edge edge)
@@ -274,16 +239,28 @@ public final class GraphQueries
      */
     public static ID getID(Vertex vertex)
     {
+        final ObjectMapper om = new ObjectMapper();
         final String json = String.valueOf(vertex.getProperty(IDENTIFIER));
-        return fromJsonStringRepresentation(json);
+
+        try
+        {
+            final JsonNode node = om.readTree(json);
+            return JSONUtilities.fromJSON(node);
+        }
+        catch (IOException e)
+        {
+            log.trace("Failed to parse ID from string '{}' (should be JSON Array)", json);
+            return null;
+        }
     }
 
     public static void setID(Vertex vertex, ID id)
     {
-        final String json = toJsonStringRepresentation(id);
+        final ObjectMapper om = new ObjectMapper();
+        final String json = JSONUtilities.toJSON(om, id).toString();
         vertex.setProperty(IDENTIFIER, json);
 
-        final String symbolic = toJsonStringRepresentation(getSymbolicID(id));
+        final String symbolic = JSONUtilities.toJSON(om, getSymbolicID(id)).toString();
         vertex.setProperty(SYMBOLIC_IDENTIFER, symbolic);
     }
 
@@ -298,8 +275,9 @@ public final class GraphQueries
 
     public static void setOwner(Element element, ID id)
     {
-        element.setProperty(OWNER, toJsonStringRepresentation(id));
-        element.setProperty(SYMBOLIC_OWNER, toJsonStringRepresentation(getSymbolicID(id)));
+        final ObjectMapper om = new ObjectMapper();
+        element.setProperty(OWNER, JSONUtilities.toJSON(om, id).toString());
+        element.setProperty(SYMBOLIC_OWNER, JSONUtilities.toJSON(om, getSymbolicID(id)).toString());
     }
 
     /**
@@ -311,7 +289,17 @@ public final class GraphQueries
         if (owner == null)
             return null;
 
-        return fromJsonStringRepresentation(String.valueOf(owner));
+        final ObjectMapper om = new ObjectMapper();
+        try
+        {
+            final JsonNode node = om.readTree(String.valueOf(owner));
+            return JSONUtilities.fromJSON(node);
+        }
+        catch (IOException e)
+        {
+            log.trace("Failed to parse ID from '{}' (should be JSON Array)", String.valueOf(owner));
+            return null;
+        }
     }
 
     /**

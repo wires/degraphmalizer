@@ -1,4 +1,4 @@
-package degraphmalizr.jobs;
+package degraphmalizr.degraphmalize;
 
 import degraphmalizr.ID;
 

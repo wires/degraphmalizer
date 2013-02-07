@@ -1,6 +1,7 @@
 package degraphmalizr;
 
 import com.google.inject.AbstractModule;
+import degraphmalizr.recompute.*;
 
 public class DegraphmalizerModule extends AbstractModule
 {
@@ -8,5 +9,7 @@ public class DegraphmalizerModule extends AbstractModule
     protected final void configure()
     {
         bind(Degraphmalizr.class).to(Degraphmalizer.class).asEagerSingleton();
+        bind(RecomputeResultFactory.class).to(RRFactory.class).asEagerSingleton();
+        bind(Recomputer.class).to(RecomputerFactoryImpl.class).asEagerSingleton();
     }
 }

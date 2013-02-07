@@ -1,29 +1,13 @@
 package degraphmalizr;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-import org.codehaus.jackson.annotate.JsonIgnore;
-
-@JsonIgnoreProperties("symbolic")
-@JsonPropertyOrder({ "idx", "t", "id", "v" })
 public class ID
 {
-    @JsonProperty("idx")
     private final String index;
-
-    @JsonProperty("t")
     private final String type;
-
-    @JsonProperty("id")
     private final String id;
-
-    @JsonProperty("v")
     private final long version;
 
-    @JsonCreator
-    public ID(@JsonProperty("idx") String index, @JsonProperty("t") String type, @JsonProperty("id") String id, @JsonProperty("v") long version)
+    public ID(String index, String type, String id, long version)
     {
         this.index = index;
         this.type = type;
@@ -51,10 +35,29 @@ public class ID
         return version;
     }
 
-    @JsonIgnore
     public final boolean isSymbolic()
     {
         return version == 0;
+    }
+
+    public ID type(String newType)
+    {
+        return new ID(index, newType, id, version);
+    }
+
+    public ID index(String newIndex)
+    {
+        return new ID(newIndex, type, id, version);
+    }
+
+    public ID id(String newId)
+    {
+        return new ID(index, type, newId, version);
+    }
+
+    public ID version(long newVersion)
+    {
+        return new ID(index, type, id, newVersion);
     }
 
     @Override

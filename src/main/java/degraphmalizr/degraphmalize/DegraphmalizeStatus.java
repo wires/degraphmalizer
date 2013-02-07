@@ -1,4 +1,4 @@
-package degraphmalizr.jobs;
+package degraphmalizr.degraphmalize;
 
 import degraphmalizr.recompute.RecomputeRequest;
 import degraphmalizr.recompute.RecomputeResult;
@@ -16,8 +16,8 @@ public interface DegraphmalizeStatus
     /**
      * Called when the action has failed because of an exception.
      *
-     * {@link degraphmalizr.jobs.DegraphmalizeResult#outcome()} will be false, and the exception causing the problem
-     * can be retrieved from {@link degraphmalizr.jobs.DegraphmalizeResult#exception()}.
+     * {@link degraphmalizr.degraphmalize.DegraphmalizeResult#outcome()} will be false, and the exception causing the problem
+     * can be retrieved from {@link degraphmalizr.degraphmalize.DegraphmalizeResult#exception()}.
      */
     void exception(DegraphmalizeResult result);
 }

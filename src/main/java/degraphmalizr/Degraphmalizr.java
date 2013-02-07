@@ -1,8 +1,8 @@
 package degraphmalizr;
 
-import degraphmalizr.jobs.DegraphmalizeAction;
-import degraphmalizr.jobs.DegraphmalizeActionType;
-import degraphmalizr.jobs.DegraphmalizeStatus;
+import degraphmalizr.degraphmalize.DegraphmalizeAction;
+import degraphmalizr.degraphmalize.DegraphmalizeActionType;
+import degraphmalizr.degraphmalize.DegraphmalizeStatus;
 import exceptions.DegraphmalizerException;
 
 import java.util.List;

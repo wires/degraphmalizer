@@ -2,17 +2,16 @@ package degraphmalizr;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Optional;
 import com.google.common.collect.Iterables;
 import com.google.inject.Provider;
 import com.tinkerpop.blueprints.*;
 import configuration.*;
 import configuration.javascript.JSONUtilities;
-import degraphmalizr.jobs.*;
-import degraphmalizr.recompute.RecomputeRequest;
+import degraphmalizr.degraphmalize.*;
+import degraphmalizr.recompute.*;
 import elasticsearch.QueryFunction;
-import elasticsearch.ResolvedPathElement;
 import exceptions.DegraphmalizerException;
 import graphs.GraphQueries;
 import graphs.ops.Subgraph;
@@ -44,6 +43,7 @@ public class Degraphmalizer implements Degraphmalizr
     protected final ExecutorService fetchQueue;
 
     protected final QueryFunction queryFn;
+    protected final Recomputer recomputer;
 
     protected final Provider<Configuration> cfgProvider;
 
@@ -55,15 +55,16 @@ public class Degraphmalizer implements Degraphmalizr
                           @Fetches ExecutorService fetchQueue,
                           @Recomputes ExecutorService recomputeQueue,
                           QueryFunction queryFunction,
+                          Recomputer recomputer,
                           Provider<Configuration> configProvider)
 	{
         this.fetchQueue = fetchQueue;
         this.recomputeQueue = recomputeQueue;
         this.degraphmalizeQueue = degraphmalizeQueue;
-
         this.graph = graph;
         this.subgraphmanager = subgraphmanager;
 		this.client = client;
+        this.recomputer = recomputer;
         this.cfgProvider = configProvider;
         this.queryFn = queryFunction;
 	}
@@ -118,7 +119,7 @@ public class Degraphmalizer implements Degraphmalizr
     {
         try
         {
-            log.info("Processing request '{}', for id={}", action.hash().toString(), action.id());
+            log.info("Processing request for id {}", action.id());
 
             // Get document from elasticsearch
             final JsonNode jsonNode = getDocument(action.id());
@@ -137,7 +138,7 @@ public class Degraphmalizer implements Degraphmalizr
                 generateSubgraph(action);
 
                 final List<RecomputeRequest> recomputeRequests = determineRecomputeActions(action);
-                final List<Future<Optional<Pair<IndexResponse, ObjectNode>>>> results = recomputeAffectedDocuments(recomputeRequests);
+                final List<Future<RecomputeResult>> results = recomputeAffectedDocuments(recomputeRequests);
 
                 // TODO refactor action class
                 action.status().complete(DegraphmalizeResult.success(action));
@@ -177,7 +178,7 @@ public class Degraphmalizer implements Degraphmalizr
             final Subgraph sg = subgraphmanager.createSubgraph(action.id());
             subgraphmanager.deleteSubgraph(sg);
 
-            final List<Future<Optional<Pair<IndexResponse, ObjectNode>>>> results = recomputeAffectedDocuments(recomputeRequests);
+            final List<Future<RecomputeResult>> results = recomputeAffectedDocuments(recomputeRequests);
 
             // TODO refactor action class
             action.status().complete(DegraphmalizeResult.success(action));
@@ -241,10 +242,10 @@ public class Degraphmalizer implements Degraphmalizr
 
     }
 
-    private List<Future<Optional<Pair<IndexResponse, ObjectNode>>>> recomputeAffectedDocuments(List<RecomputeRequest> recomputeRequests) throws DegraphmalizerException, InterruptedException {
+    private List<Future<RecomputeResult>> recomputeAffectedDocuments(List<RecomputeRequest> recomputeRequests) throws DegraphmalizerException, InterruptedException {
         // create Callable from the actions
         // TODO call 'recompute started' for each action to update the status
-        final ArrayList<Callable<Optional<Pair<IndexResponse, ObjectNode>>>> jobs = new ArrayList<Callable<Optional<Pair<IndexResponse, ObjectNode>>>>();
+        final ArrayList<Callable<RecomputeResult>> jobs = new ArrayList<Callable<RecomputeResult>>();
         for(RecomputeRequest r : recomputeRequests)
             jobs.add(recomputeDocument(r));
 
@@ -303,7 +304,7 @@ public class Degraphmalizer implements Degraphmalizr
             }
         }
 
-        log.debug("Action {} caused recompute for {} documents", action.hash(), recomputeRequests.size());
+        log.debug("Action for id {} caused recompute for {} documents", action.id(), recomputeRequests.size());
         return recomputeRequests;
     }
 
@@ -314,146 +315,73 @@ public class Degraphmalizer implements Degraphmalizr
      * @param action represents the source document and recompute configuration.
      * @return the ES IndexRespons to the insert of the target document.
      */
-    private Callable<Optional<Pair<IndexResponse,ObjectNode>>> recomputeDocument(final RecomputeRequest action)
+    private Callable<RecomputeResult> recomputeDocument(final RecomputeRequest action)
     {
-        return new Callable<Optional<Pair<IndexResponse, ObjectNode>>>()
+        return new Callable<RecomputeResult>()
         {
             @Override
-            public Optional<Pair<IndexResponse, ObjectNode>> call() throws DegraphmalizerException
+            public RecomputeResult call() throws DegraphmalizerException
             {
-                try
-                {
-                    // ideally, this is handled in a monad, but with this boolean we keep track of failures
-                    boolean isAbsent = false;
-
-                    /*
-                    * Now we are going to iterate over all the walks configured for this input document. For each walk:
-                    * - We fetch a tree of children non-recursively from our document in the inverted direction of the walk, as Graph vertices
-                    * - We convert the tree of vertices to a tree of ElasticSearch documents
-                    * - We call the reduce() method for this walk, with the tree of documents as argument.
-                    * - We collect the result.
-                     */
-
-                    final HashMap<String, JsonNode> walkResults = new HashMap<String, JsonNode>();
-
-                    if (!action.config.walks().entrySet().isEmpty())
-                    {
-                        for (Map.Entry<String, WalkConfig> walkCfg : action.config.walks().entrySet())
-                        {
-                            // walk graph, and fetch all the children in the opposite direction of the walk
-                            final Tree<Pair<Edge, Vertex>> tree =
-                                    GraphQueries.childrenFrom(graph, action.root.vertex(), walkCfg.getValue().direction());
-
-                            // write size information to log
-                            if (log.isDebugEnabled())
-                            {
-                                final int size = Iterables.size(Trees.bfsWalk(tree));
-                                log.debug("Retrieving {} documents from ES", size);
-                            }
-
-                            // get all documents in the tree from Elasticsearch (in parallel)
-                            final Tree<Optional<ResolvedPathElement>> docTree = Trees.pmap(fetchQueue, queryFn, tree);
-
-                            // if some value is absent from the tree, abort the computation
-                            final Optional<Tree<ResolvedPathElement>> fullTree = Trees.optional(docTree);
-
-                            // TODO split various failure modes
-                            if (!fullTree.isPresent())
-                            {
-                                isAbsent = true;
-                                break;
-                            }
-
-                            // reduce each property to a value based on the walk result
-                            for (final Map.Entry<String, ? extends PropertyConfig> propertyCfg : walkCfg.getValue().properties().entrySet())
-                                walkResults.put(propertyCfg.getKey(), propertyCfg.getValue().reduce(fullTree.get()));
-                        }
-
-                        // something failed, so we abort the whole re-computation
-                        if (isAbsent)
-                        {
-                            // TODO refactor the action, it should have the ID
-                            log.debug("Some results were absent, aborting re-computation for {}", action.root.ID());
-                            return Optional.absent();
-                        }
-                    }
-
-
-
-                    /*
-                    * Now we are going to fetch the current ElasticSearch document,
-                    * - Transform it, if transformation is required
-                    * - Add the walk properties
-                    * - Add a reference to the source document.
-                    * - And store it as target document type in target index.
-                     */
-
-                    //todo: what if Optional.absent??
-                    //todo: queryFn.apply may produce null
-                    ResolvedPathElement root = queryFn.apply(new Pair<Edge, Vertex>(null, action.root.vertex())).get();
-                    // fetch the current ES document
-                    //todo: what if optional absent?
-                    final JsonNode rawDocument = objectMapper.readTree(root.getResponse().get().getSourceAsString());
-
-                    // pre-process document using javascript
-                    final JsonNode transformed = action.config.transform(rawDocument);
-
-                    if (!transformed.isObject())
-                    {
-                        log.debug("Root of processed document is not a JSON object (ie. it's a value), we are not adding the reduced properties");
-                        return Optional.absent();
-                    }
-
-                    final ObjectNode document = (ObjectNode) transformed;
-
-                    // add the results to the document
-                    for (Map.Entry<String, JsonNode> e : walkResults.entrySet())
-                        document.put(e.getKey(), e.getValue());
-
-                    // write the result document to the target index
-                    final String targetIndex = action.config.targetIndex();
-                    final String targetType = action.config.targetType();
-                    final ID id = action.root.ID();
-                    final String idString = id.id();
-
-                    // write the source version to the document
-                    document.put("_fromSource", JSONUtilities.toJSON(objectMapper, id));
-
-                    // write document to Elasticsearch
-                    final String documentSource = document.toString();
-                    final IndexResponse ir = client.prepareIndex(targetIndex, targetType, idString).setSource(documentSource)
-                            .execute().actionGet();
-
-                    log.debug("Written /{}/{}/{}, version={}", new Object[]{targetIndex, targetType, idString, ir.version()});
-
-                    log.debug("Content: {}", documentSource);
-                    return Optional.of(new Pair<IndexResponse, ObjectNode>(ir, document));
-                }
-                catch (Exception e)
-                {
-                    // TODO store and retrieve from action object, see TODO above line 215, at time of this commit ;^)
-                    final String msg = "Exception in recomputation phase for id " + action.root.ID();
-                    log.error(msg, e);
-
-                    throw new DegraphmalizerException(msg, e);
-                }
+                // TODO pass callback
+                final RecomputeCallback cb = new RecomputeCallback(){};
+                return recomputer.recompute(action, cb);
             }
         };
     }
 
-    private ObjectNode getStatusJsonNode(List<Future<Optional<Pair<IndexResponse, ObjectNode>>>> results) throws InterruptedException, ExecutionException
+    private ObjectNode getStatusJsonNode(List<Future<RecomputeResult>> results) throws InterruptedException, ExecutionException
     {
-        final Optional<Pair<IndexResponse, ObjectNode>> ourResult = results.get(0).get();
-        final ObjectNode n = objectMapper.createObjectNode();
+        final RecomputeResult ourResult = results.get(0).get();
 
-        if(ourResult.isPresent())
+        if(ourResult.success().isPresent())
         {
+            final ObjectNode n = objectMapper.createObjectNode();
+
+            final RecomputeResult.Success success = ourResult.success().get();
             n.put("success", true);
-            n.put("version", ourResult.get().a.version());
-            n.put("result", ourResult.get().b);
+
+            // write targetID using index reponse
+            final IndexResponse ir = success.indexResponse();
+            final ObjectNode targetID = objectMapper.createObjectNode();
+            targetID.put("index", ir.index());
+            targetID.put("type", ir.type());
+            targetID.put("id", ir.id());
+            targetID.put("version", ir.version());
+            n.put("targetID", targetID);
+
+            // write dictionary of properties and their values
+            final ObjectNode properties = objectMapper.createObjectNode();
+            for(Map.Entry<String,JsonNode> entry : success.properties().entrySet())
+                properties.put(entry.getKey(), entry.getValue());
+            n.put("properties", properties);
+
+            // write dictionary of properties and their values
+            n.put("sourceDocumentAfterTransform", success.sourceDocument());
+
+            return n;
         }
-        else
+
+        if(ourResult.exception().isPresent())
+        {
+            final Throwable t = ourResult.exception().get();
+            final ObjectNode n = JSONUtilities.renderException(objectMapper, t);
             n.put("success", false);
+            return n;
+        }
+
+        if(ourResult.expired().isPresent())
+        {
+            final ObjectNode n = objectMapper.createObjectNode();
+            final ArrayNode ids = objectMapper.createArrayNode();
+            n.put("success", false);
+            for(ID id : ourResult.expired().get())
+                ids.add(JSONUtilities.toJSON(objectMapper, id));
+            return n;
+        }
+
+        final ObjectNode n = objectMapper.createObjectNode();
+        n.put("success", false);
+        n.put("status", ourResult.status().name());
         return n;
     }
 }

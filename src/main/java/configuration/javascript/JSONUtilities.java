@@ -67,20 +67,21 @@ public final class JSONUtilities
         return objectNode;
     }
 
-    public static ObjectNode toJSON(ObjectMapper om, Vertex vertex)
+    public static ArrayNode toJSON(ObjectMapper om, Vertex vertex)
     {
         final ID id = GraphQueries.getID(vertex);
         return toJSON(om, id);
     }
 
-    public static ObjectNode toJSON(ObjectMapper om, ID id)
+    public static ArrayNode toJSON(ObjectMapper om, ID id)
     {
-        final ObjectNode n = om.createObjectNode();
-        n.put("index", id.index());
-        n.put("type", id.type());
-        n.put("id", id.id());
-        n.put("version", id.version());
-        return n;
+        final ObjectMapper objectMapper = new ObjectMapper();
+
+        return objectMapper.createArrayNode()
+                .add(id.index())
+                .add(id.type())
+                .add(id.id())
+                .add(id.version());
     }
 
     public static ObjectNode renderException(ObjectMapper om, Throwable t)
@@ -96,5 +97,20 @@ public final class JSONUtilities
 
         return ex;
     }
+
+    public static ID fromJSON(JsonNode n)
+    {
+        if(!n.isArray())
+            return null;
+
+        final ArrayNode a = (ArrayNode)n;
+        final String index = a.get(0).textValue();
+        final String type = a.get(1).textValue();
+        final String id = a.get(2).textValue();
+        final long version = a.get(3).longValue();
+
+        return new ID(index,type,id,version);
+    }
+
 
 }

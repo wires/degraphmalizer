@@ -3,7 +3,7 @@ package driver.handler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Charsets;
-import degraphmalizr.jobs.*;
+import degraphmalizr.degraphmalize.*;
 import degraphmalizr.recompute.*;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;

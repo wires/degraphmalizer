@@ -1,4 +1,4 @@
-package degraphmalizr.jobs;
+package degraphmalizr.degraphmalize;
 
 import exceptions.DegraphmalizerException;
 
@@ -35,11 +35,13 @@ public class DegraphmalizeResult
         return exception;
     }
 
-    public static DegraphmalizeResult success(DegraphmalizeAction action) {
+    public static DegraphmalizeResult success(DegraphmalizeAction action)
+    {
         return new DegraphmalizeResult(DegraphmalizeOutcome.SUCCESS, action);
     }
 
-    public static DegraphmalizeResult failure(DegraphmalizeAction action, DegraphmalizerException e) {
+    public static DegraphmalizeResult failure(DegraphmalizeAction action, DegraphmalizerException e)
+    {
         return new DegraphmalizeResult(DegraphmalizeOutcome.FAILURE, action, e);
     }
 }

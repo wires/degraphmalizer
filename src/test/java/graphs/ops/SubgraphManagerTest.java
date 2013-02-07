@@ -1,21 +1,18 @@
 package graphs.ops;
 
-import java.io.IOException;
-import java.util.*;
-
-import org.neo4j.helpers.collection.Iterables;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tinkerpop.blueprints.*;
-
+import configuration.javascript.JSONUtilities;
 import degraphmalizr.EdgeID;
 import degraphmalizr.ID;
 import exceptions.DegraphmalizerException;
 import graphs.GraphQueries;
+import org.neo4j.helpers.collection.Iterables;
+import org.testng.annotations.*;
+
+import java.io.IOException;
+import java.util.*;
 
 import static graphs.GraphQueries.*;
 import static org.fest.assertions.Assertions.assertThat;
@@ -436,8 +433,9 @@ public class SubgraphManagerTest
     private Vertex addVertexWithId(ID id, boolean isSymbolic)
     {
         final Vertex vertex = lg.G.addVertex(id);
-        final String identifier = toJsonStringRepresentation(isSymbolic ? getSymbolicID(id) :  id);
-        final String symbolicIdentifier = toJsonStringRepresentation(getSymbolicID(id));
+        final ObjectMapper om = new ObjectMapper();
+        final String identifier = JSONUtilities.toJSON(om, isSymbolic ? getSymbolicID(id) : id).toString();
+        final String symbolicIdentifier = JSONUtilities.toJSON(om, getSymbolicID(id)).toString();
 
         vertex.setProperty(IDENTIFIER, identifier);
         vertex.setProperty(OWNER, identifier);
@@ -495,8 +493,9 @@ public class SubgraphManagerTest
         final Vertex center = commitAndFindCentralVertex(sg, id);
         p.assertOK(center);
 
-        final String identifier = toJsonStringRepresentation(id);
-        final String symbolicidentifier = toJsonStringRepresentation(getSymbolicID(id));
+        final ObjectMapper om = new ObjectMapper();
+        final String identifier = JSONUtilities.toJSON(om, id).toString();
+        final String symbolicidentifier = JSONUtilities.toJSON(om, getSymbolicID(id)).toString();
 
         checkElementProperty(center, IDENTIFIER, identifier);
         checkElementProperty(center, OWNER, identifier);
