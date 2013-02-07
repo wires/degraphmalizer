@@ -12,6 +12,7 @@ import org.elasticsearch.index.shard.ShardId;
 import org.elasticsearch.index.shard.service.IndexShard;
 import org.elasticsearch.indices.IndicesLifecycle;
 import org.elasticsearch.indices.IndicesService;
+import org.elasticsearch.plugin.degraphmalizer.updater.UpdaterManager;
 
 /**
  * This class is responsible for starting and stopping DegraphmalizerIndexShardListener instances.

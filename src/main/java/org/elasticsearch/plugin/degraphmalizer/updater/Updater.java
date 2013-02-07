@@ -1,4 +1,4 @@
-package org.elasticsearch.plugin.degraphmalizer;
+package org.elasticsearch.plugin.degraphmalizer.updater;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -11,8 +11,7 @@ import org.apache.http.util.EntityUtils;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -21,7 +20,7 @@ import java.net.URISyntaxException;
  * more information). The Updater manages a queue of Change objects, executes HTTP requests for these
  * changes and retries changes when HTTP requests fail.
  */
-public class Updater implements Runnable {
+public final class Updater implements Runnable {
     private static final ESLogger LOG = Loggers.getLogger(Updater.class);
 
     private final HttpClient httpClient = new DefaultHttpClient();
@@ -34,7 +33,7 @@ public class Updater implements Runnable {
 
     private final String index;
 
-    private DiskQueue errorFile; // TODO: File?
+    private File errorFile;
 
     private UpdaterQueue queue;
     private boolean shutdownInProgress = false;
@@ -47,16 +46,13 @@ public class Updater implements Runnable {
         this.retryDelayOnFailureInMillis = retryDelayOnFailureInMillis;
         this.maxRetries = maxRetries;
 
-        queue = new UpdaterQueue(index, queueLimit, logPath);
+        queue = new UpdaterQueue(logPath, index, queueLimit);
+        new Thread(queue).start();
 
-        errorFile = new DiskQueue(logPath + File.separator + index + "-error.log");
+        errorFile = new File(logPath, index + "-error.log");
 
         LOG.info("Updater instantiated for index {}. Updates will be sent to {}://{}:{}. Retry delay on failure is {} milliseconds.", index, uriScheme, uriHost, uriPort, retryDelayOnFailureInMillis);
         LOG.info("Updater will overflow in {} after limit of {} has been reached, messages will be retried {} times ", logPath, queueLimit, maxRetries);
-    }
-
-    public void start() {
-        new Thread(this).start();
     }
 
     public void shutdown() {
@@ -84,13 +80,12 @@ public class Updater implements Runnable {
                     done = true;
                 }
             }
-
-            httpClient.getConnectionManager().shutdown();
-            LOG.info("Updater stopped for index {}.", index);
         } catch (Exception e) {
             LOG.error("Updater for index {} stopped with exception: {}", index, e);
         } finally {
+            httpClient.getConnectionManager().shutdown();
             queue.shutdown();
+            LOG.info("Updater stopped for index {}.", index);
         }
     }
 
@@ -114,11 +109,7 @@ public class Updater implements Runnable {
                 LOG.debug("Change performed: {}", change);
             }
 
-            try {
-                EntityUtils.consume(response.getEntity());
-            } finally {
-                request.releaseConnection();
-            }
+            EntityUtils.consume(response.getEntity());
         } catch (IOException e) {
             LOG.warn("Error executing request {} {}: {}", request.getMethod(), request.getURI(), e.getMessage());
             retry(change);
@@ -168,18 +159,25 @@ public class Updater implements Runnable {
     }
 
     private void retry(final Change change) {
-        if (change.retries()<maxRetries) {
+        if (change.retries() < maxRetries) {
             change.retried();
             final DelayedImpl<Change> delayedChange = new DelayedImpl<Change>(change, change.retries()*retryDelayOnFailureInMillis);
             queue.add(delayedChange);
             LOG.debug("Retrying change {} on index {} in {} milliseconds", change, index, retryDelayOnFailureInMillis);
         } else {
-            try {
-                LOG.warn("Writing failed change {} to error log {}", change,errorFile.name());
-                errorFile.writeToDisk(change);
-            } catch (IOException e) {
-                LOG.warn("Can't write failed change {} to error log {}",change,errorFile.name());
-            }
+            logError(change);
+        }
+    }
+
+    public void logError(Change change) {
+        try {
+            LOG.warn("Writing failed change {} to error log {}", change, errorFile.getCanonicalPath());
+            final PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(errorFile, true)));
+            writer.println(Change.toValue(change));
+            writer.flush();
+            writer.close();
+        } catch (IOException e) {
+            LOG.error("I/O error: " + e.getMessage());
         }
     }
 }

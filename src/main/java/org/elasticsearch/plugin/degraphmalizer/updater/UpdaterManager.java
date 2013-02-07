@@ -2,7 +2,7 @@
  * Copyright (C) 2013 All rights reserved
  * VPRO The Netherlands
  */
-package org.elasticsearch.plugin.degraphmalizer;
+package org.elasticsearch.plugin.degraphmalizer.updater;
 
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
@@ -10,6 +10,7 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.plugin.degraphmalizer.DegraphmalizerPlugin;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -76,7 +77,7 @@ public class UpdaterManager extends AbstractLifecycleComponent<UpdaterManager> i
         }
         final Updater updater = new Updater(index, uriScheme, uriHost, uriPort, retryDelayOnFailureInMillis, logPath, queueLimit, maxRetries);
         updaters.put(index, updater);
-        updater.start();
+        new Thread(updater).start();
         LOG.info("Updater started for index {}", index);
     }
 
@@ -123,7 +124,7 @@ public class UpdaterManager extends AbstractLifecycleComponent<UpdaterManager> i
     private void registerMBean() {
         try {
             final MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            final ObjectName name = new ObjectName("org.elasticsearch.plugin.degraphmalizer.UpdaterManager:type=UpdaterManager");
+            final ObjectName name = new ObjectName("org.elasticsearch.plugin.degraphmalizer.updater.UpdaterManager:type=UpdaterManager");
             mbs.registerMBean(this, name);
             LOG.info("Registered MBean");
         } catch (Exception e) {

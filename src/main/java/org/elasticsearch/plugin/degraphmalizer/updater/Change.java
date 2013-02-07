@@ -1,4 +1,4 @@
-package org.elasticsearch.plugin.degraphmalizer;
+package org.elasticsearch.plugin.degraphmalizer.updater;
 
 public class Change {
     private final Action action;
@@ -40,14 +40,10 @@ public class Change {
     }
 
     public static String toValue(Change change) {
-        String value = "";
-
-        return value = change.action().name() + "," + change.type() + "," + change.version() + "," + change.id();
+        return change.action().name() + "," + change.type() + "," + change.version() + "," + change.id();
     }
 
     public static Change fromValue(String value) {
-        Change change;
-
         String[] values = value.split(",", 4);
         Action action = Action.valueOf(values[0]);
         String type = values[1];

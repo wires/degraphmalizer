@@ -4,6 +4,9 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.index.engine.Engine;
 import org.elasticsearch.index.indexing.IndexingOperationListener;
+import org.elasticsearch.plugin.degraphmalizer.updater.Change;
+import org.elasticsearch.plugin.degraphmalizer.updater.UpdaterManager;
+
 import static org.elasticsearch.index.engine.Engine.Operation.Origin.PRIMARY;
 
 /**

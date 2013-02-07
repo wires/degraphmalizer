@@ -2,6 +2,7 @@ package org.elasticsearch.plugin.degraphmalizer;
 
 import org.elasticsearch.common.component.LifecycleComponent;
 import org.elasticsearch.common.inject.Module;
+import org.elasticsearch.plugin.degraphmalizer.updater.UpdaterManager;
 import org.elasticsearch.plugins.AbstractPlugin;
 
 import java.util.ArrayList;

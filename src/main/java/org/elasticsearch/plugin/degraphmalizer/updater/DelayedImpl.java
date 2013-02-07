@@ -1,4 +1,4 @@
-package org.elasticsearch.plugin.degraphmalizer;
+package org.elasticsearch.plugin.degraphmalizer.updater;
 
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
