@@ -2,6 +2,7 @@ package configuration.javascript;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
@@ -81,4 +82,19 @@ public final class JSONUtilities
         n.put("version", id.version());
         return n;
     }
+
+    public static ObjectNode renderException(ObjectMapper om, Throwable t)
+    {
+        final ArrayNode ss = om.createArrayNode();
+        for(StackTraceElement elt : t.getStackTrace())
+            ss.add(elt.toString());
+
+        final ObjectNode ex = om.createObjectNode();
+        ex.put("message", t.getMessage());
+        ex.put("class", t.getClass().getSimpleName());
+        ex.put("stacktrace", ss);
+
+        return ex;
+    }
+
 }
