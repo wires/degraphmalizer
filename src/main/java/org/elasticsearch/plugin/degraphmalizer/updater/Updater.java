@@ -95,10 +95,7 @@ public final class Updater implements Runnable {
     }
 
     private void perform(final Change change) {
-        LOG.debug("Attempting to perform {}", change);
-
         final HttpRequestBase request = toRequest(change);
-
         try {
             final HttpResponse response = httpClient.execute(request);
 

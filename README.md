@@ -192,3 +192,6 @@ You can configure the Degraphmalizer plugin using the following settings in `ela
 - `plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerHost`: Hostname used to access the Degraphmalizer (default: `localhost`)
 - `plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerPort`: Port used to access the Degraphmalizer (default: `9821`)
 - `plugin.degraphmalizer.DegraphmalizerPlugin.delayOnFailureInMillis`: Delay in milliseconds before retrying failed requests to the Degraphmalizer (default: `10000`)
+- `plugin.degraphmalizer.DegraphmalizerPlugin.queueLimit`: Number of updates to queue in memory per index before spooling to disk (default: `100000`)
+- `plugin.degraphmalizer.DegraphmalizerPlugin.logPath`: Path for error logs and overflow spool files (default: `/export/elasticsearch/degraphmalizer`)
+- `plugin.degraphmalizer.DegraphmalizerPlugin.maxRetries`: Number of times to retry sending an update to the Degraphmalizer before considering it failed (default: `10`)
