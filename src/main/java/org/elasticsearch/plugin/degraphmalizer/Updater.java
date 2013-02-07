@@ -89,6 +89,8 @@ public class Updater implements Runnable {
             LOG.info("Updater stopped for index {}.", index);
         } catch (Exception e) {
             LOG.error("Updater for index {} stopped with exception: {}", index, e);
+        } finally {
+            queue.shutdown();
         }
     }
 
