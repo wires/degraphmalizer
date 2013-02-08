@@ -8,6 +8,7 @@ import degraphmalizr.DegraphmalizerModule;
 import driver.handler.HandlerModule;
 import driver.server.Server;
 import driver.server.ServerModule;
+import elasticsearch.LocalES;
 import elasticsearch.TransportES;
 import fixutures.FixtureLoaderModule;
 import fixutures.FixturesLoader;
@@ -69,11 +70,15 @@ public final class Main
             System.exit(1);
         }
 
-        final String host = opt.transport.get(0);
-        final int port = Integer.parseInt(opt.transport.get(1));
-        final String cluster = opt.transport.get(2);
-
-        modules.add(new TransportES(cluster, host, port));
+        if(opt.development)
+            modules.add(new LocalES());
+        else
+        {
+            final String host = opt.transport.get(0);
+            final int port = Integer.parseInt(opt.transport.get(1));
+            final String cluster = opt.transport.get(2);
+            modules.add(new TransportES(cluster, host, port));
+        }
 
         // we always run an embedded local graph database
         modules.add(new EmbeddedNeo4J(opt.graphdb));

@@ -7,8 +7,11 @@ import java.util.*;
 public class Options
 {
     @Parameter(names = {"-t", "--transport" }, description = "Run against remote ES (host, port, cluster)",
-            arity = 3, required = true)
+            arity = 3)
     List<String> transport = new ArrayList<String>();
+
+    @Parameter(names = {"-d", "--debug"}, description = "Run in developer mode")
+    boolean development = false;
 
     @Parameter(names = {"-p", "--port"}, description = "Listening port")
     int port;
