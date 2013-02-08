@@ -170,7 +170,7 @@ public final class Updater implements Runnable {
         try {
             LOG.warn("Writing failed change {} to error log {}", change, errorFile.getCanonicalPath());
             final PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(errorFile, true)));
-            writer.println(Change.toValue(change));
+            writer.println(change.toValue());
             writer.flush();
             writer.close();
         } catch (IOException e) {

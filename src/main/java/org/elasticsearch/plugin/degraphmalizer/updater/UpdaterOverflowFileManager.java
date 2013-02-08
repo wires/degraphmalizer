@@ -1,12 +1,12 @@
 package org.elasticsearch.plugin.degraphmalizer.updater;
 
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.Loggers;
+
 import java.io.*;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.concurrent.BlockingQueue;
-
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
 
 public class UpdaterOverflowFileManager {
 
@@ -74,8 +74,8 @@ public class UpdaterOverflowFileManager {
             int count = 0;
             while (! queue.isEmpty() && count < limit) {
                 try {
-                    final Change change = queue.take().thing();
-                    writer.println(Change.toValue(change));
+                    final DelayedImpl<Change> delayed = queue.take();
+                    writer.println(delayed.toValue());
                     count++;
                 } catch (InterruptedException e) {
                     LOG.warn("Take from input queue interrupted: " + e.getMessage());
@@ -93,6 +93,7 @@ public class UpdaterOverflowFileManager {
      */
     public void load(final BlockingQueue<DelayedImpl<Change>> queue) {
         final File[] files = getOverflowFiles();
+        final DelayedImpl<Change> delayedFactory = new DelayedImpl<Change>(new Change(),0);
 
         if (files.length > 0) {
             final File file = files[0];
@@ -100,9 +101,9 @@ public class UpdaterOverflowFileManager {
                 final BufferedReader reader = new BufferedReader(new FileReader(file));
                 String line = reader.readLine();
                 do {
-                    final Change change = Change.fromValue(line);
+                    final DelayedImpl<Change> delayed = delayedFactory.fromValue(line);
                     try {
-                        queue.put(DelayedImpl.immediate(change));
+                        queue.put(delayed);
                     } catch (InterruptedException e) {
                         LOG.warn("Put into queue was interrupted: {}", e.getMessage());
                     }

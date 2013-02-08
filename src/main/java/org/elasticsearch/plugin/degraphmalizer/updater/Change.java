@@ -1,18 +1,27 @@
 package org.elasticsearch.plugin.degraphmalizer.updater;
 
-public class Change {
+public class Change implements StringSerialization<Change> {
     private final Action action;
     private final String type;
     private final String id;
     private final long version;
 
-    private int retries = 0;
+    private int retries;
+
+    public Change() {
+        this(Action.UPDATE,"","",0,0);
+    }
 
     public Change(final Action action, final String type, final String id, long version) {
+        this(action,type,id,version, 0);
+    }
+
+    public Change(final Action action, final String type, final String id, long version, int retries) {
         this.action = action;
         this.type = type;
         this.id = id;
         this.version = version;
+        this.retries = retries;
     }
 
     public Action action() {
@@ -39,18 +48,19 @@ public class Change {
         retries++;
     }
 
-    public static String toValue(Change change) {
-        return change.action().name() + "," + change.type() + "," + change.version() + "," + change.id();
+    public String toValue() {
+        return this.action().name() + "," + this.type() + "," + this.version() + ","+this.retries()+"," + this.id();
     }
 
-    public static Change fromValue(String value) {
-        String[] values = value.split(",", 4);
+    public Change fromValue(String value) {
+        String[] values = value.split(",", 5);
         Action action = Action.valueOf(values[0]);
         String type = values[1];
         Long version = Long.valueOf(values[2]);
-        String id = values[3];
+        Integer retries = Integer.valueOf(values[3]);
+        String id = values[4];
 
-        return new Change(action, type, id, version);
+        return new Change(action, type, id, version, retries);
     }
 
     public static Change update(final String type, final String id, final long version) {
