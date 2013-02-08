@@ -70,7 +70,7 @@ public class UpdaterOverflowFileManager {
         } while (file.exists());
 
         try {
-            final PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(file)));
+            final PrintWriter writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file),"UTF-8")));
             int count = 0;
             while (! queue.isEmpty() && count < limit) {
                 try {
@@ -98,7 +98,7 @@ public class UpdaterOverflowFileManager {
         if (files.length > 0) {
             final File file = files[0];
             try {
-                final BufferedReader reader = new BufferedReader(new FileReader(file));
+                final BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file),"UTF-8"));
                 String line = reader.readLine();
                 do {
                     final DelayedImpl<Change> delayed = delayedFactory.fromValue(line);

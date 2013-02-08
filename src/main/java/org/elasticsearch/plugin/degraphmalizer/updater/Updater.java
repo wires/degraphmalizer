@@ -169,7 +169,7 @@ public final class Updater implements Runnable {
     public void logError(Change change) {
         try {
             LOG.warn("Writing failed change {} to error log {}", change, errorFile.getCanonicalPath());
-            final PrintWriter writer = new PrintWriter(new BufferedWriter(new FileWriter(errorFile, true)));
+            final PrintWriter writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(errorFile,true),"UTF-8")));
             writer.println(change.toValue());
             writer.flush();
             writer.close();
