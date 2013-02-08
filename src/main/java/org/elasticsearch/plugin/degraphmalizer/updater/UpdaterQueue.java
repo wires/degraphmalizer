@@ -1,12 +1,12 @@
 package org.elasticsearch.plugin.degraphmalizer.updater;
 
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.Loggers;
+
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
 
 public class UpdaterQueue implements Runnable {
 
@@ -22,7 +22,7 @@ public class UpdaterQueue implements Runnable {
     private boolean shuttingDown = false;
 
     public UpdaterQueue(final String logPath, final String index, final int limit) {
-        this.limit = limit;
+        this.limit = limit/2;
         this.overflowFileManager = new UpdaterOverflowFileManager(logPath, index, limit);
     }
 
