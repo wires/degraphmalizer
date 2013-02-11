@@ -82,7 +82,7 @@ public class UpdaterOverflowFileManager {
                     count += newSize[i];
                 }
             } else {
-                for (int i = 0; i < newList.length ; i++) {
+                for (int i = 0; i < newList.length; i++) {
                     newSize[i] = countLines(newList[i]);
                     count += newSize[i];
                 }
@@ -174,11 +174,13 @@ public class UpdaterOverflowFileManager {
                 final BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
                 String line = reader.readLine();
                 do {
-                    final DelayedImpl<Change> delayed = delayedFactory.fromValue(line);
                     try {
+                        final DelayedImpl<Change> delayed = delayedFactory.fromValue(line);
                         queue.put(delayed);
                     } catch (InterruptedException e) {
                         LOG.warn("Put into queue was interrupted: {}", e.getMessage());
+                    } catch (Exception e) {
+                        LOG.error("Unparsable overflow line " + line);
                     }
                     line = reader.readLine();
                 } while (line != null);
@@ -197,7 +199,7 @@ public class UpdaterOverflowFileManager {
      */
     private File[] getOverflowFiles() {
         final File[] files = new File(logPath).listFiles(filenameFilter);
-        if (files!=null) {
+        if (files != null) {
             Arrays.sort(files, fileComparator);
         } else {
             return NO_FILES;
