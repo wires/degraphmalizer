@@ -12,6 +12,8 @@ public class UpdaterOverflowFileManager {
 
     private static final ESLogger LOG = Loggers.getLogger(UpdaterOverflowFileManager.class);
 
+    private static final File[] NO_FILES = {};
+
     private final String logPath;
     private final String filenamePrefix;
     private final int limit;
@@ -195,7 +197,11 @@ public class UpdaterOverflowFileManager {
      */
     private File[] getOverflowFiles() {
         final File[] files = new File(logPath).listFiles(filenameFilter);
-        Arrays.sort(files, fileComparator);
+        if (files!=null) {
+            Arrays.sort(files, fileComparator);
+        } else {
+            return NO_FILES;
+        }
         return files;
     }
 }

@@ -121,6 +121,9 @@ public class UpdaterQueue implements Runnable,UpdaterQueueMBean {
         try {
             final MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
             final ObjectName name = new ObjectName("org.elasticsearch.plugin.degraphmalizer.updater.UpdaterQueue:type=UpdaterQueue,name=UpdaterQueue-"+index);
+            if (mbs.isRegistered(name)) {
+                mbs.unregisterMBean(name);
+            }
             mbs.registerMBean(this, name);
             LOG.info("Registered MBean");
         } catch (Exception e) {
