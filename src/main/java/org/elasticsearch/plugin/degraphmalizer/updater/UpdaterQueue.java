@@ -3,12 +3,15 @@ package org.elasticsearch.plugin.degraphmalizer.updater;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+import java.lang.management.ManagementFactory;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-public class UpdaterQueue implements Runnable {
+public class UpdaterQueue implements Runnable,UpdaterQueueMBean {
 
     private static final ESLogger LOG = Loggers.getLogger(UpdaterQueue.class);
 
@@ -19,11 +22,15 @@ public class UpdaterQueue implements Runnable {
 
     private int limit;
 
+    private String index;
+
     private boolean shuttingDown = false;
 
     public UpdaterQueue(final String logPath, final String index, final int limit) {
         this.limit = limit/2;
+        this.index = index;
         this.overflowFileManager = new UpdaterOverflowFileManager(logPath, index, limit);
+        registerMBean();
     }
 
     @Override
@@ -63,14 +70,36 @@ public class UpdaterQueue implements Runnable {
         return inputQueue.isEmpty() && outputQueue.isEmpty() && overflowFileManager.isEmpty();
     }
 
+    @Override
     public int size() {
         return inputQueue.size() + outputQueue.size() + overflowFileManager.size();
+    }
+
+    @Override
+    public int getInputQueueSize() {
+        return inputQueue.size();
+    }
+
+    @Override
+    public int getOutputQueueSize() {
+        return outputQueue.size();
+    }
+
+    @Override
+    public int getOverflowSize() {
+        return overflowFileManager.size();
+    }
+
+    @Override
+    public String getIndex() {
+        return index;
     }
 
     public void shutdown() {
         shuttingDown = true; // Flag for thread to shut down
     }
 
+    @Override
     public void clear() {
         inputQueue.clear();
         outputQueue.clear();
@@ -84,6 +113,18 @@ public class UpdaterQueue implements Runnable {
 
         while (!inputQueue.isEmpty()) {
             overflowFileManager.save(inputQueue);
+        }
+    }
+
+
+    private void registerMBean() {
+        try {
+            final MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+            final ObjectName name = new ObjectName("org.elasticsearch.plugin.degraphmalizer.updater.UpdaterQueue:type=UpdaterQueue,name=UpdaterQueue-"+index);
+            mbs.registerMBean(this, name);
+            LOG.info("Registered MBean");
+        } catch (Exception e) {
+            LOG.error("Failed to register MBean", e);
         }
     }
 }
