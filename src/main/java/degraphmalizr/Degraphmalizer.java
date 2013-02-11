@@ -12,7 +12,7 @@ import configuration.javascript.JSONUtilities;
 import degraphmalizr.degraphmalize.*;
 import degraphmalizr.recompute.*;
 import elasticsearch.QueryFunction;
-import exceptions.DegraphmalizerException;
+import exceptions.*;
 import graphs.GraphQueries;
 import graphs.ops.Subgraph;
 import graphs.ops.SubgraphManager;
@@ -70,7 +70,7 @@ public class Degraphmalizer implements Degraphmalizr
 	}
 
     @Override
-    public final List<DegraphmalizeAction> degraphmalize(DegraphmalizeActionType actionType, ID id, DegraphmalizeStatus callback) throws DegraphmalizerException
+    public final List<DegraphmalizeAction> degraphmalize(DegraphmalizeActionType actionType, ID id, DegraphmalizeStatus callback)
     {
         final ArrayList<DegraphmalizeAction> actions = new ArrayList<DegraphmalizeAction>();
 
@@ -91,26 +91,25 @@ public class Degraphmalizer implements Degraphmalizr
         return actions;
     }
 
-    private Callable<JsonNode> degraphmalizeJob(final DegraphmalizeAction action) throws DegraphmalizerException
+    private Callable<JsonNode> degraphmalizeJob(final DegraphmalizeAction action)
 	{
 		return new Callable<JsonNode>()
 		{
 			@Override
 			public JsonNode call() throws Exception
 			{
-                final JsonNode result;
                 final DegraphmalizeActionType actionType = action.type();
 
-                switch(actionType) {
+                switch(actionType)
+                {
                     case UPDATE:
                         return doUpdate(action);
 
                     case DELETE:
                         return doDelete(action);
-
-                    default:
-                        throw new DegraphmalizerException("Don't know how to handle action type " + actionType + " for action " + action);
                 }
+
+                throw new UnreachableCodeReachedException();
             }
 		};
 	}
@@ -157,8 +156,7 @@ public class Degraphmalizer implements Degraphmalizr
         }
         catch (final Exception e)
         {
-            final DegraphmalizerException ex = new DegraphmalizerException("Unknown exception occurred", e);
-            final DegraphmalizeResult result = DegraphmalizeResult.failure(action, ex);
+            final DegraphmalizeResult result = DegraphmalizeResult.failure(action, new WrappedException(e));
 
             // report failure
             action.status().exception(result);
@@ -184,7 +182,9 @@ public class Degraphmalizer implements Degraphmalizr
             action.status().complete(DegraphmalizeResult.success(action));
 
             return getStatusJsonNode(results);
-        } catch (final DegraphmalizerException e) {
+        }
+        catch (final DegraphmalizerException e)
+        {
             final DegraphmalizeResult result = DegraphmalizeResult.failure(action, e);
 
             // report failure
@@ -192,9 +192,10 @@ public class Degraphmalizer implements Degraphmalizr
 
             // rethrow, this will captured by Future<>.get()
             throw e;
-        } catch (final Exception e) {
-            final DegraphmalizerException ex = new DegraphmalizerException("Unknown exception occurred", e);
-            final DegraphmalizeResult result = DegraphmalizeResult.failure(action, ex);
+        }
+        catch (final Exception e)
+        {
+            final DegraphmalizeResult result = DegraphmalizeResult.failure(action, new WrappedException(e));
 
             // report failure
             action.status().exception(result);
@@ -204,23 +205,23 @@ public class Degraphmalizer implements Degraphmalizr
         }
     }
 
-    private JsonNode getDocument(ID id) throws InterruptedException, ExecutionException, DegraphmalizerException, IOException {
-
+    private JsonNode getDocument(ID id) throws InterruptedException, ExecutionException, IOException
+    {
         // get the source document from Elasticsearch
         final GetResponse resp = client.prepareGet(id.index(), id.type(), id.id()).execute().get();
 
         if (!resp.exists())
             return null;
 
-        //TODO: shouldn't this be: resp.version() > id.version()
+        // TODO: shouldn't this be: resp.version() > id.version()
         log.debug("Request has version " + id.version() + " and current es document has version " + resp.version());
         if (resp.version() != id.version())
-            throw new DegraphmalizerException("Query expired, current version is " + resp.version());
+            throw new ExpiredException(id.version(resp.version()));
 
         return objectMapper.readTree(resp.getSourceAsString());
     }
 
-    private void generateSubgraph(DegraphmalizeAction action) throws DegraphmalizerException {
+    private void generateSubgraph(DegraphmalizeAction action) {
         final ID id = action.id();
 
 //        if(log.isTraceEnabled())
@@ -242,7 +243,8 @@ public class Degraphmalizer implements Degraphmalizr
 
     }
 
-    private List<Future<RecomputeResult>> recomputeAffectedDocuments(List<RecomputeRequest> recomputeRequests) throws DegraphmalizerException, InterruptedException {
+    private List<Future<RecomputeResult>> recomputeAffectedDocuments(List<RecomputeRequest> recomputeRequests) throws InterruptedException
+    {
         // create Callable from the actions
         // TODO call 'recompute started' for each action to update the status
         final ArrayList<Callable<RecomputeResult>> jobs = new ArrayList<Callable<RecomputeResult>>();
@@ -254,14 +256,15 @@ public class Degraphmalizer implements Degraphmalizr
         return recomputeQueue.invokeAll(jobs);
     }
 
-    private ArrayList<RecomputeRequest> determineRecomputeActions(DegraphmalizeAction action) throws DegraphmalizerException {
+    private ArrayList<RecomputeRequest> determineRecomputeActions(DegraphmalizeAction action)
+    {
         final ID id = action.id();
 
         // we now start traversals for each walk to find documents affected by this change
         final Vertex root = GraphQueries.findVertex(graph, id);
         if (root == null)
             // TODO this shouldn't occur, because the subgraph implicitly commits a vertex to the graph
-            throw new DegraphmalizerException("No node for document " + id);
+            throw new NotFoundInGraphException(id);
 
         final ArrayList<RecomputeRequest> recomputeRequests = new ArrayList<RecomputeRequest>();
 
@@ -320,7 +323,7 @@ public class Degraphmalizer implements Degraphmalizr
         return new Callable<RecomputeResult>()
         {
             @Override
-            public RecomputeResult call() throws DegraphmalizerException
+            public RecomputeResult call()
             {
                 // TODO pass callback
                 final RecomputeCallback cb = new RecomputeCallback(){};

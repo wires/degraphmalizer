@@ -87,8 +87,8 @@ public class SubgraphManagerTest
      * One should not be allowed to create a subgraph with version 0
      *
      */
-    @Test(expectedExceptions = DegraphmalizerException.class)
-    void testVersionZeroNotAllowed() throws DegraphmalizerException
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    void testVersionZeroNotAllowed()
     {
         final ID symbolicID = randomSymbolicID();
         lg.sgm.createSubgraph(symbolicID);
@@ -311,16 +311,6 @@ public class SubgraphManagerTest
     void testUpdateSubgraphWithEqualVersion() throws DegraphmalizerException
     {
         testUpgradeSubgraphToVersion(2, 2);
-    }
-
-    /**
-     * Creating a subgraph for an existing vertex with a lower version should fail.
-     * @throws DegraphmalizerException
-     */
-    @Test(expectedExceptions = DegraphmalizerException.class)
-    void testUpdateSubgraphWithLowerVersion() throws DegraphmalizerException
-    {
-        testUpgradeSubgraphToVersion(2, 1);
     }
 
     private void testUpgradeSubgraphToVersion(long preveousVersion, long nextVersion) throws DegraphmalizerException

@@ -30,7 +30,7 @@ public class BlueprintsSubgraphManager implements SubgraphManager
     public final Subgraph createSubgraph(ID id) throws DegraphmalizerException
     {
         if(id.version() == 0)
-            throw new DegraphmalizerException("Subgraph must have version > 0");
+            throw new IllegalArgumentException("Subgraph must have version > 0");
         return new SG(id);
     }
 
@@ -181,11 +181,13 @@ public class BlueprintsSubgraphManager implements SubgraphManager
             log.trace("Created central vertex");
         }
 
-        if (isOlder(sg.id(), getID(center)))
-            throw new DegraphmalizerException("Cannot override older vertex");
-
-        if (! isOwnable(center, sg.id()))
-            throw new DegraphmalizerException("It is not possible to change the owner of a vertex");
+        // it is actually fine to commit an older version, version management is completely done by ES
+        if (log.isWarnEnabled())
+        {
+            final ID cid = getID(center);
+            if (isOlder(sg.id(), cid))
+                log.warn("Commit version < current version", sg.id(), cid);
+        }
 
         setProperties(center, sg.properties());
 
@@ -199,23 +201,23 @@ public class BlueprintsSubgraphManager implements SubgraphManager
         return center;
     }
 
-    private void updateEdgeIds(Vertex center, ID id) throws DegraphmalizerException {
-        for(Edge edge: center.getEdges(Direction.BOTH)) {
-            updateEdgeId(edge, id);
-        }
+    private void updateEdgeIds(Vertex center, ID id) throws DegraphmalizerException
+    {
+        for(Edge edge: center.getEdges(Direction.BOTH))
+            setEdgeId(updateEdgeId(edge, id), edge);
     }
 
-    private void updateEdgeId(Edge edge, ID id) throws DegraphmalizerException {
-        EdgeID edgeID = getEdgeID(edge), newEdgeId;
+    private EdgeID updateEdgeId(Edge edge, ID id) throws DegraphmalizerException
+    {
+        final EdgeID edgeID = getEdgeID(edge);
 
-        if (onlyVersionDiffers(edgeID.head(), id)) {
-            newEdgeId = new EdgeID(edgeID.tail(), edgeID.label(), id);
-        }else if (onlyVersionDiffers(edgeID.tail(), id)) {
-            newEdgeId = new EdgeID(id, edgeID.label(), edgeID.head());
-        }else {
-            throw new DegraphmalizerException("id:" + id + " is not part of edge id:" + edgeID);
-        }
-        setEdgeId(newEdgeId, edge);
+        if (onlyVersionDiffers(edgeID.head(), id))
+            return new EdgeID(edgeID.tail(), edgeID.label(), id);
+
+        if (onlyVersionDiffers(edgeID.tail(), id))
+            return new EdgeID(id, edgeID.label(), edgeID.head());
+
+        throw new IllegalArgumentException("id:" + id + " is not part of edge id:" + edgeID);
     }
 
     /**

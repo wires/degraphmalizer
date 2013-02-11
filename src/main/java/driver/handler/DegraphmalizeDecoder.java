@@ -1,5 +1,6 @@
 package driver.handler;
 
+import exceptions.InvalidRequest;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.http.HttpMethod;
@@ -25,17 +26,9 @@ public class DegraphmalizeDecoder extends OneToOneDecoder
         final String[] components = request.getUri().substring(1).split("/");
 
         if (components.length != 4)
-            throw new DegraphmalizerException("URL must be of the form '/{index}/{type}/{id}/{version}'");
+            throw new InvalidRequest("URL must be of the form '/{index}/{type}/{id}/{version}'");
 
-        final DegraphmalizeActionType actionType;
-
-        final HttpMethod httpMethod = request.getMethod();
-
-        if (HttpMethod.DELETE.equals(httpMethod)) {
-            actionType = DegraphmalizeActionType.DELETE;
-        } else {
-            actionType = DegraphmalizeActionType.UPDATE;
-        }
+        final DegraphmalizeActionType actionType = actionTypeFor(request);
 
         final String index = components[0];
         final String type = components[1];
@@ -43,5 +36,14 @@ public class DegraphmalizeDecoder extends OneToOneDecoder
         final long v = Long.parseLong(components[3]);
 
         return new JobRequest(actionType, new ID(index, type, id, v));
+    }
+
+    // HTTP.method ? DELETE => anti-degraphmalize it
+    private static DegraphmalizeActionType actionTypeFor(HttpRequest req)
+    {
+        if (HttpMethod.DELETE.equals(req.getMethod()))
+            return DegraphmalizeActionType.DELETE;
+
+        return DegraphmalizeActionType.UPDATE;
     }
 }

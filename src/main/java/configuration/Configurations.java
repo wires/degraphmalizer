@@ -1,7 +1,5 @@
 package configuration;
 
-import exceptions.DegraphmalizerException;
-
 import java.util.ArrayList;
 
 public class Configurations
@@ -9,7 +7,7 @@ public class Configurations
     /**
      * Find all TypeConfigs with specified source index and source type
      */
-    public static Iterable<TypeConfig> configsFor(Configuration cfg, String srcIndex, String srcType) throws DegraphmalizerException
+    public static Iterable<TypeConfig> configsFor(Configuration cfg, String srcIndex, String srcType)
     {
         final ArrayList<TypeConfig> configs = new ArrayList<TypeConfig>();
 

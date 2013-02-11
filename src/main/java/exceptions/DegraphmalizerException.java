@@ -3,14 +3,14 @@ package exceptions;
 /**
  * Super class of all degraphmalizer exceptions
  */
-public class DegraphmalizerException extends Exception
+public class DegraphmalizerException extends RuntimeException
 {
-    public DegraphmalizerException(String msg, Exception cause)
+    protected DegraphmalizerException(String msg, Exception cause)
     {
         super(msg, cause);
     }
 
-    public DegraphmalizerException(String msg)
+    protected DegraphmalizerException(String msg)
     {
         super(msg);
     }
