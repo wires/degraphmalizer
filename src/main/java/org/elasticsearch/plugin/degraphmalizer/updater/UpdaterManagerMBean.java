@@ -7,6 +7,4 @@ import java.util.Map;
  */
 public interface UpdaterManagerMBean {
     Map<String, Integer> getQueueSizes();
-
-    boolean flushQueue(String indexName);
 }

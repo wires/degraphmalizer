@@ -10,15 +10,19 @@ import java.util.concurrent.TimeUnit;
  *
  * Note: this class has a natural ordering that is inconsistent with equals.
  */
-public class DelayedImpl<T> implements Delayed {
+public class DelayedImpl<T extends StringSerialization<T>> implements Delayed,StringSerialization<DelayedImpl<T>> {
     private final T thing;
     private final long delayInMillis;
     private final long baseMillis;
 
     public DelayedImpl(final T thing, final long delayInMillis) {
+        this(thing, delayInMillis, System.currentTimeMillis());
+    }
+
+    public DelayedImpl(final T thing, final long delayInMillis, final long baseMillis) {
         this.thing = thing;
         this.delayInMillis = delayInMillis;
-        this.baseMillis = System.currentTimeMillis();
+        this.baseMillis = baseMillis;
     }
 
     public T thing() {
@@ -35,7 +39,21 @@ public class DelayedImpl<T> implements Delayed {
         return Long.compare(getDelay(TimeUnit.MILLISECONDS), other.getDelay(TimeUnit.MILLISECONDS));
     }
 
-    public static <T> DelayedImpl<T> immediate(final T thing) {
+    public static <T extends StringSerialization<T>> DelayedImpl<T> immediate(final T thing) {
         return new DelayedImpl<T>(thing, 0);
+    }
+
+    @Override
+    public String toValue() {
+        return delayInMillis+","+baseMillis+","+thing().toValue();
+    }
+
+    @Override
+    public DelayedImpl<T> fromValue(String value) {
+        String[] values = value.split(",", 3);
+        Long delay=Long.valueOf(values[0]);
+        Long base=Long.valueOf(values[1]);
+        T thing = thing().fromValue(values[2]);
+        return new DelayedImpl(thing,delay,base);
     }
 }

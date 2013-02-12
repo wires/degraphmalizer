@@ -110,7 +110,6 @@ public class UpdaterManager extends AbstractLifecycleComponent<UpdaterManager> i
         return indexQueueSizes;
     }
 
-    @Override
     public boolean flushQueue(final String indexName) {
         final Updater updater = updaters.get(indexName);
         if (updater != null) {
@@ -124,7 +123,10 @@ public class UpdaterManager extends AbstractLifecycleComponent<UpdaterManager> i
     private void registerMBean() {
         try {
             final MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            final ObjectName name = new ObjectName("org.elasticsearch.plugin.degraphmalizer.updater.UpdaterManager:type=UpdaterManager");
+            final ObjectName name = new ObjectName("org.elasticsearch.plugin.degraphmalizer.updater:type=UpdaterManager,name=UpdaterManager");
+            if (mbs.isRegistered(name)) {
+                mbs.unregisterMBean(name);
+            }
             mbs.registerMBean(this, name);
             LOG.info("Registered MBean");
         } catch (Exception e) {
