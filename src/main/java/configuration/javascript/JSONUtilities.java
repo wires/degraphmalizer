@@ -8,13 +8,14 @@ import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
 import degraphmalizr.EdgeID;
 import degraphmalizr.ID;
+import degraphmalizr.recompute.RecomputeResult;
 import graphs.GraphQueries;
-import org.mozilla.javascript.Callable;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.NativeJSON;
-import org.mozilla.javascript.Scriptable;
+import org.elasticsearch.action.index.IndexResponse;
+import org.mozilla.javascript.*;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Some helper functions to convert between Object (coming from Rhino) and {@link JsonNode}
@@ -112,5 +113,58 @@ public final class JSONUtilities
         return new ID(index,type,id,version);
     }
 
+    public static ObjectNode toJSON(ObjectMapper objectMapper, RecomputeResult ourResult) throws InterruptedException, ExecutionException
+    {
+        if(ourResult.success().isPresent())
+        {
+            final ObjectNode n = objectMapper.createObjectNode();
+
+            final RecomputeResult.Success success = ourResult.success().get();
+            n.put("success", true);
+
+            // write targetID using index reponse
+            final IndexResponse ir = success.indexResponse();
+            final ObjectNode targetID = objectMapper.createObjectNode();
+            targetID.put("index", ir.index());
+            targetID.put("type", ir.type());
+            targetID.put("id", ir.id());
+            targetID.put("version", ir.version());
+            n.put("targetID", targetID);
+
+            // write dictionary of properties and their values
+            final ObjectNode properties = objectMapper.createObjectNode();
+            for(Map.Entry<String,JsonNode> entry : success.properties().entrySet())
+                properties.put(entry.getKey(), entry.getValue());
+            n.put("properties", properties);
+
+            // write dictionary of properties and their values
+            n.put("sourceDocumentAfterTransform", success.sourceDocument());
+
+            return n;
+        }
+
+        if(ourResult.exception().isPresent())
+        {
+            final Throwable t = ourResult.exception().get();
+            final ObjectNode n = JSONUtilities.renderException(objectMapper, t);
+            n.put("success", false);
+            return n;
+        }
+
+        if(ourResult.expired().isPresent())
+        {
+            final ObjectNode n = objectMapper.createObjectNode();
+            final ArrayNode ids = objectMapper.createArrayNode();
+            n.put("success", false);
+            for(ID id : ourResult.expired().get())
+                ids.add(JSONUtilities.toJSON(objectMapper, id));
+            return n;
+        }
+
+        final ObjectNode n = objectMapper.createObjectNode();
+        n.put("success", false);
+        n.put("status", ourResult.status().name());
+        return n;
+    }
 
 }

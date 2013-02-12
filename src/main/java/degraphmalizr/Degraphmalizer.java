@@ -2,7 +2,6 @@ package degraphmalizr;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Iterables;
 import com.google.inject.Provider;
@@ -18,14 +17,14 @@ import graphs.ops.Subgraph;
 import graphs.ops.SubgraphManager;
 import modules.bindingannotations.*;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.slf4j.Logger;
 import trees.*;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.*;
 
 public class Degraphmalizer implements Degraphmalizr
@@ -74,10 +73,23 @@ public class Degraphmalizer implements Degraphmalizr
     {
         final ArrayList<DegraphmalizeAction> actions = new ArrayList<DegraphmalizeAction>();
 
+        StringBuilder logMessage = null;
+
+        if(log.isDebugEnabled())
+        {
+            logMessage = new StringBuilder("Matching request from ");
+            logMessage.append(id);
+            logMessage.append(" -> ");
+        }
+
+
         for(TypeConfig cfg : Configurations.configsFor(cfgProvider.get(), id.index(), id.type()))
         {
-            log.debug("Matching to request for /{}/{} --> /{}/{}",
-                    new Object[]{cfg.sourceIndex(), cfg.sourceType(), cfg.targetIndex(), cfg.targetType()});
+            if(log.isDebugEnabled())
+            {
+                logMessage.append("/").append(cfg.targetIndex()).append("/");
+                logMessage.append(cfg.targetType()).append(", ");
+            }
 
             // construct the action object
             final DegraphmalizeAction action = new DegraphmalizeAction(actionType, id, cfg, callback);
@@ -87,6 +99,9 @@ public class Degraphmalizer implements Degraphmalizr
 
             actions.add(action);
         }
+
+        if(log.isDebugEnabled())
+            log.debug(logMessage.toString());
 
         return actions;
     }
@@ -182,6 +197,13 @@ public class Degraphmalizer implements Degraphmalizr
             action.status().complete(DegraphmalizeResult.success(action));
 
             return getStatusJsonNode(results);
+        }
+        catch (final NotFoundInGraphException e)
+        {
+            // TODO move to proper place
+            log.warn("While doing delete, could not find central node for ID {}", e.id());
+            action.status().complete(DegraphmalizeResult.success(action));
+            return objectMapper.createObjectNode().put("jelle", "was here");
         }
         catch (final DegraphmalizerException e)
         {
@@ -332,59 +354,10 @@ public class Degraphmalizer implements Degraphmalizr
         };
     }
 
+    // TODO deprecate, also kill the method in JSONUtilities
     private ObjectNode getStatusJsonNode(List<Future<RecomputeResult>> results) throws InterruptedException, ExecutionException
     {
         final RecomputeResult ourResult = results.get(0).get();
-
-        if(ourResult.success().isPresent())
-        {
-            final ObjectNode n = objectMapper.createObjectNode();
-
-            final RecomputeResult.Success success = ourResult.success().get();
-            n.put("success", true);
-
-            // write targetID using index reponse
-            final IndexResponse ir = success.indexResponse();
-            final ObjectNode targetID = objectMapper.createObjectNode();
-            targetID.put("index", ir.index());
-            targetID.put("type", ir.type());
-            targetID.put("id", ir.id());
-            targetID.put("version", ir.version());
-            n.put("targetID", targetID);
-
-            // write dictionary of properties and their values
-            final ObjectNode properties = objectMapper.createObjectNode();
-            for(Map.Entry<String,JsonNode> entry : success.properties().entrySet())
-                properties.put(entry.getKey(), entry.getValue());
-            n.put("properties", properties);
-
-            // write dictionary of properties and their values
-            n.put("sourceDocumentAfterTransform", success.sourceDocument());
-
-            return n;
-        }
-
-        if(ourResult.exception().isPresent())
-        {
-            final Throwable t = ourResult.exception().get();
-            final ObjectNode n = JSONUtilities.renderException(objectMapper, t);
-            n.put("success", false);
-            return n;
-        }
-
-        if(ourResult.expired().isPresent())
-        {
-            final ObjectNode n = objectMapper.createObjectNode();
-            final ArrayNode ids = objectMapper.createArrayNode();
-            n.put("success", false);
-            for(ID id : ourResult.expired().get())
-                ids.add(JSONUtilities.toJSON(objectMapper, id));
-            return n;
-        }
-
-        final ObjectNode n = objectMapper.createObjectNode();
-        n.put("success", false);
-        n.put("status", ourResult.status().name());
-        return n;
+        return JSONUtilities.toJSON(objectMapper, ourResult);
     }
 }
