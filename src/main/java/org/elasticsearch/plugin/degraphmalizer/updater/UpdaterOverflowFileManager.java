@@ -18,9 +18,6 @@ public class UpdaterOverflowFileManager {
     private final String filenamePrefix;
     private final int limit;
 
-    private File[] countList;
-    private int[] sizeList;
-
     public UpdaterOverflowFileManager(final String logPath, final String index, final int limit) {
         this.logPath = logPath;
         this.filenamePrefix = index + "-overflow-";
@@ -45,65 +42,11 @@ public class UpdaterOverflowFileManager {
      * Number of records in overflow files.
      */
     public int size() {
-        return sizeSlow();
-    }
-
-    public int sizeSlow() {
         int count = 0;
         for (File file : getOverflowFiles()) {
             count += countLines(file);
         }
         return count;
-    }
-
-    public int sizeQuick() {
-        int count = 0;
-        if (countList == null) {
-            countList = getOverflowFiles();
-            sizeList = new int[countList.length];
-            int i = 0;
-            for (File file : countList) {
-                sizeList[i] = countLines(file);
-                count += sizeList[i];
-                i++;
-            }
-        } else {
-            File[] newList = getOverflowFiles();
-            int newSize[] = new int[newList.length];
-            Integer offset = findOffset(newList[0], countList);
-            if (offset != null) {
-                for (int i = 0; i < newList.length; i++) {
-                    int offsetPosition = i + offset;
-                    if (offsetPosition < sizeList.length) {
-                        newSize[i] = sizeList[offsetPosition];
-                    } else {
-                        newSize[i] = countLines(newList[i]);
-                    }
-                    count += newSize[i];
-                }
-            } else {
-                for (int i = 0; i < newList.length; i++) {
-                    newSize[i] = countLines(newList[i]);
-                    count += newSize[i];
-                }
-            }
-            sizeList = newSize;
-            countList = newList;
-        }
-        return count;
-    }
-
-    private Integer findOffset(File file, File[] list) {
-        String name = file.getName();
-        Integer offset = null;
-        for (int j = 0; j < list.length; j++) {
-            String otherName = list[j].getName();
-            if (name.equals(otherName)) {
-                offset = j;
-                break;
-            }
-        }
-        return offset;
     }
 
     public int countLines(File file) {
