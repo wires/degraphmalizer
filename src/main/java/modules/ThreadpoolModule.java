@@ -1,11 +1,11 @@
 package modules;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.*;
 import elasticsearch.QueryFunction;
 import modules.bindingannotations.*;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public class ThreadpoolModule extends AbstractModule
 {
@@ -21,7 +21,10 @@ public class ThreadpoolModule extends AbstractModule
     final ExecutorService provideDegraphmalizesExecutor()
     {
         // single threaded updates!
-        return Executors.newSingleThreadExecutor();
+        final ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
+                .setNameFormat("graphmod").build();
+
+        return Executors.newSingleThreadExecutor(namedThreadFactory);
     }
 
     @Provides
@@ -29,7 +32,10 @@ public class ThreadpoolModule extends AbstractModule
     @Recomputes
     final ExecutorService provideRecomputesExecutor()
     {
-        return Executors.newFixedThreadPool(16);
+        final ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
+                .setNameFormat("recomputer-%d").build();
+
+        return Executors.newCachedThreadPool(namedThreadFactory);
     }
 
     @Provides
@@ -37,7 +43,10 @@ public class ThreadpoolModule extends AbstractModule
     @Fetches
     final ExecutorService provideFetchesExecutor()
     {
-        return Executors.newFixedThreadPool(64);
+        final ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
+                .setNameFormat("fetcher-%d").build();
+
+        return Executors.newCachedThreadPool(namedThreadFactory);
     }
 
 }
