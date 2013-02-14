@@ -1,5 +1,6 @@
 package modules;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.*;
 import com.tinkerpop.blueprints.TransactionalGraph;
 import graphs.ops.BlueprintsSubgraphManager;
@@ -12,8 +13,8 @@ public class BlueprintsSubgraphManagerModule extends AbstractModule
     {}
 
     @Provides @Inject @Singleton
-    final SubgraphManager provideSubgraphManager(TransactionalGraph G)
+    final SubgraphManager provideSubgraphManager(ObjectMapper om, TransactionalGraph G)
     {
-        return new BlueprintsSubgraphManager(G);
+        return new BlueprintsSubgraphManager(om, G);
     }
 }

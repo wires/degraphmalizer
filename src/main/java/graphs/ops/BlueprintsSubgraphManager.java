@@ -1,6 +1,7 @@
 package graphs.ops;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tinkerpop.blueprints.*;
 import degraphmalizr.EdgeID;
 import degraphmalizr.ID;
@@ -19,11 +20,13 @@ public class BlueprintsSubgraphManager implements SubgraphManager
 {
     private final Logger log = LoggerFactory.getLogger(BlueprintsSubgraphManager.class);
 
+    private final ObjectMapper om;
     private final TransactionalGraph graph;
 
-    public BlueprintsSubgraphManager(TransactionalGraph graph)
+    public BlueprintsSubgraphManager(ObjectMapper om, TransactionalGraph graph)
     {
         this.graph = graph;
+        this.om = om;
     }
 
     @Override
@@ -107,7 +110,7 @@ public class BlueprintsSubgraphManager implements SubgraphManager
         for(Edge e: edgesToDelete)
         {
             // it is possible that a vertex turned symbolic and we are the last edge pointing to it, then remove it
-            final Vertex v = e.getVertex(directionOppositeTo(getEdgeID(e), sg.id()));
+            final Vertex v = e.getVertex(directionOppositeTo(getEdgeID(om, e), sg.id()));
             if(canDeleteVertex(v, sg.id(), edgesToDelete))
                 danglingVertices.add(v);
         }
@@ -128,18 +131,18 @@ public class BlueprintsSubgraphManager implements SubgraphManager
             }
             else
             {
-                GraphQueries.makeSymbolic(v);
+                GraphQueries.makeSymbolic(om, v);
             }
     }
 
     private Pair<List<Vertex>, List<Edge>> findOwnedElements(ID id) {
         // create a list of all elements owned by any version of this subgraph
         final List<Vertex> vertexList = new ArrayList<Vertex>();
-        for (Vertex v : findOwnedVertices(graph, id))
+        for (Vertex v : findOwnedVertices(om, graph, id))
             vertexList.add(v);
 
         final List<Edge> edgeList = new ArrayList<Edge>();
-        for (Edge e : findOwnedEdges(graph, id))
+        for (Edge e : findOwnedEdges(om, graph, id))
             edgeList.add(e);
 
         return new Pair<List<Vertex>, List<Edge>>(vertexList, edgeList);
@@ -154,7 +157,7 @@ public class BlueprintsSubgraphManager implements SubgraphManager
         for(Edge e: v.getEdges(Direction.BOTH))
         {
             // if there is one edge pointing to this vertex that isn't ours, we must keep the vertex
-            if(!onlyVersionDiffers(getOwner(e), owner))
+            if(!onlyVersionDiffers(getOwner(om, e), owner))
                 return false;
 
             // and all the other edges must be marked for deletion too!
@@ -162,7 +165,7 @@ public class BlueprintsSubgraphManager implements SubgraphManager
                 return false;
 
             //if this vertex is not symbolic and not owned by this subgraph, we don't delete it.
-            if(! isSymbolic(v)) return false;
+            if(! isSymbolic(om, v)) return false;
         }
 
         // only then can this vertex be removed
@@ -172,19 +175,19 @@ public class BlueprintsSubgraphManager implements SubgraphManager
     private Vertex createOrUpdateCentralVertex(SG sg) throws DegraphmalizerException
     {
         // find vertex, doesn't care about version
-        Vertex center = resolveVertex(graph, sg.id());
+        Vertex center = resolveVertex(om, graph, sg.id());
 
         if (center == null)
         {
             log.trace("Couldn't find central vertex with id {}, create new vertex", sg.id());
-            center = createVertex(graph, sg.id());
+            center = createVertex(om, graph, sg.id());
             log.trace("Created central vertex");
         }
 
         // it is actually fine to commit an older version, version management is completely done by ES
         if (log.isWarnEnabled())
         {
-            final ID cid = getID(center);
+            final ID cid = getID(om, center);
             if (isOlder(sg.id(), cid))
                 log.warn("Commit version < current version", sg.id(), cid);
         }
@@ -195,8 +198,8 @@ public class BlueprintsSubgraphManager implements SubgraphManager
         updateEdgeIds(center, sg.id());
 
         // update the identifier (to the latest version)
-        setID(center, sg.id());
-        setOwner(center, sg.id());
+        setID(om, center, sg.id());
+        setOwner(om, center, sg.id());
 
         return center;
     }
@@ -204,12 +207,12 @@ public class BlueprintsSubgraphManager implements SubgraphManager
     private void updateEdgeIds(Vertex center, ID id) throws DegraphmalizerException
     {
         for(Edge edge: center.getEdges(Direction.BOTH))
-            setEdgeId(updateEdgeId(edge, id), edge);
+            setEdgeId(om, updateEdgeId(edge, id), edge);
     }
 
     private EdgeID updateEdgeId(Edge edge, ID id) throws DegraphmalizerException
     {
-        final EdgeID edgeID = getEdgeID(edge);
+        final EdgeID edgeID = getEdgeID(om, edge);
 
         if (onlyVersionDiffers(edgeID.head(), id))
             return new EdgeID(edgeID.tail(), edgeID.label(), id);
@@ -235,7 +238,7 @@ public class BlueprintsSubgraphManager implements SubgraphManager
         for (Map.Entry<EdgeID, Map<String, JsonNode>> e : sg.edges().entrySet())
         {
             final EdgeID edgeId = e.getKey();
-            Edge edge = findEdge(graph, edgeId);
+            Edge edge = findEdge(om, graph, edgeId);
 
             if (edge != null)
                 //check if this edge belongs to this subgraph.
@@ -248,7 +251,7 @@ public class BlueprintsSubgraphManager implements SubgraphManager
             }
 
             // claim edge
-            setOwner(edge, sg.id());
+            setOwner(om, edge, sg.id());
             setProperties(edge, e.getValue());
             edgeList.add(edge);
         }
@@ -260,11 +263,11 @@ public class BlueprintsSubgraphManager implements SubgraphManager
         final ID other = getOppositeId(edgeId, centralVertex);
 
         // we either resolve the symbolic vertex, or create one to represent it
-        Vertex v = resolveVertex(graph, other);
+        Vertex v = resolveVertex(om, graph, other);
         if (v == null)
-            v = createVertex(graph, other);
+            v = createVertex(om, graph, other);
 
-        final Edge edge = createEdge(graph, createOppositeId(edgeId, centralVertex, getID(v)));
+        final Edge edge = createEdge(om, graph, createOppositeId(edgeId, centralVertex, getID(om, v)));
         return new Pair<Edge,Vertex>(edge, v);
     }
 
@@ -276,7 +279,7 @@ public class BlueprintsSubgraphManager implements SubgraphManager
      */
     private void edgeConsistencyCheck(ID centralVertex, EdgeID edgeId, Edge edge)
     {
-        final ID owner = getOwner(edge);
+        final ID owner = getOwner(om, edge);
 
         if (!onlyVersionDiffers(owner, centralVertex))
             throw new RuntimeException("Edge " + edgeId + " is already owned by " + owner);

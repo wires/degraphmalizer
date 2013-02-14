@@ -1,15 +1,14 @@
 package jmx;
 
-import javax.inject.Inject;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tinkerpop.blueprints.Graph;
+import graphs.GraphQueries;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
 import org.slf4j.Logger;
 
-import com.tinkerpop.blueprints.Graph;
-
-import graphs.GraphQueries;
+import javax.inject.Inject;
 
 public class GraphBuilder implements GraphBuilderMBean
 {
@@ -18,12 +17,14 @@ public class GraphBuilder implements GraphBuilderMBean
 	
 	protected final Client client;
 	protected final Graph graph;
+    protected final ObjectMapper om;
 	
 	@Inject
-	public GraphBuilder(Client client, Graph graph)
+	public GraphBuilder(ObjectMapper om, Client client, Graph graph)
 	{
 		this.client = client;
 		this.graph = graph;
+        this.om = om;
 	}
 	
 	@Override
@@ -66,6 +67,6 @@ public class GraphBuilder implements GraphBuilderMBean
 
     @Override
     public final void dumpGraph() {
-        GraphQueries.dumpGraph(graph);
+        GraphQueries.dumpGraph(om, graph);
     }
 }

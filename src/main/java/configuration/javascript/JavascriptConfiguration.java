@@ -39,7 +39,7 @@ public class JavascriptConfiguration implements Configuration
 
 
 
-    public JavascriptConfiguration(File directory) throws IOException
+    public JavascriptConfiguration(ObjectMapper om, File directory) throws IOException
     {
         //todo: directory.listFiles() can return null
         for(File dir : directory.listFiles())
@@ -54,7 +54,7 @@ public class JavascriptConfiguration implements Configuration
                 fixtureConfig = new JavascriptFixtureConfiguration(dir);
                 log.debug(fixtureConfig.toString());
             }else{
-                indices.put(dirname, new JavascriptIndexConfig(dirname, dir));
+                indices.put(dirname, new JavascriptIndexConfig(om, dirname, dir));
             }
         }
     }
@@ -89,7 +89,7 @@ class JavascriptIndexConfig implements IndexConfig
 	 * @param directory Directory to watch for files
 	 * @throws IOException
 	 */
-	public JavascriptIndexConfig(String index, File directory) throws IOException {
+	public JavascriptIndexConfig(ObjectMapper om, String index, File directory) throws IOException {
 
         this.index = index;
         Scriptable scope = null;
@@ -132,7 +132,7 @@ class JavascriptIndexConfig implements IndexConfig
 
                 final Scriptable typeConfig = (Scriptable) compile(cx, scope, reader, fn);
 
-                types.put(type, new JavascriptTypeConfig(type, scope, typeConfig, this));
+                types.put(type, new JavascriptTypeConfig(om, type, scope, typeConfig, this));
             }
         } finally {
             Context.exit();
@@ -186,19 +186,22 @@ class JavascriptTypeConfig implements TypeConfig
     final String sourceIndex;
     final String sourceType;
 
+    final ObjectMapper objectMapper;
 
     final Map<String,WalkConfig> walks = new HashMap<String, WalkConfig>();
 
-    public JavascriptTypeConfig(String type, Scriptable scope, Scriptable script, IndexConfig indexConfig) throws IOException
-	{
-		this.type = type;
-		this.script = script;
-		this.indexConfig = indexConfig;
+    public JavascriptTypeConfig(ObjectMapper objectMapper, String type, Scriptable scope, Scriptable script, IndexConfig indexConfig) throws IOException
+    {
+        this.objectMapper = objectMapper;
+        this.type = type;
+        this.script = script;
+        this.indexConfig = indexConfig;
 
         log.debug("Creating config for type [{}] in index [{}]", type, indexConfig.name());
 
-        try{
-		    Context.enter();
+        try
+        {
+            Context.enter();
 
             // filter & graph extraction functions
             filter = (Function) fetchObjectOrNull("filter");
@@ -211,32 +214,33 @@ class JavascriptTypeConfig implements TypeConfig
 
             // add the walks
             final Scriptable walks = (Scriptable) fetchObjectOrNull("walks");
-            if (walks != null) {
-                for(Object id : ScriptableObject.getPropertyIds(walks))
+            if (walks != null)
+            {
+                for (Object id : ScriptableObject.getPropertyIds(walks))
                 {
                     final String walkName = id.toString();
-        
+
                     // get the walk object
-                    final Scriptable walk = (Scriptable)ScriptableObject.getProperty(walks, walkName);
-        
+                    final Scriptable walk = (Scriptable) ScriptableObject.getProperty(walks, walkName);
+
                     final Direction direction = Direction.valueOf(ScriptableObject.getProperty(walk, "direction").toString());
-        
-                    final Scriptable properties = (Scriptable)ScriptableObject.getProperty(walk, "properties");
-        
-                    final JavascriptWalkConfig walkCfg = new JavascriptWalkConfig(walkName, direction, this, scope, properties);
-        
+
+                    final Scriptable properties = (Scriptable) ScriptableObject.getProperty(walk, "properties");
+
+                    final JavascriptWalkConfig walkCfg = new JavascriptWalkConfig(objectMapper,  walkName, direction, this, scope, properties);
+
                     this.walks.put(walkName, walkCfg);
                 }
-            }else{
+            } else
+            {
                 log.debug("No walks found in configuration");
             }
-        }
-        finally
+        } finally
         {
 
             Context.exit();
         }
-	}
+    }
 
     private Object fetchObjectOrNull(String field)
     {
@@ -270,7 +274,7 @@ class JavascriptTypeConfig implements TypeConfig
         // extract graph components
         final LoggingSubgraph lsg = new LoggingSubgraph("subgraph");
         final CompositeSubgraph csg = new CompositeSubgraph(lsg, graphops);
-        final JavascriptSubgraph sg = new JavascriptSubgraph(csg, cx, script);
+        final JavascriptSubgraph sg = new JavascriptSubgraph(objectMapper,  csg, cx, script);
         final Object obj = JSONUtilities.toJSONObject(cx, script,  job.document().toString());
         extract.call(cx, script, null, new Object[]{obj, sg});
         Context.exit();
@@ -314,7 +318,7 @@ class JavascriptTypeConfig implements TypeConfig
             final Context cx = Context.enter();
             final Object doc = JSONUtilities.toJSONObject(cx, script, document.toString());
             final Object result = transform.call(cx, script, null, new Object[]{doc});
-            return JSONUtilities.fromJSONObject(new ObjectMapper(), cx, script, result);
+            return JSONUtilities.fromJSONObject(objectMapper, cx, script, result);
         }
         catch (IOException e)
         {
@@ -374,7 +378,7 @@ class JavascriptWalkConfig implements WalkConfig
     final Map<String, JavascriptPropertyConfig> properties = new HashMap<String,JavascriptPropertyConfig>();
 
 
-    public JavascriptWalkConfig(String walkName, Direction direction, TypeConfig typeCfg, Scriptable scope, Scriptable propertyScriptable)
+    public JavascriptWalkConfig(ObjectMapper om, String walkName, Direction direction, TypeConfig typeCfg, Scriptable scope, Scriptable propertyScriptable)
     {
         this.walkName = walkName;
         this.direction = direction;
@@ -393,7 +397,7 @@ class JavascriptWalkConfig implements WalkConfig
                 final Function reduce = (Function)ScriptableObject.getProperty(property, "reduce");
                 final boolean nested = ScriptableObject.getProperty(property, "nested").toString().equals("true");
 
-                this.properties.put(propertyName, new JavascriptPropertyConfig(propertyName, nested, reduce, scope, this));
+                this.properties.put(propertyName, new JavascriptPropertyConfig(om, propertyName, nested, reduce, scope, this));
             }
         }
         finally
@@ -435,9 +439,11 @@ class JavascriptPropertyConfig implements PropertyConfig
 	final Function reduce;
 	final Scriptable scope;
 	final WalkConfig walkConfig;
-	
-	public JavascriptPropertyConfig(String name, boolean nested, Function reduce, Scriptable scope, WalkConfig walkConfig)
+    final ObjectMapper om;
+
+    public JavascriptPropertyConfig(ObjectMapper om, String name, boolean nested, Function reduce, Scriptable scope, WalkConfig walkConfig)
 	{
+        this.om = om;
         this.nested = nested;
 		this.name = name;
 		this.reduce = reduce;
@@ -455,8 +461,6 @@ class JavascriptPropertyConfig implements PropertyConfig
 	public JsonNode reduce(Tree<ResolvedPathElement> tree)
 	{
 		JsonNode result = null;
-
-        final ObjectMapper om = new ObjectMapper();
 
         final com.google.common.base.Function<ResolvedPathElement, JsonNode> resultToString = new com.google.common.base.Function<ResolvedPathElement, JsonNode>()
         {

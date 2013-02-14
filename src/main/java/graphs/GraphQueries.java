@@ -57,6 +57,7 @@ public final class GraphQueries
     }
 
 
+
     /**
      * Set the property of an element to a json value.
      *
@@ -91,7 +92,7 @@ public final class GraphQueries
         elt.setProperty(property, value.toString());
     }
 
-    public static JsonNode getProperty(Element elt, String property)
+    public static JsonNode getProperty(ObjectMapper om, Element elt, String property)
     {
         checkPropertyName(property);
 
@@ -101,7 +102,6 @@ public final class GraphQueries
             throw new RuntimeException("Property " + property + " is not in the expected format (String), it's a "
                     + obj.getClass().getSimpleName());
 
-        final ObjectMapper om = new ObjectMapper();
         final String s = String.valueOf(obj);
 
         try
@@ -143,9 +143,9 @@ public final class GraphQueries
             throw new IllegalArgumentException("Property name '" + name + "' is a reserved name");
     }
 
-    public static Edge findEdge(Graph G, EdgeID edgeID)
+    public static Edge findEdge(ObjectMapper om, Graph G, EdgeID edgeID)
     {
-        final String id = getStringRepresentation(edgeID);
+        final String id = getStringRepresentation(om, edgeID);
         final Iterator<Edge> ei = G.getEdges(IDENTIFIER, id).iterator();
         if(!ei.hasNext())
             return null;
@@ -159,10 +159,9 @@ public final class GraphQueries
         return e;
     }
 
-    private static String getStringRepresentation(final EdgeID edgeID)
+    private static String getStringRepresentation(ObjectMapper om, final EdgeID edgeID)
     {
         final StringBuilder stringBuilder = new StringBuilder();
-        final ObjectMapper om = new ObjectMapper();
         stringBuilder.append(JSONUtilities.toJSON(om, edgeID.tail()).toString())
                      .append("--")
                      .append(edgeID.label())
@@ -172,9 +171,8 @@ public final class GraphQueries
     }
 
 
-    private static Vertex findVertexOnProperty(Graph G, ID id, String propertyName)
+    private static Vertex findVertexOnProperty(ObjectMapper om, Graph G, ID id, String propertyName)
     {
-        final ObjectMapper om = new ObjectMapper();
         final String idStr = JSONUtilities.toJSON(om, id).toString();
         final Iterator<Vertex> vi = G.getVertices(propertyName, idStr).iterator();
         if(!vi.hasNext())
@@ -188,45 +186,43 @@ public final class GraphQueries
         return v;
     }
 
-    public static Vertex findVertex(Graph G, ID id)
+    public static Vertex findVertex(ObjectMapper om, Graph G, ID id)
     {
-        return findVertexOnProperty(G, id, IDENTIFIER);
+        return findVertexOnProperty(om, G, id, IDENTIFIER);
     }
 
     /**
      * Find all vertices owner by the specified ID, don't look at versions.
      * This method will not return the ownable symbolic vertices.
      */
-    public static Iterable<Vertex> findOwnedVertices(Graph G, ID owner)
+    public static Iterable<Vertex> findOwnedVertices(ObjectMapper om, Graph G, ID owner)
     {
-        final ObjectMapper om = new ObjectMapper();
         return G.getVertices(SYMBOLIC_OWNER, JSONUtilities.toJSON(om, getSymbolicID(owner)).toString());
     }
 
     /**
      * Find all edge owner by the specified ID, don't look at versions.
      */
-    public static Iterable<Edge> findOwnedEdges(Graph G, ID owner)
+    public static Iterable<Edge> findOwnedEdges(ObjectMapper om, Graph G, ID owner)
     {
-        final ObjectMapper om = new ObjectMapper();
         return G.getEdges(SYMBOLIC_OWNER, JSONUtilities.toJSON(om, getSymbolicID(owner)).toString());
     }
 
     /**
      * Find vertex without considering the version specified in the ID.
      */
-    public static Vertex resolveVertex(Graph G, ID id)
+    public static Vertex resolveVertex(ObjectMapper om, Graph G, ID id)
     {
-        return findVertexOnProperty(G, getSymbolicID(id), SYMBOLIC_IDENTIFER);
+        return findVertexOnProperty(om, G, getSymbolicID(id), SYMBOLIC_IDENTIFER);
     }
 
-    public static EdgeID getEdgeID(Edge edge)
+    public static EdgeID getEdgeID(ObjectMapper om, Edge edge)
     {
         final Vertex tail = edge.getVertex(Direction.OUT);
         final Vertex head = edge.getVertex(Direction.IN);
 
-        final ID tailID = getID(tail);
-        final ID headID = getID(head);
+        final ID tailID = getID(om, tail);
+        final ID headID = getID(om, head);
 
         if (tailID != null && headID != null)
             return new EdgeID(tailID, edge.getLabel(), headID);
@@ -237,9 +233,8 @@ public final class GraphQueries
     /**
      * TODO: return null if ID cannot be found
      */
-    public static ID getID(Vertex vertex)
+    public static ID getID(ObjectMapper om, Vertex vertex)
     {
-        final ObjectMapper om = new ObjectMapper();
         final String json = String.valueOf(vertex.getProperty(IDENTIFIER));
 
         try
@@ -254,9 +249,8 @@ public final class GraphQueries
         }
     }
 
-    public static void setID(Vertex vertex, ID id)
+    public static void setID(ObjectMapper om, Vertex vertex, ID id)
     {
-        final ObjectMapper om = new ObjectMapper();
         final String json = JSONUtilities.toJSON(om, id).toString();
         vertex.setProperty(IDENTIFIER, json);
 
@@ -264,8 +258,8 @@ public final class GraphQueries
         vertex.setProperty(SYMBOLIC_IDENTIFER, symbolic);
     }
 
-    public static void setEdgeId(EdgeID edgeID, Edge edge) {
-        edge.setProperty(IDENTIFIER, getStringRepresentation(edgeID));
+    public static void setEdgeId(ObjectMapper om, EdgeID edgeID, Edge edge) {
+        edge.setProperty(IDENTIFIER, getStringRepresentation(om, edgeID));
     }
 
     public static ID getSymbolicID(ID id)
@@ -273,9 +267,8 @@ public final class GraphQueries
         return new ID(id.index(), id.type(), id.id(), 0);
     }
 
-    public static void setOwner(Element element, ID id)
+    public static void setOwner(ObjectMapper om, Element element, ID id)
     {
-        final ObjectMapper om = new ObjectMapper();
         element.setProperty(OWNER, JSONUtilities.toJSON(om, id).toString());
         element.setProperty(SYMBOLIC_OWNER, JSONUtilities.toJSON(om, getSymbolicID(id)).toString());
     }
@@ -283,13 +276,12 @@ public final class GraphQueries
     /**
      * Find the owner of an edge or a vertex.
      */
-    public static ID getOwner(Element element)
+    public static ID getOwner(ObjectMapper om, Element element)
     {
         final Object owner = element.getProperty(OWNER);
         if (owner == null)
             return null;
 
-        final ObjectMapper om = new ObjectMapper();
         try
         {
             final JsonNode node = om.readTree(String.valueOf(owner));
@@ -305,33 +297,33 @@ public final class GraphQueries
     /**
      * Create an edge in the graph and set its identifier.
      */
-    public static Edge createEdge(Graph G, EdgeID edgeID)
+    public static Edge createEdge(ObjectMapper om, Graph G, EdgeID edgeID)
     {
-        final Vertex tv = findVertex(G, edgeID.tail());
-        final Vertex hv = findVertex(G, edgeID.head());
+        final Vertex tv = findVertex(om, G, edgeID.tail());
+        final Vertex hv = findVertex(om, G, edgeID.head());
 
         if(tv == null || hv == null)
             throw new RuntimeException("Head or tail of edge doesn't exist!");
 
         final Edge e = G.addEdge(null, tv, hv, edgeID.label());
 
-        setEdgeId(edgeID, e);
+        setEdgeId(om, edgeID, e);
         return e;
     }
 
     /**
      * Create a vertex and set it's identifier.
      */
-    public static Vertex createVertex(Graph G, ID id)
+    public static Vertex createVertex(ObjectMapper om, Graph G, ID id)
     {
         final Vertex v = G.addVertex(null);
-        setID(v, id);
+        setID(om, v, id);
         return v;
     }
 
-    public static boolean isSymbolic(final Vertex v)
+    public static boolean isSymbolic(ObjectMapper om, final Vertex v)
     {
-        return getID(v).isSymbolic();
+        return getID(om, v).isSymbolic();
     }
 
     /**
@@ -344,10 +336,10 @@ public final class GraphQueries
      *     <li>The vertex is a symbolic vertex ({@code version() == 0})</li>
      * </ul>
      */
-    public static boolean isOwnable(final Vertex v, final ID owner)
+    public static boolean isOwnable(ObjectMapper om, final Vertex v, final ID owner)
     {
-        final ID id = getOwner(v);
-        return id == null || onlyVersionDiffers(id, owner) || isSymbolic(v);
+        final ID id = getOwner(om, v);
+        return id == null || onlyVersionDiffers(id, owner) || isSymbolic(om, v);
     }
 
     /**
@@ -393,13 +385,13 @@ public final class GraphQueries
             return new EdgeID(targetId, id.label(), id.head());
     }
 
-    public static void dumpGraph(Graph graph)
+    public static void dumpGraph(ObjectMapper om, Graph graph)
     {
         log.trace("Graph dump start");
 
         for(Edge e : graph.getEdges())
         {
-            final EdgeID edgeId = getEdgeID(e);
+            final EdgeID edgeId = getEdgeID(om, e);
             if(edgeId == null)
                 log.trace(e.toString());
             else
@@ -409,22 +401,22 @@ public final class GraphQueries
         log.trace("Graph dump done");
     }
 
-    public static void makeSymbolic(Vertex vertex)
+    public static void makeSymbolic(ObjectMapper om, Vertex vertex)
     {
-        final ID symbolicID = getSymbolicID(getID(vertex));
-        setID(vertex, symbolicID);
-        setOwner(vertex, symbolicID);
+        final ID symbolicID = getSymbolicID(getID(om, vertex));
+        setID(om, vertex, symbolicID);
+        setOwner(om, vertex, symbolicID);
 
         for (Edge edge : vertex.getEdges(Direction.IN)) {
-            EdgeID id = getEdgeID(edge);
+            EdgeID id = getEdgeID(om, edge);
             EdgeID idWithSymbolicHead = new EdgeID(id.tail(), id.label(), symbolicID);
-            setEdgeId(idWithSymbolicHead, edge);
+            setEdgeId(om, idWithSymbolicHead, edge);
         }
 
         for (Edge edge : vertex.getEdges(Direction.OUT)) {
-            EdgeID id = getEdgeID(edge);
+            EdgeID id = getEdgeID(om, edge);
             EdgeID idWithSymbolicHead = new EdgeID(symbolicID, id.label(), id.head());
-            setEdgeId(idWithSymbolicHead, edge);
+            setEdgeId(om, idWithSymbolicHead, edge);
         }
     }
 }

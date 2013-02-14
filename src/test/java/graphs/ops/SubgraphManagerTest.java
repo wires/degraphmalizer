@@ -21,6 +21,7 @@ public class SubgraphManagerTest
 {
     final Random random = new Random(System.currentTimeMillis());
     LocalGraph lg;
+    final ObjectMapper om = new ObjectMapper();
 
     @BeforeMethod
     public void clearGraph()
@@ -130,16 +131,16 @@ public class SubgraphManagerTest
         assertThat(lg.G.getVertices()).hasSize(2);
         assertThat(lg.G.getEdges()).hasSize(1);
 
-        final Vertex v0 = resolveVertex(lg.G, id0);
-        final Vertex v1 = resolveVertex(lg.G, id1);
+        final Vertex v0 = resolveVertex(om, lg.G, id0);
+        final Vertex v1 = resolveVertex(om, lg.G, id1);
 
-        assertThat(getID(v0)).isEqualTo(id0);
-        assertThat(getID(v1)).isEqualTo(id1);
+        assertThat(getID(om, v0)).isEqualTo(id0);
+        assertThat(getID(om, v1)).isEqualTo(id1);
         p0.assertOK(v0);
         p1.assertOK(v1);
 
         final EdgeID edgeID = new EdgeID(id0, "label", id1);
-        final Edge e = findEdge(lg.G, edgeID);
+        final Edge e = findEdge(om, lg.G, edgeID);
 
         assertThat(e).isNotNull();
         assertThat(e.getVertex(Direction.IN)).isEqualTo(v1);
@@ -159,7 +160,7 @@ public class SubgraphManagerTest
         final ID id2 = new ID("a", "b", "c2", 2);
         addVertexWithId(id1, true);
         addVertexWithId(id2, false);
-        createEdge(lg.G, new EdgeID(id1, "edge", id2));
+        createEdge(om, lg.G, new EdgeID(id1, "edge", id2));
 
         //now create a subgraph for id1, but with a version
         final ID id1a = new ID("a", "b", "c1", 1);
@@ -206,9 +207,9 @@ public class SubgraphManagerTest
         //edge -> IN == v2 :: edge -> OUT == v1
         final Vertex head = edge.getVertex(Direction.IN);
 
-        assertThat(getID(head).version()).isZero();
-        assertThat(getID(head)).isEqualTo(targetId);
-        assertThat(getID(v)).isEqualTo(sourceId);
+        assertThat(getID(om, head).version()).isZero();
+        assertThat(getID(om, head)).isEqualTo(targetId);
+        assertThat(getID(om, v)).isEqualTo(sourceId);
     }
 
     /**
@@ -233,7 +234,7 @@ public class SubgraphManagerTest
         //test if the edge has been created properly
         Edge edge = v.getEdges(Direction.OUT).iterator().next();
         Vertex vout = edge.getVertex(Direction.IN);
-        assertThat(getID(vout)).isEqualTo(targetId);
+        assertThat(getID(om, vout)).isEqualTo(targetId);
 
         //test if exactly two vertices are created.
         assertThat(Iterables.toList(lg.G.getVertices()).size()).isEqualTo(2);
@@ -260,7 +261,7 @@ public class SubgraphManagerTest
         lg.sgm.commitSubgraph(sg);
 
         //test that the vertex still has the properties.
-        Vertex targetVertex = findVertex(lg.G, targetID);
+        Vertex targetVertex = findVertex(om, lg.G, targetID);
         assertThat(targetVertex).isEqualTo(v);
         assertThat(targetVertex.getPropertyKeys().size()).isEqualTo(5);
         checkElementProperty(targetVertex, "foo", "bar");
@@ -290,7 +291,7 @@ public class SubgraphManagerTest
         checkElementProperty(v1, "prop0", "een");
         checkElementProperty(v1, "prop1", "twee");
         assertThat(v1.getPropertyKeys().contains("foo")).isFalse();
-        assertThat(getID(v1).version()).isEqualTo(newID.version());
+        assertThat(getID(om, v1).version()).isEqualTo(newID.version());
     }
 
     /**
@@ -350,7 +351,7 @@ public class SubgraphManagerTest
         lg.G.stopTransaction(TransactionalGraph.Conclusion.SUCCESS);
 
         //let's check we actually have the edges.
-        final Vertex v1 = findVertex(lg.G, rootId);
+        final Vertex v1 = findVertex(om, lg.G, rootId);
         assertThat(Iterables.toList(v1.getEdges(Direction.OUT))).hasSize(2);
         assertThat(Iterables.toList(v1.getEdges(Direction.IN))).hasSize(2);
 
@@ -360,16 +361,16 @@ public class SubgraphManagerTest
         lg.sgm.commitSubgraph(sg);
 
         //assert that the new subgraph has no edges,
-        final Vertex v2 = findVertex(lg.G, rootId);
+        final Vertex v2 = findVertex(om, lg.G, rootId);
         assertThat(Iterables.toList(v2.getEdges(Direction.BOTH))).isEmpty();
 
         //the two symbolic vertices are gone,
-        assertThat(findVertex(lg.G, symbolicVertexIncoming)).isNull();
-        assertThat(findVertex(lg.G, symbolicVertexOutGoing)).isNull();
+        assertThat(findVertex(om, lg.G, symbolicVertexIncoming)).isNull();
+        assertThat(findVertex(om, lg.G, symbolicVertexOutGoing)).isNull();
 
         //and the two versioned vertices are still there.
-        assertThat(findVertex(lg.G, realVertexIncoming)).isNotNull();
-        assertThat(findVertex(lg.G, realVertexOutgoing)).isNotNull();
+        assertThat(findVertex(om, lg.G, realVertexIncoming)).isNotNull();
+        assertThat(findVertex(om, lg.G, realVertexOutgoing)).isNotNull();
     }
 
     @Test
@@ -400,21 +401,21 @@ public class SubgraphManagerTest
         lg.sgm.deleteSubgraph(sg1);
 
         // Check vertices
-        Vertex vertex0 = findVertex(lg.G, v0);
-        Vertex vertex1 = findVertex(lg.G, v1s);
-        Vertex vertex2 = findVertex(lg.G, v2);
+        Vertex vertex0 = findVertex(om, lg.G, v0);
+        Vertex vertex1 = findVertex(om, lg.G, v1s);
+        Vertex vertex2 = findVertex(om, lg.G, v2);
 
         assertThat(vertex0).isNotNull();
         assertThat(vertex1).isNotNull();
         assertThat(vertex2).isNotNull();
 
-        assertThat(GraphQueries.isSymbolic(vertex0)).isFalse();
-        assertThat(GraphQueries.isSymbolic(vertex1)).isTrue();
-        assertThat(GraphQueries.isSymbolic(vertex2)).isFalse();
+        assertThat(GraphQueries.isSymbolic(om, vertex0)).isFalse();
+        assertThat(GraphQueries.isSymbolic(om, vertex1)).isTrue();
+        assertThat(GraphQueries.isSymbolic(om, vertex2)).isFalse();
 
         // Check edges
-        final Edge edge0 = findEdge(lg.G, e0);
-        final Edge edge1 = findEdge(lg.G, e1);
+        final Edge edge0 = findEdge(om, lg.G, e0);
+        final Edge edge1 = findEdge(om, lg.G, e1);
 
         assertThat(edge0).isNotNull();
         assertThat(edge1).isNull();
@@ -445,15 +446,15 @@ public class SubgraphManagerTest
     private void addEdgeAndVertices(final ID graphID, final ID targetID, final String label, Direction direction)
     {
         for (final ID id : Arrays.asList(graphID, targetID)) {
-            if (findVertex(lg.G, id) == null) {
-                setOwner(createVertex(lg.G, id), id);
+            if (findVertex(om, lg.G, id) == null) {
+                setOwner(om, createVertex(om, lg.G, id), id);
             }
         }
 
         if (direction == Direction.IN) {
-            setOwner(createEdge(lg.G, new EdgeID(targetID, label, graphID)), graphID);
+            setOwner(om, createEdge(om, lg.G, new EdgeID(targetID, label, graphID)), graphID);
         }else{
-            setOwner(createEdge(lg.G, new EdgeID(graphID, label, targetID)), graphID);
+            setOwner(om, createEdge(om, lg.G, new EdgeID(graphID, label, targetID)), graphID);
         }
     }
 
@@ -500,7 +501,7 @@ public class SubgraphManagerTest
     private Vertex commitAndFindCentralVertex(Subgraph sg, ID id) throws DegraphmalizerException
     {
         lg.sgm.commitSubgraph(sg);
-        return findVertex(lg.G, id);
+        return findVertex(om, lg.G, id);
     }
 
     private Vertex commitAndFindCentralVertex(ID id) throws DegraphmalizerException
@@ -553,7 +554,7 @@ class Props
             final String name = e.getKey();
             final JsonNode expected = e.getValue();
 
-            final JsonNode n = getProperty(v, name);
+            final JsonNode n = getProperty(om, v, name);
             assertThat(n.equals(expected)).isTrue();
         }
     }

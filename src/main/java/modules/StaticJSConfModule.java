@@ -1,5 +1,6 @@
 package modules;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.*;
 import configuration.Configuration;
 import configuration.javascript.JavascriptConfiguration;
@@ -25,8 +26,9 @@ public class StaticJSConfModule extends AbstractModule
 	
 	@Provides
 	@Singleton
-    final Configuration provideConfiguration() throws IOException
+    @Inject
+    final Configuration provideConfiguration(ObjectMapper om) throws IOException
 	{
-		return new JavascriptConfiguration(new File(scriptFolder));
+		return new JavascriptConfiguration(om, new File(scriptFolder));
 	}
 }

@@ -54,7 +54,7 @@ public final class JSONUtilities
     {
         final ObjectNode objectNode = om.createObjectNode();
 
-        final EdgeID edgeID = GraphQueries.getEdgeID(edge);
+        final EdgeID edgeID = GraphQueries.getEdgeID(om, edge);
 
         final ID tail = edgeID.tail();
         objectNode.put("tail", toJSON(om, tail));
@@ -70,15 +70,13 @@ public final class JSONUtilities
 
     public static ArrayNode toJSON(ObjectMapper om, Vertex vertex)
     {
-        final ID id = GraphQueries.getID(vertex);
+        final ID id = GraphQueries.getID(om, vertex);
         return toJSON(om, id);
     }
 
     public static ArrayNode toJSON(ObjectMapper om, ID id)
     {
-        final ObjectMapper objectMapper = new ObjectMapper();
-
-        return objectMapper.createArrayNode()
+        return om.createArrayNode()
                 .add(id.index())
                 .add(id.type())
                 .add(id.id())

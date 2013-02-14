@@ -1,5 +1,6 @@
 package modules;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.*;
 import configuration.*;
 import configuration.javascript.JavascriptConfiguration;
@@ -60,7 +61,7 @@ public class ReloadingJSConfModule extends AbstractModule implements Configurati
             @Override public Configuration get() {
                 try
                 {
-                    return new JavascriptConfiguration(new File(scriptFolder));
+                    return new JavascriptConfiguration(new ObjectMapper(), new File(scriptFolder));
                 }
                 catch (Exception e)
                 {

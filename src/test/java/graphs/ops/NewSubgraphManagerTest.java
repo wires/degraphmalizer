@@ -1,22 +1,16 @@
 package graphs.ops;
 
-import java.util.Collections;
-import java.util.Random;
-
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import com.tinkerpop.blueprints.Direction;
-import com.tinkerpop.blueprints.Edge;
-import com.tinkerpop.blueprints.Graph;
-import com.tinkerpop.blueprints.Vertex;
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tinkerpop.blueprints.*;
 import degraphmalizr.EdgeID;
 import degraphmalizr.ID;
 import exceptions.DegraphmalizerException;
 import graphs.GraphQueries;
+import org.testng.annotations.*;
+
+import java.util.Collections;
+import java.util.Random;
 
 import static org.fest.assertions.Assertions.assertThat;
 
@@ -147,9 +141,10 @@ public class NewSubgraphManagerTest
 
     protected void assertThatGraphContains(Graph G, EdgeID edge_id)
     {
-        final Vertex head = GraphQueries.findVertex(G, edge_id.head());
-        final Vertex tail = GraphQueries.findVertex(G, edge_id.tail());
-        final Edge edge = GraphQueries.findEdge(G, edge_id);
+        final ObjectMapper om = new ObjectMapper();
+        final Vertex head = GraphQueries.findVertex(om, G, edge_id.head());
+        final Vertex tail = GraphQueries.findVertex(om, G, edge_id.tail());
+        final Edge edge = GraphQueries.findEdge(om, G, edge_id);
 
         assertThat(head).isNotNull();
         assertThat(tail).isNotNull();

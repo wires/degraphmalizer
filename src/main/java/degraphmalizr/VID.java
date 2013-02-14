@@ -1,5 +1,6 @@
 package degraphmalizr;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
 import graphs.GraphQueries;
@@ -12,27 +13,32 @@ public class VID
     final ID id;
     final Vertex v;
 
-    public VID(Vertex v)
+    final ObjectMapper om;
+
+    public VID(ObjectMapper om, Vertex v)
     {
-        this.id = GraphQueries.getID(v);
+        this.om = om;
+        this.id = GraphQueries.getID(om, v);
         this.v = v;
     }
 
-    public VID(Vertex v, ID id)
+    public VID(ObjectMapper om, Vertex v, ID id)
     {
+        this.om = om;
         this.id = id;
         this.v = v;
     }
 
-    public VID(Graph G, ID id)
+    public VID(ObjectMapper om, Graph G, ID id)
     {
+        this.om = om;
         this.id = id;
-        this.v = GraphQueries.findVertex(G, id);
+        this.v = GraphQueries.findVertex(om, G, id);
     }
 
     public boolean isCorrect()
     {
-        return id.equals(GraphQueries.getID(v));
+        return id.equals(GraphQueries.getID(om, v));
     }
 
     public final ID ID()

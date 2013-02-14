@@ -47,7 +47,7 @@ public class QueryFunction implements Function<Pair<Edge,Vertex>, Optional<Resol
         }
 
         // retrieve id property
-        final ID id = GraphQueries.getID(pair.b);
+        final ID id = GraphQueries.getID(objectMapper, pair.b);
 
         // vertices without ID's cannot be looked up
         if(id == null)

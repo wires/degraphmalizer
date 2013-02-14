@@ -38,13 +38,14 @@ public class RecomputerFactoryImpl implements Recomputer
     protected final ExecutorService recomputeQueue;
     protected final ExecutorService fetchQueue;
     protected final QueryFunction queryFn;
-    protected final ObjectMapper objectMapper = new ObjectMapper();
+    protected final ObjectMapper objectMapper;
 
     @Inject
     public RecomputerFactoryImpl(Client client, Graph graph,
                                  RecomputeResultFactory resultFactory,
                                  @Fetches ExecutorService fetchQueue,
                                  @Recomputes ExecutorService recomputeQueue,
+                                 ObjectMapper objectMapper,
                                  QueryFunction queryFunction)
     {
         this.fetchQueue = fetchQueue;
@@ -53,6 +54,7 @@ public class RecomputerFactoryImpl implements Recomputer
         this.graph = graph;
         this.client = client;
         this.queryFn = queryFunction;
+        this.objectMapper = objectMapper;
     }
 
     class Recomputer

@@ -46,7 +46,7 @@ public class Degraphmalizer implements Degraphmalizr
 
     protected final Provider<Configuration> cfgProvider;
 
-    final ObjectMapper objectMapper = new ObjectMapper();
+    final ObjectMapper objectMapper;
 
 	@Inject
 	public Degraphmalizer(Client client, SubgraphManager subgraphmanager, Graph graph,
@@ -54,6 +54,7 @@ public class Degraphmalizer implements Degraphmalizr
                           @Fetches ExecutorService fetchQueue,
                           @Recomputes ExecutorService recomputeQueue,
                           QueryFunction queryFunction,
+                          ObjectMapper objectMapper,
                           Recomputer recomputer,
                           Provider<Configuration> configProvider)
 	{
@@ -66,6 +67,7 @@ public class Degraphmalizer implements Degraphmalizr
         this.recomputer = recomputer;
         this.cfgProvider = configProvider;
         this.queryFn = queryFunction;
+        this.objectMapper = objectMapper;
 	}
 
     @Override
@@ -85,7 +87,7 @@ public class Degraphmalizer implements Degraphmalizr
 
         for(TypeConfig cfg : Configurations.configsFor(cfgProvider.get(), id.index(), id.type()))
         {
-            if(log.isDebugEnabled())
+            if((logMessage != null) && log.isDebugEnabled())
             {
                 logMessage.append("/").append(cfg.targetIndex()).append("/");
                 logMessage.append(cfg.targetType()).append(", ");
@@ -247,7 +249,7 @@ public class Degraphmalizer implements Degraphmalizr
         final ID id = action.id();
 
 //        if(log.isTraceEnabled())
-            GraphQueries.dumpGraph(graph);
+            GraphQueries.dumpGraph(objectMapper, graph);
 
         // extract the graph elements
         log.debug("Extracting graph elements");
@@ -261,7 +263,7 @@ public class Degraphmalizer implements Degraphmalizr
         log.debug("Committed subgraph to graph");
         
 //        if(log.isTraceEnabled())
-            GraphQueries.dumpGraph(graph);
+            GraphQueries.dumpGraph(objectMapper, graph);
 
     }
 
@@ -283,7 +285,7 @@ public class Degraphmalizer implements Degraphmalizr
         final ID id = action.id();
 
         // we now start traversals for each walk to find documents affected by this change
-        final Vertex root = GraphQueries.findVertex(graph, id);
+        final Vertex root = GraphQueries.findVertex(objectMapper, graph, id);
         if (root == null)
             // TODO this shouldn't occur, because the subgraph implicitly commits a vertex to the graph
             throw new NotFoundInGraphException(id);
@@ -291,7 +293,7 @@ public class Degraphmalizer implements Degraphmalizr
         final ArrayList<RecomputeRequest> recomputeRequests = new ArrayList<RecomputeRequest>();
 
         // we add ourselves as the first job in the list
-        final VID vid = new VID(root, id);
+        final VID vid = new VID(objectMapper, root, id);
         recomputeRequests.add(new RecomputeRequest(vid, action.typeConfig()));
 
         for(WalkConfig walkCfg : action.typeConfig().walks().values())
@@ -318,7 +320,7 @@ public class Degraphmalizer implements Degraphmalizr
                 if(v.equals(root))
                     continue;
 
-                final VID v_id = new VID(v);
+                final VID v_id = new VID(objectMapper, v);
 
                 // we already know this document does not exist in ES, skip
                 if(v_id.ID().version() == 0)

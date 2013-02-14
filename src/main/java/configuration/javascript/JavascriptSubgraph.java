@@ -19,13 +19,14 @@ import java.util.Map;
 //TODO not like this plz
 public class JavascriptSubgraph
 {
-    final ObjectMapper om = new ObjectMapper();
+    final ObjectMapper om;
     final Subgraph subgraph;
     final Scriptable scope;
     final Context cx;
 
-    public JavascriptSubgraph(Subgraph subgraph, Context cx, Scriptable scope)
+    public JavascriptSubgraph(ObjectMapper om, Subgraph subgraph, Context cx, Scriptable scope)
     {
+        this.om = om;
         this.subgraph = subgraph;
         this.cx = cx;
         this.scope = scope;
