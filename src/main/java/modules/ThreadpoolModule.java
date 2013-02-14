@@ -22,7 +22,7 @@ public class ThreadpoolModule extends AbstractModule
     {
         // single threaded updates!
         final ThreadFactory namedThreadFactory = new ThreadFactoryBuilder()
-                .setNameFormat("graphmod").build();
+                .setNameFormat("degraphmalizer").build();
 
         return Executors.newSingleThreadExecutor(namedThreadFactory);
     }
