@@ -65,7 +65,7 @@ public class RedegraphmalizePostProcessor implements PostProcessor
             {
                 ID id = new ID(hit.getIndex(), hit.getType(), hit.getId(), getVersion(hit));
                 log.debug("Re-degraphmalizing document {}", id);
-                degraphmalizr.degraphmalize(DegraphmalizeActionType.UPDATE, id, new LoggingDegraphmalizeStatus(log));
+                degraphmalizr.degraphmalize(DegraphmalizeActionType.UPDATE, id, new LoggingDegraphmalizeStatus());
             }
 
         } catch (Exception e)

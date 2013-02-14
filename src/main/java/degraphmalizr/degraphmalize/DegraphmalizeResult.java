@@ -44,4 +44,13 @@ public class DegraphmalizeResult
     {
         return new DegraphmalizeResult(DegraphmalizeOutcome.FAILURE, action, e);
     }
+
+    @Override
+    public String toString() {
+        return "DegraphmalizeResult{" +
+                "outcome=" + outcome +
+                ", action=" + action +
+                ", exception=" + exception +
+                '}';
+    }
 }

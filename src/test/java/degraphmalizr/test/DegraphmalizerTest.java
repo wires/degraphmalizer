@@ -150,7 +150,6 @@ public class DegraphmalizerTest
             final JsonNode result = a.resultDocument().get();
 
             assertThat(result.get("success").toString()).isEqualTo("true");
-            System.err.println(result.toString());
 
             assertThat(result.get("properties").has("nodes-in")).isTrue();
             assertThat(result.get("properties").has("nodes-out")).isTrue();

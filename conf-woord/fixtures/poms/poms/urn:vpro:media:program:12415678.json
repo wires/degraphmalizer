@@ -1,0 +1,340 @@
+{
+    "genres": [
+        "Overige"
+    ],
+    "segments": [
+        {
+            "sortDate": 1327857300000,
+            "lastModified": 1352299306375,
+            "embeddable": true,
+            "credits": [],
+            "scheduleEvents": [],
+            "workflow": "PUBLISHED",
+            "descriptions": [
+                {
+                    "owner": "BROADCASTER",
+                    "value": "Annemiek van der Laan is een studente als ze de onweerstaanbare Portugees Joao tegen het lijf loopt. Het is liefde op het eerste gezicht en een heftige romance onspint zich. Maar Joao is zeer gesloten en heeft geheimen waar Annemiek geen toegang toe krijgt. Ze verbreekt de relatie en hij verdwijnt uit haar leven. Totdat ze hem twintig jaar later opnieuw ontmoet in de tram. Een verhaal van Stefan Heijdendael en Jair Stein.  Annemiek van der Laan schreef een boek over het leven met Joao, getiteld ‘Verslavende liefde’, uitgegeven bij Nieuw Amsterdam. ",
+                    "type": "MAIN"
+                }
+            ],
+            "urn": "urn:vpro:media:segment:14223611",
+            "creationDate": 1337699926908,
+            "duration": 600000,
+            "broadcasters": [
+                "VPRO"
+            ],
+            "start": 0,
+            "locations": [],
+            "descendantOf": [
+                {
+                    "type": "ARCHIVE",
+                    "urnRef": "urn:vpro:media:group:11887617"
+                },
+                {
+                    "midRef": "AUTO_PLOTS",
+                    "type": "SERIES",
+                    "urnRef": "urn:vpro:media:group:4943256"
+                },
+                {
+                    "type": "BROADCAST",
+                    "urnRef": "urn:vpro:media:program:12415678"
+                }
+            ],
+            "titles": [
+                {
+                    "owner": "BROADCASTER",
+                    "value": "INTRO & AKTE 1: Annemiek en Joao",
+                    "type": "MAIN"
+                }
+            ],
+            "avType": "AUDIO",
+            "images": [
+                {
+                    "imageUri": "urn:vpro:image:77462",
+                    "urn": "urn:vpro:media:image:14223614",
+                    "creationDate": 1337699972510,
+                    "title": "Plots 15 Intro",
+                    "height": 377,
+                    "lastModified": 1337699972511,
+                    "description": "Plots 15 Onmogelijke liefde",
+                    "width": 377,
+                    "owner": "BROADCASTER",
+                    "highlighted": false,
+                    "type": "PICTURE",
+                    "workflow": "PUBLISHED"
+                }
+            ],
+            "urnRef": "urn:vpro:media:program:12415678"
+        },
+        {
+            "sortDate": 1327857300000,
+            "lastModified": 1337699926907,
+            "embeddable": true,
+            "credits": [],
+            "scheduleEvents": [],
+            "workflow": "PUBLISHED",
+            "descriptions": [
+                {
+                    "owner": "BROADCASTER",
+                    "value": "Tim gaat naar een boeddistisch klooster voor een meditatieretraite. Centraal staat het ontwikkelen van opmerkzaamheid. Aandachtig zijn zonder te oordelen, zonder te analyseren, zonder verwachtingen. Samen met een groep andere vakantiemonniken leeft Tim twee weken volgens een streng stramien en mediteert tien uur per dag. Het is niet de bedoeling dat de deelnemers onderling contact leggen en op enigerlei wijze met elkaar communiceren. Vandaar ook dat de kloostergasten op sekse zijn verdeeld over een mannen- en vrouwenafdeling, om erotische fantasieën geen kans te geven, die vaak opspelen tijdens dit soort retraites. Maar de monniken hebben geen rekening gehouden met homoseksualiteit. Een verhaal van Richtje Reinsma. Montage: Jennifer Pettersson.",
+                    "type": "MAIN"
+                }
+            ],
+            "urn": "urn:vpro:media:segment:14223608",
+            "creationDate": 1337699926906,
+            "duration": 600000,
+            "broadcasters": [
+                "VPRO"
+            ],
+            "start": 600000,
+            "locations": [],
+            "descendantOf": [
+                {
+                    "type": "ARCHIVE",
+                    "urnRef": "urn:vpro:media:group:11887617"
+                },
+                {
+                    "midRef": "AUTO_PLOTS",
+                    "type": "SERIES",
+                    "urnRef": "urn:vpro:media:group:4943256"
+                },
+                {
+                    "type": "BROADCAST",
+                    "urnRef": "urn:vpro:media:program:12415678"
+                }
+            ],
+            "titles": [
+                {
+                    "owner": "BROADCASTER",
+                    "value": "AKTE 2: Tim en Cedric",
+                    "type": "MAIN"
+                }
+            ],
+            "avType": "AUDIO",
+            "images": [],
+            "urnRef": "urn:vpro:media:program:12415678"
+        },
+        {
+            "sortDate": 1327857300000,
+            "lastModified": 1337699926906,
+            "embeddable": true,
+            "credits": [],
+            "scheduleEvents": [],
+            "workflow": "PUBLISHED",
+            "descriptions": [
+                {
+                    "owner": "BROADCASTER",
+                    "value": "Naomi is ontroostbaar als haar ideale man overlijdt: Michael Jackson. Maar gelukkig zijn er meer mensen zoals hij. In Los Angeles ontmoet ze een Michael Jackson-lookalike en is direct smoorverliefd. Binnen drie weken zijn ze verloofd en het jonge stel is dolgelukkig. Er is slechts één probleem: de lookalike slaagt er niet in om zichzelf te zijn. Een verhaal van Maartje Duin.",
+                    "type": "MAIN"
+                }
+            ],
+            "urn": "urn:vpro:media:segment:14223605",
+            "creationDate": 1337699926905,
+            "duration": 600000,
+            "broadcasters": [
+                "VPRO"
+            ],
+            "start": 1200000,
+            "locations": [],
+            "descendantOf": [
+                {
+                    "type": "ARCHIVE",
+                    "urnRef": "urn:vpro:media:group:11887617"
+                },
+                {
+                    "midRef": "AUTO_PLOTS",
+                    "type": "SERIES",
+                    "urnRef": "urn:vpro:media:group:4943256"
+                },
+                {
+                    "type": "BROADCAST",
+                    "urnRef": "urn:vpro:media:program:12415678"
+                }
+            ],
+            "titles": [
+                {
+                    "owner": "BROADCASTER",
+                    "value": "AKTE 3: Naomi, Jovan en Michael",
+                    "type": "MAIN"
+                }
+            ],
+            "avType": "AUDIO",
+            "images": [],
+            "urnRef": "urn:vpro:media:program:12415678"
+        },
+        {
+            "sortDate": 1327857300000,
+            "lastModified": 1337699926904,
+            "embeddable": true,
+            "credits": [],
+            "scheduleEvents": [],
+            "workflow": "PUBLISHED",
+            "descriptions": [
+                {
+                    "owner": "BROADCASTER",
+                    "value": "Sommige relaties hebben zoveel impact dat ze alle volgende liefdes in de weg staan. Dat geldt zeker voor de eerste relatie van dichter en kinderboekenschrijver Ted van Lieshout. Over de man met wie hij de relatie had, wil hij eigenlijk niets zeggen, om hem niet in problemen te brengen. Een verhaal van Stef Visjager.",
+                    "type": "MAIN"
+                }
+            ],
+            "urn": "urn:vpro:media:segment:14223602",
+            "creationDate": 1337699926903,
+            "duration": 627000,
+            "broadcasters": [
+                "VPRO"
+            ],
+            "start": 1800000,
+            "locations": [],
+            "descendantOf": [
+                {
+                    "type": "ARCHIVE",
+                    "urnRef": "urn:vpro:media:group:11887617"
+                },
+                {
+                    "midRef": "AUTO_PLOTS",
+                    "type": "SERIES",
+                    "urnRef": "urn:vpro:media:group:4943256"
+                },
+                {
+                    "type": "BROADCAST",
+                    "urnRef": "urn:vpro:media:program:12415678"
+                }
+            ],
+            "titles": [
+                {
+                    "owner": "BROADCASTER",
+                    "value": "AKTE 4: Ted en meneer",
+                    "type": "MAIN"
+                }
+            ],
+            "avType": "AUDIO",
+            "images": [],
+            "urnRef": "urn:vpro:media:program:12415678"
+        }
+    ],
+    "credits": [],
+    "type": "BROADCAST",
+    "descriptions": [
+        {
+            "owner": "BROADCASTER",
+            "value": "Wonderlijke, ware verhalen rond een thema. Onmogelijke liefde. Naomi is ontroostbaar als haar ideale man overlijdt: Michael Jackson. Maar gelukkig zijn er meer mensen zoals hij. In Los Angeles ontmoet ze een Michael Jackson-lookalike, met wie ze trouwt. Het jonge stel is dolgelukkig, maar er is één probleem: de lookalike slaagt er niet in om zichzelf te zijn. Wonderlijke ware verhalen over onmogelijke liefde.",
+            "type": "MAIN"
+        },
+        {
+            "owner": "MIS",
+            "value": "Wonderlijke, ware verhalen rond een thema. -Onmogelijke liefde. Naomi is ontroostbaar als haar ideale man overlijdt: Michael Jackson. Maar gelukkig zijn er meer mensen zoals hij. In Los Angeles ontmoet ze een Michael Jackson-lookalike, met wie ze trouwt. Het jonge stel is dolgelukkig, maar er is één probleem: de lookalike slaagt er niet in om zichzelf te zijn. Wonderlijke ware verhalen over onmogelijke liefde.",
+            "type": "MAIN"
+        },
+        {
+            "owner": "BROADCASTER",
+            "value": "Wonderlijke, ware verhalen rond een thema. Onmogelijke liefde. Absurde, ontroerende en ontregelende variaties op een klassiek thema: de onvermijdelijke, maar tot mislukken gedoemde liefde.",
+            "type": "SHORT"
+        },
+        {
+            "owner": "MIS",
+            "value": "Wonderlijke, ware verhalen rond een thema. -Onmogelijke liefde. Naomi is ontroostbaar als haar ideale man overlijdt: Michael Jackson. Maar gelukkig zijn er meer mensen zoals hij.",
+            "type": "SHORT"
+        }
+    ],
+    "languages": [
+        "NL"
+    ],
+    "broadcasters": [
+        "VPRO"
+    ],
+    "_id": "urn:vpro:media:program:12415678",
+    "locations": [
+        {
+            "urn": "urn:vpro:media:location:14223597",
+            "creationDate": 1337699656246,
+            "lastModified": 1337699656248,
+            "owner": "BROADCASTER",
+            "avAttributes": {
+                "avFileFormat": "MP3"
+            },
+            "programUrl": "http://download.omroep.nl/vpro/algemeen/plots/PLOTS_15_ONMOGELIJKE_LIEFDE.mp3",
+            "type": "INTERNAL",
+            "workflow": "PUBLISHED"
+        },
+        {
+            "urn": "urn:vpro:media:location:14223601",
+            "creationDate": 1337699753924,
+            "lastModified": 1337699753926,
+            "owner": "BROADCASTER",
+            "avAttributes": {
+                "avFileFormat": "WM"
+            },
+            "programUrl": "http://cgi.omroep.nl/cgi-bin/streams?/radio1/vpro/instituutidzerda/20120129-18.wma",
+            "type": "INTERNAL",
+            "workflow": "PUBLISHED"
+        },
+        {
+            "urn": "urn:vpro:media:location:14223599",
+            "creationDate": 1337699656248,
+            "lastModified": 1337699656250,
+            "publishStart": 1327862940000,
+            "owner": "BROADCASTER",
+            "avAttributes": {
+                "avFileFormat": "HTML"
+            },
+            "programUrl": "http://player.omroep.nl/?aflID=13809080",
+            "type": "INTERNAL",
+            "workflow": "PUBLISHED"
+        }
+    ],
+    "episodeOf": [
+        {
+            "index": 27,
+            "added": 1337699990053,
+            "midRef": "AUTO_PLOTS",
+            "highlighted": false,
+            "type": "SERIES",
+            "urnRef": "urn:vpro:media:group:4943256"
+        }
+    ],
+    "avType": "AUDIO",
+    "sortDate": 1327857300000,
+    "lastModified": 1352299306001,
+    "embeddable": true,
+    "poSeriesID": "AUTO_PLOTS",
+    "scheduleEvents": [
+        {
+            "duration": 2940000,
+            "start": 1327857300000,
+            "urnRef": "urn:vpro:media:program:12415678",
+            "channel": "RAD1",
+            "imi": "imi:47393"
+        }
+    ],
+    "crids": [
+        "crid://bds.tv/38454557"
+    ],
+    "workflow": "PUBLISHED",
+    "_rev": "21-a2bd29813d5b079e64c2c3c8f682f160",
+    "creationDate": 1326846358111,
+    "urn": "urn:vpro:media:program:12415678",
+    "duration": 2940000,
+    "descendantOf": [
+        {
+            "type": "ARCHIVE",
+            "urnRef": "urn:vpro:media:group:11887617"
+        },
+        {
+            "midRef": "AUTO_PLOTS",
+            "type": "SERIES",
+            "urnRef": "urn:vpro:media:group:4943256"
+        }
+    ],
+    "titles": [
+        {
+            "owner": "MIS",
+            "value": "Plots",
+            "type": "MAIN"
+        },
+        {
+            "owner": "BROADCASTER",
+            "value": "# 15. Onmogelijke liefde",
+            "type": "SUB"
+        }
+    ],
+    "images": []
+}

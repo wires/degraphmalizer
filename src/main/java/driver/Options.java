@@ -10,7 +10,7 @@ public class Options
             arity = 3)
     List<String> transport = new ArrayList<String>();
 
-    @Parameter(names = {"-d", "--debug"}, description = "Run in developer mode")
+    @Parameter(names = {"-d", "--development"}, description = "Run in development mode")
     boolean development = false;
 
     @Parameter(names = {"-p", "--port"}, description = "Listening port")

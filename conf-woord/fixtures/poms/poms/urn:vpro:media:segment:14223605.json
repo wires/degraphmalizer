@@ -1,0 +1,50 @@
+{
+    "sortDate": 1327857300000,
+    "lastModified": 1337699926906,
+    "embeddable": true,
+    "credits": [],
+    "scheduleEvents": [],
+    "workflow": "PUBLISHED",
+    "descriptions": [
+        {
+            "owner": "BROADCASTER",
+            "value": "Naomi is ontroostbaar als haar ideale man overlijdt: Michael Jackson. Maar gelukkig zijn er meer mensen zoals hij. In Los Angeles ontmoet ze een Michael Jackson-lookalike en is direct smoorverliefd. Binnen drie weken zijn ze verloofd en het jonge stel is dolgelukkig. Er is slechts één probleem: de lookalike slaagt er niet in om zichzelf te zijn. Een verhaal van Maartje Duin.",
+            "type": "MAIN"
+        }
+    ],
+    "_rev": "6-41efbdb48e7ba019bcf1679165a0a9c9",
+    "urn": "urn:vpro:media:segment:14223605",
+    "creationDate": 1337699926905,
+    "duration": 600000,
+    "_id": "urn:vpro:media:segment:14223605",
+    "broadcasters": [
+        "VPRO"
+    ],
+    "start": 1200000,
+    "locations": [],
+    "descendantOf": [
+        {
+            "type": "ARCHIVE",
+            "urnRef": "urn:vpro:media:group:11887617"
+        },
+        {
+            "midRef": "AUTO_PLOTS",
+            "type": "SERIES",
+            "urnRef": "urn:vpro:media:group:4943256"
+        },
+        {
+            "type": "BROADCAST",
+            "urnRef": "urn:vpro:media:program:12415678"
+        }
+    ],
+    "images": [],
+    "titles": [
+        {
+            "owner": "BROADCASTER",
+            "value": "AKTE 3: Naomi, Jovan en Michael",
+            "type": "MAIN"
+        }
+    ],
+    "avType": "AUDIO",
+    "urnRef": "urn:vpro:media:program:12415678"
+}

@@ -9,4 +9,8 @@ public class WrappedException extends DegraphmalizerException
     {
         super("Unknown exception occurred", cause);
     }
+
+    public String toString() {
+        return getCause().getClass()+": "+getCause().getMessage();
+    }
 }

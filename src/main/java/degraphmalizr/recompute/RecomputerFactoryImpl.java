@@ -59,13 +59,12 @@ public class RecomputerFactoryImpl implements Recomputer
     {
         protected final RecomputeRequest request;
         protected final RecomputeCallback callback;
-        protected final HashMap<String, JsonNode> walkResults;
 
-        public Recomputer(RecomputeRequest request, RecomputeCallback callback) throws ExecutionException, InterruptedException
+
+        public Recomputer(RecomputeRequest request, RecomputeCallback callback)
         {
             this.request = request;
             this.callback = callback;
-            this.walkResults = walkResults();
         }
 
         private HashMap<String,JsonNode> walkResults() throws ExecutionException, InterruptedException
@@ -166,36 +165,39 @@ public class RecomputerFactoryImpl implements Recomputer
             return objectMapper.readTree(r.get().getResponse().get().sourceAsString());
         }
 
-        public RecomputeResult recompute() throws IOException
+        public RecomputeResult recompute() throws IOException, ExecutionException, InterruptedException
         {
             // ideally, this is handled in a monad, but with this boolean we keep track of failures
             boolean isAbsent = false;
+
+            // Now we are going to:
+            // - fetch the current ElasticSearch document,
+            final JsonNode rawDocument = getFromES();
+
+            // - Return when this document does not need to be processed.
+            if (!request.config.filter(rawDocument)) {
+                return factory.recomputeFailed(request, RecomputeResult.Status.FILTERED);
+            }
 
             // Now we are going to iterate over all the walks configured for this input document. For each walk:
             // - We fetch a tree of children non-recursively from our document in the inverted direction of the walk, as Graph vertices
             // - We convert the tree of vertices to a tree of ElasticSearch documents
             // - We call the reduce() method for this walk, with the tree of documents as argument.
             // - We collect the result.
-
+            final HashMap<String, JsonNode> walkResults = walkResults();
             if(walkResults == null)
                 // TODO return expired ID's
                 return factory.recomputeExpired(request, Collections.<ID>emptyList());
 
             // Now we are going to:
-            // - fetch the current ElasticSearch document,
             // - Transform it, if transformation is required
             // - Add the walk properties
             // - Add a reference to the source document.
             // - And store it as target document type in target index.
 
-            final JsonNode rawDocument = getFromES();
-
             if (rawDocument == null)
                 // TODO even better error handling etc.. distinguish exceptions and document really absent
                 return factory.recomputeFailed(request, RecomputeResult.Status.SOURCE_DOCUMENT_ABSENT);
-
-            System.err.println(rawDocument.toString());
-
 
             // pre-process document using javascript
             final JsonNode transformed = request.config.transform(rawDocument);

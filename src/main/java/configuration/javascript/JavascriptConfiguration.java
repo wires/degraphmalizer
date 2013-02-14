@@ -104,6 +104,9 @@ class JavascriptIndexConfig implements IndexConfig
             loadLib(cx, scope, "underscore-1.4.0.js");
             loadLib(cx, scope, "subgraph.js");
 
+            final Object jsLogger = Context.javaToJS(new JSLogger(), scope);
+            ScriptableObject.putProperty(scope, "log", jsLogger);
+
             // close the root scope for modifications
             cx.seal(scope);
 
@@ -270,7 +273,6 @@ class JavascriptTypeConfig implements TypeConfig
         final JavascriptSubgraph sg = new JavascriptSubgraph(csg, cx, script);
         final Object obj = JSONUtilities.toJSONObject(cx, script,  job.document().toString());
         extract.call(cx, script, null, new Object[]{obj, sg});
-
         Context.exit();
 
     }

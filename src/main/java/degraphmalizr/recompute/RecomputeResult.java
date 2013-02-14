@@ -23,6 +23,7 @@ public interface RecomputeResult
         SUCCESS,
         EXCEPTION,
         EXPIRED,
+        FILTERED,
 
         SOURCE_DOCUMENT_ABSENT,
         SOURCE_NOT_OBJECT, // source is not a json object, e.g array or value
