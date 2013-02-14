@@ -9,12 +9,13 @@ import driver.handler.HandlerModule;
 import driver.server.Server;
 import driver.server.ServerModule;
 import elasticsearch.LocalES;
-import elasticsearch.TransportES;
+import elasticsearch.NodeES;
 import fixutures.FixtureLoaderModule;
 import fixutures.FixturesLoader;
 import jmx.GraphBuilder;
 import modules.*;
-import neo4j.*;
+import neo4j.CommonNeo4j;
+import neo4j.EmbeddedNeo4J;
 import org.elasticsearch.client.Client;
 import org.nnsoft.guice.sli4j.slf4j.Slf4jLoggingModule;
 import org.slf4j.Logger;
@@ -77,7 +78,8 @@ public final class Main
             final String host = opt.transport.get(0);
             final int port = Integer.parseInt(opt.transport.get(1));
             final String cluster = opt.transport.get(2);
-            modules.add(new TransportES(cluster, host, port));
+//            modules.add(new TransportES(cluster, host, port));
+            modules.add(new NodeES(cluster, host, port));
         }
 
         // we always run an embedded local graph database
