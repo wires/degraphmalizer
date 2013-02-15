@@ -26,9 +26,16 @@ public class CommonNeo4j extends AbstractModule
         final Neo4jGraph graph = new Neo4jGraph(dataDir, settings);
 
         // quickly get vertices by ID
-        graph.createKeyIndex(GraphQueries.IDENTIFIER, Vertex.class);
-        graph.createKeyIndex(GraphQueries.SYMBOLIC_OWNER, Vertex.class);
-        graph.createKeyIndex(GraphQueries.SYMBOLIC_OWNER, Edge.class);
+        final String[] props = new String[] {
+                GraphQueries.OWNER, GraphQueries.SYMBOLIC_OWNER,
+                GraphQueries.IDENTIFIER, GraphQueries.SYMBOLIC_IDENTIFER };
+
+        for(String prop : props)
+        {
+            graph.createKeyIndex(prop, Vertex.class);
+            graph.createKeyIndex(prop, Edge.class);
+        }
+
         graph.stopTransaction(TransactionalGraph.Conclusion.SUCCESS);
 
         return graph;
