@@ -35,7 +35,7 @@
 
     transform: (function(doc) {
         var getBestValue = function(doc, key, type) {
-            if (doc[key]) {
+            if (doc[key] !== undefined) {
                 for (var idx in doc[key]) {
                    var value = doc[key][idx];
                    if (value.owner && value.owner == 'BROADCASTER' && value.type && value.type == type) {
@@ -73,7 +73,7 @@
 
         // Copy default fields
         ['tags', 'genres', 'broadcasters', 'duration'].forEach(function(field){
-            if (doc[field]) {
+            if (doc[field] !== undefined) {
                 result[field] = doc[field];
             }
         });
@@ -95,7 +95,7 @@
                 "programTitles": {
                     reduce: function(doc_tree) {
                         var getBestValue = function(doc, key, type) {
-                            if (doc[key]) {
+                            if (doc[key] !== undefined) {
                                 for (var idx in doc[key]) {
                                     var value = doc[key][idx];
                                     if (value.owner && value.owner == 'BROADCASTER' && value.type && value.type == type) {
