@@ -474,26 +474,28 @@ class JavascriptPropertyConfig implements PropertyConfig
                 try
                 {
                     final Optional<GetResponse> getResponse = input.getResponse();
+                    final ObjectNode n = om.createObjectNode();
+
                     if(getResponse.isPresent())
                     {
                         final String getResponseString = getResponse.get().getSourceAsString();
-                        final Edge edge = input.edge();
-                        final Vertex vertex = input.vertex();
 
-                        final ObjectNode n = om.createObjectNode();
                         n.put("exists", true);
                         n.put("value", om.readTree(getResponseString));
-                        if (edge != null)
-                            n.put("edge", JSONUtilities.toJSON(om, edge));
-                        n.put("vertex", JSONUtilities.toJSON(om, vertex));
-                        return n;
                     }
                     else
                     {
-                        final ObjectNode n = om.createObjectNode();
                         n.put("exists", false);
-                        return n;
                     }
+
+                    final Edge edge = input.edge();
+                    final Vertex vertex = input.vertex();
+
+                    if (edge != null)
+                        n.put("edge", JSONUtilities.toJSON(om, edge));
+                    if (vertex != null)
+                        n.put("vertex", JSONUtilities.toJSON(om, vertex));
+                    return n;
                 }
                 catch (IOException e)
                 {
