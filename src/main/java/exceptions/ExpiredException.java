@@ -26,7 +26,7 @@ public class ExpiredException extends DegraphmalizerException
 
     private static String exceptionMessage(Iterable<ID> expired)
     {
-        final StringBuilder sb = new StringBuilder("Query expired for ids: ");
+        final StringBuilder sb = new StringBuilder("Version mismatch between graph and ES for id(s): ");
 
         // id1; id2; id3 ...
         final Iterator<ID> ids = expired.iterator();
