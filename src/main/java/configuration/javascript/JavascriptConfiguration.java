@@ -41,21 +41,25 @@ public class JavascriptConfiguration implements Configuration
 
     public JavascriptConfiguration(ObjectMapper om, File directory) throws IOException
     {
-        //todo: directory.listFiles() can return null
-        for(File dir : directory.listFiles())
-        {
-            // skip non directories
-            if(!dir.isDirectory())
-                continue;
+        File[] directories = directory.listFiles();
+        if (directories!=null) {
+            for(File dir : directory.listFiles())
+            {
+                // skip non directories
+                if(!dir.isDirectory())
+                    continue;
 
-            // each subdirectory encodes an index
-            final String dirname = dir.getName();
-            if (FIXTURES_DIR_NAME.equals(dirname)) {
-                fixtureConfig = new JavascriptFixtureConfiguration(dir);
-                log.debug(fixtureConfig.toString());
-            }else{
-                indices.put(dirname, new JavascriptIndexConfig(om, dirname, dir));
+                // each subdirectory encodes an index
+                final String dirname = dir.getName();
+                if (FIXTURES_DIR_NAME.equals(dirname)) {
+                    fixtureConfig = new JavascriptFixtureConfiguration(dir);
+                    log.debug(fixtureConfig.toString());
+                }else{
+                    indices.put(dirname, new JavascriptIndexConfig(om, dirname, dir));
+                }
             }
+        } else {
+            log.error("Configuration directory {} does not exist",directory.getCanonicalPath());
         }
     }
 
