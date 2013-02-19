@@ -1,0 +1,74 @@
+{
+    "isOrdered": true,
+    "sortDate": 1285611655701,
+    "lastModified": 1354890408093,
+    "embeddable": true,
+    "credits": [],
+    "scheduleEvents": [],
+    "type": "SERIES",
+    "memberOf": [
+        {
+            "index": 2,
+            "added": 1337343998069,
+            "highlighted": false,
+            "type": "ARCHIVE",
+            "urnRef": "urn:vpro:media:group:11887617"
+        }
+    ],
+    "workflow": "PUBLISHED",
+    "crids": [
+        "crid://tmp.serie.omroep.nl/6063"
+    ],
+    "descriptions": [
+        {
+            "owner": "NEBO",
+            "value": "Wonderlijke, ware verhalen rond een thema.",
+            "type": "MAIN"
+        }
+    ],
+    "_rev": "338-ee8ece259a05464aeeb63e2817d1b870",
+    "urn": "urn:vpro:media:group:4943256",
+    "creationDate": 1285611655701,
+    "_id": "urn:vpro:media:group:4943256",
+    "broadcasters": [
+        "VPRO"
+    ],
+    "locations": [],
+    "descendantOf": [
+        {
+            "type": "ARCHIVE",
+            "urnRef": "urn:vpro:media:group:11887617"
+        }
+    ],
+    "images": [
+        {
+            "imageUri": "urn:vpro.image:7732",
+            "urn": "urn:vpro:media:image:9670761",
+            "creationDate": 1306261380033,
+            "lastModified": 1306261380033,
+            "owner": "NEBO",
+            "highlighted": false,
+            "type": "PICTURE",
+            "workflow": "PUBLISHED"
+        },
+        {
+            "imageUri": "urn:vpro.image:4991",
+            "urn": "urn:vpro:media:image:4943258",
+            "creationDate": 1285611655708,
+            "lastModified": 1306245009327,
+            "owner": "BROADCASTER",
+            "highlighted": false,
+            "type": "PICTURE",
+            "workflow": "PUBLISHED"
+        }
+    ],
+    "titles": [
+        {
+            "owner": "NEBO",
+            "value": "Plots",
+            "type": "MAIN"
+        }
+    ],
+    "avType": "AUDIO",
+    "mid": "AUTO_PLOTS"
+}

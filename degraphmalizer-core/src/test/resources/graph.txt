@@ -1,0 +1,9 @@
+{"an":{"A":{"label":"Streaming Node A","size":5}}}
+{"an":{"B":{"label":"Streaming Node B","size":5}}}
+{"an":{"C":{"label":"Streaming Node C","size":5}}}
+{"ae":{"AB":{"source":"A","target":"B","directed":false,"weight":2}}}
+{"ae":{"BC":{"source":"B","target":"C","directed":false,"weight":1}}}
+{"ae":{"CA":{"source":"C","target":"A","directed":false,"weight":2}}}
+{"cn":{"C":{"size":10}}}
+{"cn":{"B":{"label":null}}}
+{"ce":{"AB":{"label":"From A to B"}}}

@@ -1,0 +1,67 @@
+{"page":
+    {
+        "properties": {
+            "body": {
+                "type": "string"
+            },
+            "brand_site": {
+                "type": "string"
+            },
+            "brand_title": {
+                "type": "string"
+            },
+            "contenttype": {
+                "type": "string"
+            },
+            "date_creation": {
+                "type": "date",
+                "format": "dateOptionalTime"
+            },
+            "date_updated": {
+                "type": "date",
+                "format": "dateOptionalTime"
+            },
+            "deeplink": {
+                "type": "string"
+            },
+            "extra_field_nl_vpro_content_author": {
+                "type": "string"
+            },
+            "extra_field_nl_vpro_jcr_path": {
+                "type": "string"
+            },
+            "extra_field_nl_vpro_page_type": {
+                "type": "string"
+            },
+            "extra_field_nl_vpro_programme_title": {
+                "type": "string"
+            },
+            "extra_field_nl_vpro_subsite": {
+                "type": "string"
+            },
+            "extra_mv_field_nl_vpro_teaser_internal": {
+                "type": "string"
+            },
+            "id": {
+                "type": "string",
+                "index": "not_analyzed"
+            },
+            "poms_urn": {
+                "type": "string",
+                "index": "not_analyzed"
+            },
+            "publishers": {
+                "type": "string"
+            },
+            "shared": {
+                "type": "string"
+            },
+            "summary": {
+                "type": "string"
+            },
+            "title": {
+                "type": "string"
+            }
+        }
+    }
+}
