@@ -40,7 +40,7 @@ class LocalNode
         modules.add(new EmphemeralES());
         modules.add(new CommonNeo4j());
         modules.add(new EphemeralEmbeddedNeo4J());
-        modules.add(new StaticJSConfModule("conf/"));
+        modules.add(new StaticJSConfModule("src/test/resources/conf/"));
         modules.add(new Slf4jLoggingModule(Matchers.any()));
 
         modules.add(new LogconfModule());
