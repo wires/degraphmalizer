@@ -1,10 +1,12 @@
-graphs.iml
+*.iml
+.DS_Store
 .buildpath
 .classpath
-.project
-.idea/
 .gradle/
+.idea/
+.project
 .settings/
-graphs.log
 data/
+logs/
 target/
+work/
