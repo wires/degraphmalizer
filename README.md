@@ -2,7 +2,7 @@
 
 # The Degraphmalizer!
 
-![Pipeline](https://github.com/vpro/degraphmalizer/raw/master/pipeline.png)
+![Pipeline](pipeline.png)
 
 The degraphmalizer is an application on top of
 [Elasticsearch](http://elasticsearch.org) that can extract graph
