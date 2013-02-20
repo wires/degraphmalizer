@@ -36,7 +36,7 @@ public class DelayedImpl<T extends StringSerialization<T>> implements Delayed,St
 
     @Override
     public int compareTo(final Delayed other) {
-        return Long.compare(getDelay(TimeUnit.MILLISECONDS), other.getDelay(TimeUnit.MILLISECONDS));
+        return Long.valueOf(getDelay(TimeUnit.MILLISECONDS)).compareTo(other.getDelay(TimeUnit.MILLISECONDS));
     }
 
     public static <T extends StringSerialization<T>> DelayedImpl<T> immediate(final T thing) {
