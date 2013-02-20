@@ -1,8 +1,8 @@
-![TravisStatus](https://travis-ci.org/0x01/degraphmalizer.png)
+![TravisStatus](https://travis-ci.org/vpro/degraphmalizer.png)
 
 # The Degraphmalizer!
 
-![Pipeline](https://github.com/0x01/degraphmalizer/raw/master/pipeline.png)
+![Pipeline](https://github.com/vpro/degraphmalizer/raw/master/pipeline.png)
 
 The degraphmalizer is an Elastic Search plugin that can extract graph structure
 from your documents and use it to add computed attributes to your documents.
