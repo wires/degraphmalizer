@@ -1,3 +1,5 @@
+![TravisStatus](https://travis-ci.org/0x01/degraphmalizer.png)
+
 # The Degraphmalizer!
 
 ![Pipeline](https://github.com/0x01/degraphmalizer/raw/master/pipeline.png)
