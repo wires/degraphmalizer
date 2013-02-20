@@ -1,8 +1,0 @@
-{
-    "properties": {
-        "children" : {
-            "type": "string",
-            "index": "not_analyzed"
-        }
-    }
-}
