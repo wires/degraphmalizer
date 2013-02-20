@@ -34,7 +34,7 @@ public class UpdaterOverflowFileManager {
     private final Comparator<File> fileComparator = new Comparator<File>() {
         @Override
         public int compare(File file1, File file2) {
-            return Long.compare(file1.lastModified(), file2.lastModified());
+            return Long.valueOf(file1.lastModified()).compareTo(file2.lastModified());
         }
     };
 
