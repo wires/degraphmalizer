@@ -23,8 +23,7 @@ import trees.*;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
 
 public class Degraphmalizer implements Degraphmalizr
@@ -131,6 +130,27 @@ public class Degraphmalizer implements Degraphmalizr
 		};
 	}
 
+    private boolean inList(RecomputeRequest r, List<RecomputeRequest> rs)
+    {
+        for(RecomputeRequest q : rs)
+            if(q.root.ID().equals(r.root.ID()))
+                return true;
+
+        return false;
+    }
+
+    private List<RecomputeRequest> determineRecomputeActionsOrEmpty(DegraphmalizeAction action)
+    {
+        try
+        {
+            return determineRecomputeActions(action);
+        }
+        catch(NotFoundInGraphException e)
+        {
+            return Collections.emptyList();
+        }
+    }
+
     private JsonNode doUpdate(DegraphmalizeAction action) throws Exception
     {
         try
@@ -149,12 +169,22 @@ public class Degraphmalizer implements Degraphmalizr
             }
             else
             {
+                // find all document connected to this document before changing the graph
+                final List<RecomputeRequest> pre = determineRecomputeActionsOrEmpty(action);
+
                 action.setDocument(jsonNode);
 
+                // update the graph
                 generateSubgraph(action);
 
-                final List<RecomputeRequest> recomputeRequests = determineRecomputeActions(action);
-                final List<Future<RecomputeResult>> results = recomputeAffectedDocuments(recomputeRequests);
+                final List<RecomputeRequest> post = determineRecomputeActions(action);
+
+                // add all the missing requests from pre to post
+                for(RecomputeRequest r : pre)
+                    if(!inList(r, post))
+                        post.add(r);
+
+                final List<Future<RecomputeResult>> results = recomputeAffectedDocuments(post);
 
                 // TODO refactor action class
                 action.status().complete(DegraphmalizeResult.success(action));
@@ -293,7 +323,7 @@ public class Degraphmalizer implements Degraphmalizr
         final ArrayList<RecomputeRequest> recomputeRequests = new ArrayList<RecomputeRequest>();
 
         // we add ourselves as the first job in the list
-        final VID vid = new VID(objectMapper, root, id);
+        final VID vid = new VID(objectMapper, root);
         recomputeRequests.add(new RecomputeRequest(vid, action.typeConfig()));
 
         for(WalkConfig walkCfg : action.typeConfig().walks().values())
