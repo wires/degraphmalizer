@@ -1,5 +1,7 @@
 # The Degraphmalizer!
 
+"!https://travis-ci.org/0x01/degraphmalizer.png!":https://travis-ci.org/0x01/degraphmalizer/
+
 ![Pipeline](https://github.com/0x01/degraphmalizer/raw/master/pipeline.png)
 
 The degraphmalizer is an Elastic Search plugin that can extract graph structure
