@@ -5,14 +5,7 @@ import exceptions.DegraphmalizerException;
 
 public interface SubgraphManager
 {
-    Subgraph createSubgraph(ID id) throws DegraphmalizerException;
+    void commitSubgraph(ID id, Subgraph subgraph) throws DegraphmalizerException;
 
-    /**
-     * @throws DegraphmalizerException when you try to merge a vertex into the graph that has an older version,
-     * or when is is not possible to change the owner of a vertex
-     * TODO: perhaps this should raise different exceptions
-     */
-    void commitSubgraph(Subgraph subgraph) throws DegraphmalizerException;
-
-    void deleteSubgraph(Subgraph subgraph) throws DegraphmalizerException;
+    void deleteSubgraph(ID id) throws DegraphmalizerException;
 }

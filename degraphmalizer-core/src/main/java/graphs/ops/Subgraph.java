@@ -1,11 +1,9 @@
 package graphs.ops;
 
-import java.util.Map;
-
 import com.fasterxml.jackson.databind.JsonNode;
-import com.tinkerpop.blueprints.Direction;
-
 import degraphmalizr.ID;
+
+import java.util.Map;
 
 /**
 TODO fix this documentation a bit
@@ -18,27 +16,16 @@ how is this interface complete:
 */
 public interface Subgraph
 {
-    /**
-     * Add an edge from ({@code d == OUT}) or to ({@code d == IN}) the central node.
-     *
-     * The three parameters (label, other, direction) unique identify an edge. When
-     * this method is called on an already existing edge, that edge's properties are
-     * overwritten.
-     *
-     * @param label the edge label
-     * @param other the edge always runs between the central node and this other node
-     * @param direction
-     * @param properties
-     */
-    void addEdge(String label, ID other, Direction direction, Map<String, JsonNode> properties);
+    enum Direction { INWARDS, OUTWARDS };
 
-    /**
-     * Set property on the central node.
-     *
-     * When called on the same key twice, the value for that key is overwritten.
-     *
-     * @param key
-     * @param value
-     */
-    void setProperty(String key, JsonNode value);
+    interface Edge {
+        ID other();
+        Direction direction();
+        String label();
+        Map<String,JsonNode> properties();
+    }
+
+    Iterable<Edge> edges();
+
+    Map<String,JsonNode> properties();
 }

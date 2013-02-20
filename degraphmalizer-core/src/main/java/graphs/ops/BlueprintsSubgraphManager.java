@@ -1,6 +1,5 @@
 package graphs.ops;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tinkerpop.blueprints.*;
 import degraphmalizr.EdgeID;
@@ -11,7 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import trees.Pair;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import static com.tinkerpop.blueprints.TransactionalGraph.Conclusion.*;
 import static graphs.GraphQueries.*;
@@ -30,40 +30,40 @@ public class BlueprintsSubgraphManager implements SubgraphManager
     }
 
     @Override
-    public final Subgraph createSubgraph(ID id) throws DegraphmalizerException
+    public final void commitSubgraph(ID id, Subgraph sg) throws DegraphmalizerException
     {
         if(id.version() == 0)
             throw new IllegalArgumentException("Subgraph must have version > 0");
-        return new SG(id);
-    }
 
-    @Override
-    public final void commitSubgraph(Subgraph subgraph) throws DegraphmalizerException
-    {
-        final SG sg = (SG) subgraph;
+        if(detectSelfLoops(id, sg))
+            throw new IllegalArgumentException("Cannot have self-loops in subgraph (ie. some of your edges point to the id your are committing this Subgraph under.)");
+
+        if(detectNonSymbolicTargets(sg))
+            throw new IllegalArgumentException("All edges must link to an identified with version==0");
+
         boolean success = false;
         try
         {
             // create a list of all elements owned by any version of this subgraph
-            final Pair<List<Vertex>, List<Edge>> elementsToDelete = findOwnedElements(sg.id());
+            final Pair<List<Vertex>, List<Edge>> elementsToDelete = findOwnedElements(id);
             List<Vertex> verticesToDelete = elementsToDelete.a;
             List<Edge> edgesToDelete = elementsToDelete.b;
 
             // do stuff needed for central vertex...
-            final Vertex center = createOrUpdateCentralVertex(sg);
+            final Vertex center = createOrUpdateCentralVertex(id, sg);
 
             // ...and for the edges
-            final Pair<List<Vertex>, List<Edge>> nextVersionElts = createOrUpdateEdges(sg);
+            final Pair<List<Vertex>, List<Edge>> nextVersionElts = createOrUpdateEdges(id, sg);
 
             // now make sure everything we touched is not deleted
             verticesToDelete.remove(center);
             verticesToDelete.removeAll(nextVersionElts.a);
             edgesToDelete.removeAll(nextVersionElts.b);
 
-            List<Vertex> danglingVertices = findDanglingVertices(sg, edgesToDelete);
+            List<Vertex> danglingVertices = findDanglingVertices(id, edgesToDelete);
             verticesToDelete.addAll(danglingVertices);
 
-            removeGraphElements(sg, verticesToDelete, edgesToDelete);
+            removeGraphElements(id, verticesToDelete, edgesToDelete);
 
             // commit changes to graph
             success = true;
@@ -77,21 +77,39 @@ public class BlueprintsSubgraphManager implements SubgraphManager
         }
     }
 
+    // TODO it is probably better to ignore all versions in a subgraph (ie. call getSymbolic on all edges.other())
+    private boolean detectNonSymbolicTargets(Subgraph sg)
+    {
+        for(Subgraph.Edge e : sg.edges())
+            if(e.other().version() != 0)
+                return true;
+
+        return false;
+    }
+
+    private boolean detectSelfLoops(ID center, Subgraph sg)
+    {
+        for(Subgraph.Edge e : sg.edges())
+            if(onlyVersionDiffers(center, e.other()))
+                return true;
+
+        return false;
+    }
+
     @Override
-    public void deleteSubgraph(Subgraph subgraph) throws DegraphmalizerException {
-        final SG sg = (SG) subgraph;
+    public void deleteSubgraph(final ID id) throws DegraphmalizerException {
         boolean success = false;
         try
         {
             // create a list of all elements owned by any version of this subgraph
-            final Pair<List<Vertex>, List<Edge>> elementsToDelete = findOwnedElements(sg.id());
+            final Pair<List<Vertex>, List<Edge>> elementsToDelete = findOwnedElements(id);
             List<Vertex> verticesToDelete = elementsToDelete.a;
             List<Edge> edgesToDelete = elementsToDelete.b;
 
-            List<Vertex> danglingVertices = findDanglingVertices(sg, edgesToDelete);
+            List<Vertex> danglingVertices = findDanglingVertices(id, edgesToDelete);
             verticesToDelete.addAll(danglingVertices);
 
-            removeGraphElements(sg, verticesToDelete, edgesToDelete);
+            removeGraphElements(id, verticesToDelete, edgesToDelete);
 
             // commit changes to graph
             success = true;
@@ -103,36 +121,35 @@ public class BlueprintsSubgraphManager implements SubgraphManager
         }
     }
 
-    private List<Vertex> findDanglingVertices(SG sg, List<Edge> edgesToDelete) {
+    private List<Vertex> findDanglingVertices(ID id, List<Edge> edgesToDelete) {
         final List<Vertex> danglingVertices = new ArrayList<Vertex>();
 
         // handle the edges we can delete: We check if they connect vertices that can be deleted too.
         for(Edge e: edgesToDelete)
         {
             // it is possible that a vertex turned symbolic and we are the last edge pointing to it, then remove it
-            final Vertex v = e.getVertex(directionOppositeTo(getEdgeID(om, e), sg.id()));
-            if(canDeleteVertex(v, sg.id(), edgesToDelete))
+            final Vertex v = e.getVertex(directionOppositeTo(getEdgeID(om, e), id));
+            if(canDeleteVertex(v, id, edgesToDelete))
                 danglingVertices.add(v);
         }
 
         return danglingVertices;
     }
 
-    private void removeGraphElements(SG sg, List<Vertex> verticesToDelete, List<Edge> edgesToDelete) {
+    private void removeGraphElements(ID id, List<Vertex> verticesToDelete, List<Edge> edgesToDelete)
+    {
         // Remove the edges
         for (Edge e: edgesToDelete)
             graph.removeEdge(e);
 
         // Remove the vertices
         for (final Vertex v: verticesToDelete)
-            if (canDeleteVertex(v, sg.id(), edgesToDelete))
-            {
+        {
+            if (canDeleteVertex(v, id, edgesToDelete))
                 graph.removeVertex(v);
-            }
             else
-            {
                 GraphQueries.makeSymbolic(om, v);
-            }
+        }
     }
 
     private Pair<List<Vertex>, List<Edge>> findOwnedElements(ID id) {
@@ -172,15 +189,15 @@ public class BlueprintsSubgraphManager implements SubgraphManager
         return true;
     }
 
-    private Vertex createOrUpdateCentralVertex(SG sg) throws DegraphmalizerException
+    private Vertex createOrUpdateCentralVertex(ID id, Subgraph sg) throws DegraphmalizerException
     {
         // find vertex, doesn't care about version
-        Vertex center = resolveVertex(om, graph, sg.id());
+        Vertex center = resolveVertex(om, graph, id);
 
         if (center == null)
         {
-            log.trace("Couldn't find central vertex with id {}, create new vertex", sg.id());
-            center = createVertex(om, graph, sg.id());
+            log.trace("Couldn't find central vertex with id {}, create new vertex", id);
+            center = createVertex(om, graph, id);
             log.trace("Created central vertex");
         }
 
@@ -188,18 +205,18 @@ public class BlueprintsSubgraphManager implements SubgraphManager
         if (log.isWarnEnabled())
         {
             final ID cid = getID(om, center);
-            if (isOlder(sg.id(), cid))
-                log.warn("Commit version < current version", sg.id(), cid);
+            if (isOlder(id, cid))
+                log.warn("Commit version < current version", id, cid);
         }
 
         setProperties(center, sg.properties());
 
         //if the 'center' vertex has edges, then the edge id should be updated.
-        updateEdgeIds(center, sg.id());
+        updateEdgeIds(center, id);
 
         // update the identifier (to the latest version)
-        setID(om, center, sg.id());
-        setOwner(om, center, sg.id());
+        setID(om, center, id);
+        setOwner(om, center, id);
 
         return center;
     }
@@ -230,29 +247,29 @@ public class BlueprintsSubgraphManager implements SubgraphManager
      * If so: update the properties of that edge.
      * @return A pair of lists that contain all Edges and All vertices that will be part of the new subgraph.
      */
-    private Pair<List<Vertex>, List<Edge>> createOrUpdateEdges(SG sg)
+    private Pair<List<Vertex>, List<Edge>> createOrUpdateEdges(ID id, Subgraph sg)
     {
         List<Vertex> vertexList = new ArrayList<Vertex>();
         List<Edge> edgeList = new ArrayList<Edge>();
 
-        for (Map.Entry<EdgeID, Map<String, JsonNode>> e : sg.edges().entrySet())
+        for (Subgraph.Edge e : sg.edges())
         {
-            final EdgeID edgeId = e.getKey();
+            final EdgeID edgeId = Subgraphs.edgeID(id, e);
             Edge edge = findEdge(om, graph, edgeId);
 
             if (edge != null)
                 //check if this edge belongs to this subgraph.
-                edgeConsistencyCheck(sg.id(), edgeId, edge);
+                edgeConsistencyCheck(id, edgeId, edge);
             else
             {
-                final Pair<Edge, Vertex> pair = createEdgeAndVertex(sg.id(), edgeId);
+                final Pair<Edge, Vertex> pair = createEdgeAndVertex(id, edgeId);
                 vertexList.add(pair.b);
                 edge = pair.a;
             }
 
             // claim edge
-            setOwner(om, edge, sg.id());
-            setProperties(edge, e.getValue());
+            setOwner(om, edge, id);
+            setProperties(edge, e.properties());
             edgeList.add(edge);
         }
         return new Pair<List<Vertex>, List<Edge>>(vertexList, edgeList);
@@ -286,62 +303,5 @@ public class BlueprintsSubgraphManager implements SubgraphManager
 
         if (centralVertex.version() < owner.version())
             throw new RuntimeException("Committing an older version of a subgraph is not allowed (old = " + owner + ", new = " + centralVertex + ")");
-    }
-}
-
-class SG implements Subgraph
-{
-    private final ID id;
-
-    private final Map<EdgeID, Map<String, JsonNode>> edges = new HashMap<EdgeID, Map<String, JsonNode>>();
-    private final Map<String, JsonNode> properties = new IdentityHashMap<String, JsonNode>();
-
-    public SG(ID id)
-    {
-        this.id = id;
-    }
-
-    @Override
-    public void addEdge(String label, ID other, Direction direction, Map<String, JsonNode> edgeProperties)
-    {
-        if (other.version() != 0)
-            throw new IllegalArgumentException("Other vertex must be a symbolic vertex (version == 0)");
-
-        switch (direction)
-        {
-            // edge to us
-            case IN:
-                edges.put(new EdgeID(other, label, id), edgeProperties);
-                return;
-
-            // edge from us
-            case OUT:
-                edges.put(new EdgeID(id, label, other), edgeProperties);
-                return;
-
-            default:
-                throw new IllegalArgumentException("Direction can be IN or OUT");
-        }
-    }
-
-    @Override
-    public void setProperty(String key, JsonNode value)
-    {
-        properties.put(key, value);
-    }
-
-    public ID id()
-    {
-        return id;
-    }
-
-    public Map<EdgeID, Map<String, JsonNode>> edges()
-    {
-        return edges;
-    }
-
-    public Map<String, JsonNode> properties()
-    {
-        return properties;
     }
 }

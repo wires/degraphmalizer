@@ -36,38 +36,15 @@ public class SubgraphManagerTest
     }
 
     /**
-     * If you create a subgraph, but don't commit it, no vertices should be created in the graph.
-     *
-     * @throws Exception
-     */
-    @Test
-    public void testCreateSubgraphDoesNotCreateVertex() throws Exception
-    {
-        final Subgraph sg = lg.sgm.createSubgraph(randomVersionedID());
-        sg.addEdge("koek", randomSymbolicID(), Direction.IN, Collections.<String, JsonNode>emptyMap());
-        assertThat(lg.G.getVertices()).isEmpty();
-    }
-
-    /**
      * It should not be possible to create an edge that has the same id for head and tail
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
-    void testCommitOrUpdateEdgeWithHeadEqualToTailFails() throws DegraphmalizerException {
-        final ID id = new ID("a", "b", "c1", 1);
-        Subgraph sg = null;
-        try
-        {
-            sg = lg.sgm.createSubgraph(id);
-            sg.addEdge("test", id, Direction.OUT, Collections.<String, JsonNode>emptyMap());
-        }
-        catch (DegraphmalizerException e)
-        {
-            throw new RuntimeException("We shouldn't be here.");
-        }
-        finally
-        {
-            lg.sgm.commitSubgraph(sg);
-        }
+    void testCommitOrUpdateEdgeWithHeadEqualToTailFails() throws DegraphmalizerException
+    {
+        final MutableSubgraph sg = new MutableSubgraph();
+        final ID id = randomVersionedID();
+        sg.beginEdge("test", getSymbolicID(id), Subgraph.Direction.INWARDS);
+        lg.sgm.commitSubgraph(id, sg);
     }
 
     /**
@@ -85,14 +62,14 @@ public class SubgraphManagerTest
     }
 
     /**
-     * One should not be allowed to create a subgraph with version 0
+     * One should not be allowed to commit a subgraph to a symbolic ID (ie. version == 0)
      *
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
     void testVersionZeroNotAllowed()
     {
         final ID symbolicID = randomSymbolicID();
-        lg.sgm.createSubgraph(symbolicID);
+        lg.sgm.commitSubgraph(symbolicID, Subgraphs.EMPTY_SUBGRAPH);
     }
 
     /**
@@ -101,9 +78,9 @@ public class SubgraphManagerTest
     @Test(expectedExceptions = IllegalArgumentException.class)
     void testNotSymbolicEdgeAllowed() throws DegraphmalizerException
     {
-        final ID id = randomVersionedID();
-        final Subgraph sg = lg.sgm.createSubgraph(id);
-        sg.addEdge("label", id, Direction.IN, Collections.<String, JsonNode>emptyMap());
+        final MutableSubgraph sg = new MutableSubgraph();
+        sg.beginEdge("label", randomVersionedID(), Subgraph.Direction.INWARDS);
+        lg.sgm.commitSubgraph(randomVersionedID(), sg);
     }
 
     /**
@@ -121,11 +98,11 @@ public class SubgraphManagerTest
 
         // now we create a subgraph referring the node above
         final ID id1 = randomVersionedID();
-        final Subgraph sg1 = lg.sgm.createSubgraph(id1);
+        final MutableSubgraph sg1 = new MutableSubgraph();
         final Props p1 = new Props("\"foo\"");
         p1.modifySubgraph(sg1);
-        sg1.addEdge("label", getSymbolicID(id0), Direction.IN, Collections.<String,JsonNode>emptyMap());
-        lg.sgm.commitSubgraph(sg1);
+        sg1.beginEdge("label", getSymbolicID(id0), Subgraph.Direction.INWARDS);
+        lg.sgm.commitSubgraph(id1, sg1);
 
         // there should now be two nodes, and one edge
         assertThat(lg.G.getVertices()).hasSize(2);
@@ -190,11 +167,14 @@ public class SubgraphManagerTest
         final ID targetId = randomSymbolicID();
 
         // create a subgraph that has an edge. the other node of the edge doesn't exist yet.
-       final Subgraph sg = lg.sgm.createSubgraph(sourceId);
+        final MutableSubgraph sg = new MutableSubgraph();
 
         // create an edge: sourceId ---> targetId
         final Props p = new Props("true", "\"twee\"");
-        sg.addEdge("edge1", targetId, Direction.OUT, p.properties);
+
+        final MutableSubgraph.Edge e = sg.beginEdge("edge1", targetId, Subgraph.Direction.OUTWARDS);
+        for(Map.Entry<String,JsonNode> pe : p.properties.entrySet())
+            e.property(pe.getKey(), pe.getValue());
 
         final Vertex v = commitAndFindCentralVertex(sg, sourceId);
 
@@ -226,9 +206,9 @@ public class SubgraphManagerTest
 
         //then create a subgraph, that creates an edge to this existing symbolic vertex
         final ID id = randomVersionedID();
-        final Subgraph sg = lg.sgm.createSubgraph(id);
-        sg.addEdge("edge1", targetId, Direction.OUT, Collections.<String, JsonNode>emptyMap());
-        lg.sgm.commitSubgraph(sg);
+        final MutableSubgraph sg = new MutableSubgraph();
+        sg.beginEdge("edge1", targetId, Subgraph.Direction.OUTWARDS);
+        lg.sgm.commitSubgraph(id, sg);
         Vertex v = commitAndFindCentralVertex(sg, id);
 
         //test if the edge has been created properly
@@ -256,9 +236,9 @@ public class SubgraphManagerTest
         v.setProperty("too", "bad");
 
         //create a subgraph that links to this vertex, and commit it.
-        final Subgraph sg = lg.sgm.createSubgraph(randomVersionedID());
-        sg.addEdge("edge1", getSymbolicID(targetID), Direction.IN, Collections.<String, JsonNode>emptyMap()); /* try it with no properties*/
-        lg.sgm.commitSubgraph(sg);
+        final MutableSubgraph sg = new MutableSubgraph();
+        sg.beginEdge("edge1", getSymbolicID(targetID), Subgraph.Direction.INWARDS);
+        lg.sgm.commitSubgraph(randomVersionedID(), sg);
 
         //test that the vertex still has the properties.
         Vertex targetVertex = findVertex(om, lg.G, targetID);
@@ -283,7 +263,7 @@ public class SubgraphManagerTest
 
         //now create a subgraph for this id, and set different properties.
         ID newID = new ID(ID.index(), ID.type(), ID.id(), ID.version()+1);
-        final Subgraph sg = lg.sgm.createSubgraph(newID);
+        final MutableSubgraph sg = new MutableSubgraph();
         new Props("\"een\"", "\"twee\"").modifySubgraph(sg);
         Vertex v1 = commitAndFindCentralVertex(sg, newID);
 
@@ -324,7 +304,7 @@ public class SubgraphManagerTest
         //now create a subgraph for the same id, with a new version.
         //If we commit the subgraph and the version is not equal or higher, a DegraphmalizerException should be thrown
         final ID nextVersionId = new ID("a", "b", "c", nextVersion);
-        lg.sgm.commitSubgraph(lg.sgm.createSubgraph(nextVersionId));
+        lg.sgm.commitSubgraph(nextVersionId, new MutableSubgraph());
     }
 
     /**
@@ -357,8 +337,8 @@ public class SubgraphManagerTest
 
         //and now update the subgraph to a version without edges.
         rootId = updateIDVersion(rootId, 2);
-        Subgraph sg = lg.sgm.createSubgraph(rootId);
-        lg.sgm.commitSubgraph(sg);
+        final MutableSubgraph sg = new MutableSubgraph();
+        lg.sgm.commitSubgraph(rootId, sg);
 
         //assert that the new subgraph has no edges,
         final Vertex v2 = findVertex(om, lg.G, rootId);
@@ -380,25 +360,24 @@ public class SubgraphManagerTest
         final ID v0 = new ID("a", "b", "v0", 1);
         final ID v1s = new ID("a", "b", "v1", 0);
         final EdgeID e0 = new EdgeID(v0, "e0", v1s);
-        final Subgraph sg0 = lg.sgm.createSubgraph(v0);
-        sg0.addEdge(e0.label(), v1s, Direction.OUT, Collections.<String, JsonNode>emptyMap());
-        lg.sgm.commitSubgraph(sg0);
+        final MutableSubgraph sg0 = new MutableSubgraph();
+        sg0.beginEdge(e0.label(), v1s, Subgraph.Direction.OUTWARDS);
+        lg.sgm.commitSubgraph(v0, sg0);
 
         // Setup second subgraph
         final ID v1 = new ID("a", "b", "v1", 1);
         final ID v2s = new ID("a", "b", "v2", 0);
         final EdgeID e1 = new EdgeID(v1, "e1", v2s);
-        final Subgraph sg1 = lg.sgm.createSubgraph(v1);
-        sg1.addEdge(e1.label(), v2s, Direction.OUT, Collections.<String, JsonNode>emptyMap());
-        lg.sgm.commitSubgraph(sg1);
+        final MutableSubgraph sg1 = new MutableSubgraph();
+        sg1.beginEdge(e1.label(), v2s, Subgraph.Direction.OUTWARDS);
+        lg.sgm.commitSubgraph(v1, sg1);
 
         // Setup third subgraph
         final ID v2 = new ID("a", "b", "v2", 1);
-        final Subgraph sg2 = lg.sgm.createSubgraph(v2);
-        lg.sgm.commitSubgraph(sg2);
+        lg.sgm.commitSubgraph(v2, new MutableSubgraph());
 
         // DELETE second subgraph!
-        lg.sgm.deleteSubgraph(sg1);
+        lg.sgm.deleteSubgraph(v1);
 
         // Check vertices
         Vertex vertex0 = findVertex(om, lg.G, v0);
@@ -478,7 +457,7 @@ public class SubgraphManagerTest
      */
     private Subgraph commitSubgraphAndVerifyProperties(Props p, ID id) throws DegraphmalizerException, IOException
     {
-        final Subgraph sg = lg.sgm.createSubgraph(id);
+        final MutableSubgraph sg = new MutableSubgraph();
 
         p.modifySubgraph(sg);
         final Vertex center = commitAndFindCentralVertex(sg, id);
@@ -500,13 +479,13 @@ public class SubgraphManagerTest
 
     private Vertex commitAndFindCentralVertex(Subgraph sg, ID id) throws DegraphmalizerException
     {
-        lg.sgm.commitSubgraph(sg);
+        lg.sgm.commitSubgraph(id, sg);
         return findVertex(om, lg.G, id);
     }
 
     private Vertex commitAndFindCentralVertex(ID id) throws DegraphmalizerException
     {
-        return commitAndFindCentralVertex(lg.sgm.createSubgraph(id), id);
+        return commitAndFindCentralVertex(new MutableSubgraph(), id);
     }
 
     private ID randomSymbolicID() { return generateRandomID(0); }
@@ -541,10 +520,10 @@ class Props
             properties.put("prop" + (i++), om.readTree(v));
     }
 
-    void modifySubgraph(Subgraph sg)
+    void modifySubgraph(MutableSubgraph sg)
     {
         for(Map.Entry<String,JsonNode> e : properties.entrySet())
-            sg.setProperty(e.getKey(), e.getValue());
+            sg.property(e.getKey(), e.getValue());
     }
 
     void assertOK(Element v) throws IOException

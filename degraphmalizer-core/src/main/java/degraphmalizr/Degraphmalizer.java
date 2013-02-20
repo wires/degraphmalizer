@@ -220,8 +220,7 @@ public class Degraphmalizer implements Degraphmalizr
         {
             List<RecomputeRequest> recomputeRequests = determineRecomputeActions(action);
 
-            final Subgraph sg = subgraphmanager.createSubgraph(action.id());
-            subgraphmanager.deleteSubgraph(sg);
+            subgraphmanager.deleteSubgraph(action.id());
 
             final List<Future<RecomputeResult>> results = recomputeAffectedDocuments(recomputeRequests);
 
@@ -284,12 +283,11 @@ public class Degraphmalizer implements Degraphmalizr
         // extract the graph elements
         log.debug("Extracting graph elements");
         
-        final Subgraph sg = subgraphmanager.createSubgraph(id);
-        action.typeConfig().extract(action, sg);
+        final Subgraph sg = action.typeConfig().extract(action.document());
         
         log.debug("Completed extraction of graph elements");
         
-        subgraphmanager.commitSubgraph(sg);
+        subgraphmanager.commitSubgraph(action.id(), sg);
         log.debug("Committed subgraph to graph");
         
 //        if(log.isTraceEnabled())
