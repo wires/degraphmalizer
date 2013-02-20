@@ -3,19 +3,13 @@
     <modelVersion>4.0.0</modelVersion>	
     <parent>
         <groupId>nl.vpro</groupId>
-        <artifactId>vpro-parent</artifactId>
-        <version>R20120719</version>
+        <artifactId>degraphmalizer-parent</artifactId>
+        <version>0.1-SNAPSHOT</version>
     </parent>
 	
     <groupId>nl.vpro</groupId>
-    <artifactId>degraphmalizer</artifactId>
+    <artifactId>degraphmalizer-core</artifactId>
     <version>0.1-SNAPSHOT</version>
-
-    <scm>
-        <connection>scm:svn:svn+ssh://subversion.vpro.nl/export/svn/nl/vpro/degraphmalizer/trunk</connection>
-        <developerConnection>scm:svn:svn+ssh://subversion.vpro.nl/export/svn/nl/vpro/degraphmalizer/trunk</developerConnection>
-        <url>https://subversion.vpro.nl/cgi-bin/viewvc.cgi/nl/vpro/degraphmalizer/trunk</url>
-    </scm>
 
     <properties>
         <jackson.version>2.0.0</jackson.version>
