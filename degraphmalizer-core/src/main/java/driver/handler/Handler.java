@@ -3,12 +3,11 @@ package driver.handler;
 import com.google.inject.Inject;
 import degraphmalizr.Degraphmalizr;
 import degraphmalizr.degraphmalize.*;
-import degraphmalizr.recompute.*;
+import degraphmalizr.recompute.RecomputeRequest;
+import degraphmalizr.recompute.RecomputeResult;
 import org.jboss.netty.channel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 public class Handler extends SimpleChannelHandler
 {
@@ -67,12 +66,7 @@ public class Handler extends SimpleChannelHandler
         };
 
         // write the action object
-        List<DegraphmalizeAction> degraphmalizeActions = degraphmalizr.degraphmalize(jobRequest.actionType(), jobRequest.id(), callback);
-        if (degraphmalizeActions.isEmpty()) {
-            ctx.getChannel().write(new NoAction()).addListener(ChannelFutureListener.CLOSE);
-        } else {
-            for(final DegraphmalizeAction action : degraphmalizeActions)
-                ctx.getChannel().write(action);
-        }
+        final DegraphmalizeAction action = degraphmalizr.degraphmalize(jobRequest.actionType(), jobRequest.id(), callback);
+        ctx.getChannel().write(action);
     }
 }
