@@ -183,6 +183,7 @@ public class Degraphmalizer implements Degraphmalizr
 
                 // TODO refactor action class
                 action.status().complete(DegraphmalizeResult.success(action));
+
                 return getStatusJsonNode(results);
             }
         }
@@ -278,15 +279,27 @@ public class Degraphmalizer implements Degraphmalizr
         final ArrayList<Subgraph> sgs = new ArrayList<Subgraph>();
         for(TypeConfig c : action.configs())
         {
-            log.debug("Computing subgraph for /{}/{}", c.targetIndex(), c.targetType());
-            sgs.add(c.extract(action.document()));
+            final Subgraph sg = c.extract(action.document());
+            sgs.add(sg);
+
+            if(log.isDebugEnabled())
+            {
+                final int edges = Iterables.size(sg.edges());
+                log.debug("Computing subgraph for /{}/{}, containing {} edges",
+                        new Object[]{c.targetIndex(), c.targetType(), edges});
+            }
         }
 
-        log.debug("Completed extraction of graph elements, {} subgraphs extracted", sgs.size());
-
         final Subgraph merged = Subgraphs.merge(sgs);
+
+        if(log.isDebugEnabled())
+        {
+            final int edges = Iterables.size(merged.edges());
+            log.debug("Completed extraction of graph elements, {} subgraphs extracted, total size {} edges", sgs.size(), edges);
+        }
+
         subgraphmanager.commitSubgraph(action.id(), merged);
-        log.debug("Committed subgraph to graph");
+        log.info("Committed subgraph to graph");
         
         GraphQueries.dumpGraph(objectMapper, graph);
     }
