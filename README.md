@@ -1,36 +1,40 @@
-![TravisStatus](https://travis-ci.org/vpro/degraphmalizer.png)
+![TravisStatus](https://travis-ci.org/vpro/degraphmalizer.png?branch=master)
 
 # The Degraphmalizer!
 
 ![Pipeline](https://github.com/vpro/degraphmalizer/raw/master/pipeline.png)
 
-The degraphmalizer is an Elastic Search plugin that can extract graph structure
-from your documents and use it to add computed attributes to your documents.
+The degraphmalizer is an application on top of
+[Elasticsearch](http://elasticsearch.org) that can extract graph
+structure from your documents and use it to add computed attributes to
+your documents.
 
-Computed attributes? Yes, the graph knows "global" structure about your index
-and you can add some of this global structure to your documents. For instance
-you could add a "in-degree" attribute that would tell you how many incoming
-links there are to this document.
+Computed attributes? Yes, the graph stores the "global" structure of your index.
+Then you can add some of this global structure to your documents. For instance
+you could add an "in-degree" attribute that would tell you how many incoming
+links there are to a document.
 
-You can also ask the graph questions like: give me all document that reference
+You can also ask the graph questions like: give me all documents that refer to
 this document. Then from those documents you can extract some information and
-store this in a computed attribute. The /degraphmalized/ will keep this
-information up to date.
-
-(using MVCC / eventual consistency model)
+store that in a computed attribute. The degraphmalizer's job is to keep such
+information up to date using attribute dependency tracking.
 
 # An example
 
 A typical example probably makes this more clear:
 
 Suppose we have two parties, Alice and Bob. Alice has an index of authors and
-Bob maintains an index of books and they reference eachother:
+Bob maintains an index of books and they refer to each other:
+
+Alice:
 
 	/alice/author/gibson
 	{
 	  "name": "William Ford Gibson",
 	  "books": ["book_id_1", "book_id_2"]
 	}
+
+Bob:
 
 	/bob/books/book_id_1
 	{
@@ -48,7 +52,7 @@ second query to find the the authors that wrote those books.
 
 In many cases it would be nicer to have an index like this
 
-	/alice2/author/gibson
+	/alice-target/author/gibson
 	{
 	  "name": "William Ford Gibson",
       "books": [ { "id": "book_id_1",
@@ -58,32 +62,38 @@ In many cases it would be nicer to have an index like this
                    "title": "All Tomorrow's Parties" } ] 
 	}
 
-	/bob2/books/book_id_1
+	/bob-target/books/book_id_1
 	{
 	  "title": "Neuromancer",
 	  "authors": [ { "id": "gibson",
                      "name": "William Word Gibson" } ]
 	}
 
-	/bob2/books/book_id_2
+	/bob-target/books/book_id_2
 	{
 	  "title": "All Tomorrow's Parties"
 	  "authors": [ { "id": "gibson",
                      "name": "William Word Gibson" } ]
 	}
 
-So we duplicate the data of the separate indices into derived documents which
-we can directly query.
+So we duplicate the data of the separate indices into derived
+documents which we can directly query. This process is called
+"denormalization" and we are using a graph to do it, hence:
+degraphmalizer :)
+
 
 # Alright, Some more details plz
 
 The degraphmalizer is configured through javascript. Here is an example
 configuration that would transform Alice and Bob's index as above:
 
-`conf/author.conf.js`:
+`conf/alice-target/author.conf.js`:
 
 ```javascript
 ({
+	// we specify which documents we want to use as input for our new document
+	sourceIndex: "alice",
+	sourceType: "author",
 
 	// for each document of type author, extract subgraph relation
 	extract: function(doc, subgraph) {
@@ -93,10 +103,14 @@ configuration that would transform Alice and Bob's index as above:
 		   the total graph is composed of all the subgraphs */
 
 		// so we add on edge for each book this author wrote
-		for(var c in (doc.books || [])) 
-			// this constructs an edge from us to 'c'
-			// if 'c' doesn't exist, a node is created for it.
-			subgraph.add_edge_to("wrote_book", c);
+		if(doc.books && doc.books.length)
+		{
+			doc.books.forEach(function(c) {
+				// this constructs an edge from us to "/bob/books/c"
+				// if that ID doesn't exist, a node is created for it.
+				subgraph.addEdge("wrote_book", "bob", "books", c, false, {});
+			})
+		}
 	},
 	
 	// we now define some walks
@@ -106,8 +120,8 @@ configuration that would transform Alice and Bob's index as above:
 			   forward follows edges from tail to head, and vv.
 			   
 			   In the future you can define your own walks here,
-			   using a DSL that automatically gives reverse walk */
-			 
+			   using a DSL that automatically gives reverse walk
+			*/ 
 			direction: "forward",
 
 			/* for each walk, we can define a number of properties
