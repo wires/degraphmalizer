@@ -131,6 +131,12 @@ Alright, all components have been installed. Now you might want to configure a f
 
 You can configure the Degraphmalizer plugin using the following settings in the elasticsearch configuration file `elasticsearch.yml`:
 
+<dl>
+    <dt><pre>plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerScheme</pre></dt>
+    <dd>URI scheme used to access the Degraphmalizer, either <pre>http</pre> or <pre>https</pre></dd>
+    <dd>Default: <pre>http</pre></dd>
+</dl>
+
 <table>
     <tr>
         <th>Setting</th>
