@@ -2,12 +2,11 @@ package configuration.javascript;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import com.tinkerpop.blueprints.Direction;
 import degraphmalizr.ID;
+import graphs.ops.MutableSubgraph;
 import graphs.ops.Subgraph;
-import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -16,18 +15,18 @@ import java.util.Map;
 /**
  * Javascript interface to subgraph
  */
-//TODO not like this plz
 public class JavascriptSubgraph
 {
-    final ObjectMapper om;
-    final Subgraph subgraph;
-    final Scriptable scope;
-    final Context cx;
+    final MutableSubgraph subgraph = new MutableSubgraph();
 
-    public JavascriptSubgraph(ObjectMapper om, Subgraph subgraph, Context cx, Scriptable scope)
+    final private ObjectMapper om;
+    final private Scriptable scope;
+    final private Context cx;
+
+
+    public JavascriptSubgraph(ObjectMapper om, Context cx, Scriptable scope)
     {
         this.om = om;
-        this.subgraph = subgraph;
         this.cx = cx;
         this.scope = scope;
     }
@@ -37,24 +36,30 @@ public class JavascriptSubgraph
         final ID other = new ID(index, type, id, 0);
         final Map<String,JsonNode> props = new HashMap<String, JsonNode>();
 
+        // call subgraph method
+        final Subgraph.Direction d;
+
+        if(inwards)
+            d = Subgraph.Direction.INWARDS;
+        else
+            d = Subgraph.Direction.OUTWARDS;
+
+        final MutableSubgraph.Edge e = subgraph.beginEdge(label, other, d);
+
         for(Map.Entry<String,Object> p : properties.entrySet())
         {
             // convert into JsonNode
             final JsonNode result = JSONUtilities.fromJSONObject(om, cx, scope, p.getValue());
 
             // Store it
-            props.put(p.getKey(), result);
+            e.property(p.getKey(), result);
         }
-
-        // call subgraph method
-        subgraph.addEdge(label, other, inwards ? Direction.IN : Direction.OUT, props);
     }
 
     public final void setProperty(String key, Object value) throws IOException
     {
         // convert into JsonNode
         final JsonNode result = JSONUtilities.fromJSONObject(om, cx, scope, value);
-
-        subgraph.setProperty(key, result);
+        subgraph.property(key, result);
     }
 }

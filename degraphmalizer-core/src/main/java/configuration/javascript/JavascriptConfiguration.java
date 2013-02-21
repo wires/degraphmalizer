@@ -5,15 +5,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Optional;
-import com.tinkerpop.blueprints.Direction;
-import com.tinkerpop.blueprints.Edge;
-import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.*;
 import configuration.*;
-import degraphmalizr.degraphmalize.DegraphmalizeAction;
 import elasticsearch.ResolvedPathElement;
-import graphs.ops.CompositeSubgraph;
-import graphs.ops.LoggingSubgraph;
 import graphs.ops.Subgraph;
+import graphs.ops.Subgraphs;
 import org.elasticsearch.action.get.GetResponse;
 import org.mozilla.javascript.*;
 import org.slf4j.Logger;
@@ -265,24 +261,27 @@ class JavascriptTypeConfig implements TypeConfig
     }
 
 	@Override
-    public void extract(DegraphmalizeAction job, final Subgraph graphops)
+    public Subgraph extract(JsonNode document)
     {
+        if(document == null)
+            throw new NullPointerException("Must pass in non-null value to extract(..)");
+
         if (extract == null)
         {
             log.debug("Not extracting subgraph because no extract() function is configured");
-            return;
+            return Subgraphs.EMPTY_SUBGRAPH;
         }
 
         final Context cx = Context.enter();
 
         // extract graph components
-        final LoggingSubgraph lsg = new LoggingSubgraph("subgraph");
-        final CompositeSubgraph csg = new CompositeSubgraph(lsg, graphops);
-        final JavascriptSubgraph sg = new JavascriptSubgraph(objectMapper,  csg, cx, script);
-        final Object obj = JSONUtilities.toJSONObject(cx, script,  job.document().toString());
+        final JavascriptSubgraph sg = new JavascriptSubgraph(objectMapper, cx, script);
+
+        final Object obj = JSONUtilities.toJSONObject(cx, script, document.toString());
         extract.call(cx, script, null, new Object[]{obj, sg});
         Context.exit();
 
+        return sg.subgraph;
     }
 
 	@Override

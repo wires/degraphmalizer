@@ -2,7 +2,6 @@ package configuration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import graphs.ops.Subgraph;
-import degraphmalizr.degraphmalize.DegraphmalizeAction;
 
 import java.util.Map;
 
@@ -13,10 +12,9 @@ public interface TypeConfig
 	/**
 	 * Function that given the document computes it's generated subgraph
 	 * 
-	 * @param job
-	 * @param subgraph
+	 * @param document
 	 */
-	void extract(DegraphmalizeAction job, Subgraph subgraph);
+    Subgraph extract(JsonNode document);
 
 	/**
 	 * Process the document before it is inserted into ES

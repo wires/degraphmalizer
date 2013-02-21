@@ -1,6 +1,5 @@
 package graphs.ops;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tinkerpop.blueprints.*;
 import degraphmalizr.EdgeID;
@@ -9,7 +8,6 @@ import exceptions.DegraphmalizerException;
 import graphs.GraphQueries;
 import org.testng.annotations.*;
 
-import java.util.Collections;
 import java.util.Random;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -68,13 +66,13 @@ public class NewSubgraphManagerTest
         final ID id = edge.tail();
 
         // create subgraph containing the "a,b,c,1" vertex
-        final Subgraph subgraph1 = lg.sgm.createSubgraph(id);
+        final MutableSubgraph subgraph1 = new MutableSubgraph();
 
         // add the edge
         addEdgeToSubgraph(subgraph1, id, edge);
 
         // modify the graph
-        lg.sgm.commitSubgraph(subgraph1);
+        lg.sgm.commitSubgraph(id, subgraph1);
 
         // see if we have exactly enough elements in the graph
         assertThat(lg.G.getEdges()).hasSize(1);
@@ -87,8 +85,7 @@ public class NewSubgraphManagerTest
         final EdgeID newEdge = gb.edge("(a,b,c,1) -- label --> (d,e,f,2)");
         final ID claim = newEdge.head();
 
-        final Subgraph subgraph2 = lg.sgm.createSubgraph(claim);
-        lg.sgm.commitSubgraph(subgraph2);
+        lg.sgm.commitSubgraph(claim, new MutableSubgraph());
 
         // see if we have exactly enough elements in the graph
         assertThat(lg.G.getEdges()).hasSize(1);
@@ -107,19 +104,19 @@ public class NewSubgraphManagerTest
         final ID target = edge.head();
 
         // create and commit a subgraph containing the "d,e,f,2" vertex
-        lg.sgm.commitSubgraph(lg.sgm.createSubgraph(target));
+        lg.sgm.commitSubgraph(target, new MutableSubgraph());
 
         assertThat(lg.G.getEdges()).isEmpty();
         assertThat(lg.G.getVertices()).hasSize(1);
 
         // create subgraph containing the "a,b,c,1" vertex
-        final Subgraph source_sg = lg.sgm.createSubgraph(source);
+        final MutableSubgraph source_sg = new MutableSubgraph();
 
         // add the edge
         addEdgeToSubgraph(source_sg, source, edge);
 
         // modify the graph
-        lg.sgm.commitSubgraph(source_sg);
+        lg.sgm.commitSubgraph(source, source_sg);
 
         // see if we have exactly enough elements in the graph
         assertThat(lg.G.getEdges()).hasSize(1);
@@ -131,12 +128,12 @@ public class NewSubgraphManagerTest
 
 
     // add the edge to the subgraph, the other side of the edge will be made symbolic
-    protected void addEdgeToSubgraph(Subgraph sg, ID sg_id, EdgeID edge_id)
+    protected void addEdgeToSubgraph(MutableSubgraph sg, ID sg_id, EdgeID edge_id)
     {
-        // TODO add subgraph.id() method, and change interface style (pull: getEdges() instead of push addEdge())
         final Direction d = GraphQueries.directionOppositeTo(edge_id, sg_id);
         final ID other = GraphQueries.getSymbolicID(GraphQueries.getOppositeId(edge_id, sg_id));
-        sg.addEdge(edge_id.label(), other, d.opposite(), Collections.<String, JsonNode>emptyMap());
+        final Subgraph.Direction dd = d.opposite().equals(Direction.IN) ? Subgraph.Direction.INWARDS : Subgraph.Direction.OUTWARDS;
+        sg.beginEdge(edge_id.label(), other, dd);
     }
 
     protected void assertThatGraphContains(Graph G, EdgeID edge_id)

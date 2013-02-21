@@ -10,7 +10,7 @@ public class DegraphmalizeAction
 {
     protected final DegraphmalizeActionType actionType;
 
-    protected final TypeConfig typeCfg;
+    protected final Iterable<TypeConfig> configs;
     protected final ID id;
 
     protected JsonNode document = null;
@@ -19,11 +19,11 @@ public class DegraphmalizeAction
     // TODO fix in Degraphmalizer.degraphmalizeJob
     public Future<JsonNode> result;
 
-    public DegraphmalizeAction(DegraphmalizeActionType actionType, ID id, TypeConfig typeCfg, DegraphmalizeStatus callback)
+    public DegraphmalizeAction(DegraphmalizeActionType actionType, ID id, Iterable<TypeConfig> configs, DegraphmalizeStatus callback)
     {
         this.actionType = actionType;
         this.id = id;
-        this.typeCfg = typeCfg;
+        this.configs = configs;
         this.status = callback;
     }
 
@@ -36,9 +36,9 @@ public class DegraphmalizeAction
         return actionType;
     }
 
-    public final TypeConfig typeConfig()
+    public final Iterable<TypeConfig> configs()
     {
-        return typeCfg;
+        return configs;
     }
 
     public final DegraphmalizeStatus status()

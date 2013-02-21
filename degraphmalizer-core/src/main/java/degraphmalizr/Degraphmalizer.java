@@ -13,8 +13,7 @@ import degraphmalizr.recompute.*;
 import elasticsearch.QueryFunction;
 import exceptions.*;
 import graphs.GraphQueries;
-import graphs.ops.Subgraph;
-import graphs.ops.SubgraphManager;
+import graphs.ops.*;
 import modules.bindingannotations.*;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
@@ -70,10 +69,8 @@ public class Degraphmalizer implements Degraphmalizr
 	}
 
     @Override
-    public final List<DegraphmalizeAction> degraphmalize(DegraphmalizeActionType actionType, ID id, DegraphmalizeStatus callback)
+    public final DegraphmalizeAction degraphmalize(DegraphmalizeActionType actionType, ID id, DegraphmalizeStatus callback)
     {
-        final ArrayList<DegraphmalizeAction> actions = new ArrayList<DegraphmalizeAction>();
-
         StringBuilder logMessage = null;
 
         if(log.isDebugEnabled())
@@ -83,28 +80,26 @@ public class Degraphmalizer implements Degraphmalizr
             logMessage.append(" -> ");
         }
 
-
-        for(TypeConfig cfg : Configurations.configsFor(cfgProvider.get(), id.index(), id.type()))
+        final Iterable<TypeConfig> configs = Configurations.configsFor(cfgProvider.get(), id.index(), id.type());
+        for(TypeConfig cfg : configs)
         {
             if((logMessage != null) && log.isDebugEnabled())
             {
                 logMessage.append("/").append(cfg.targetIndex()).append("/");
                 logMessage.append(cfg.targetType()).append(", ");
             }
-
-            // construct the action object
-            final DegraphmalizeAction action = new DegraphmalizeAction(actionType, id, cfg, callback);
-
-            // convert object into task and queue
-            action.result = degraphmalizeQueue.submit(degraphmalizeJob(action));
-
-            actions.add(action);
         }
 
         if(log.isDebugEnabled())
             log.debug(logMessage.toString());
 
-        return actions;
+        // construct the action object
+        final DegraphmalizeAction action = new DegraphmalizeAction(actionType, id, configs, callback);
+
+        // convert object into task and queue
+        action.result = degraphmalizeQueue.submit(degraphmalizeJob(action));
+
+        return action;
     }
 
     private Callable<JsonNode> degraphmalizeJob(final DegraphmalizeAction action)
@@ -188,6 +183,7 @@ public class Degraphmalizer implements Degraphmalizr
 
                 // TODO refactor action class
                 action.status().complete(DegraphmalizeResult.success(action));
+
                 return getStatusJsonNode(results);
             }
         }
@@ -220,8 +216,7 @@ public class Degraphmalizer implements Degraphmalizr
         {
             List<RecomputeRequest> recomputeRequests = determineRecomputeActions(action);
 
-            final Subgraph sg = subgraphmanager.createSubgraph(action.id());
-            subgraphmanager.deleteSubgraph(sg);
+            subgraphmanager.deleteSubgraph(action.id());
 
             final List<Future<RecomputeResult>> results = recomputeAffectedDocuments(recomputeRequests);
 
@@ -278,23 +273,35 @@ public class Degraphmalizer implements Degraphmalizr
     private void generateSubgraph(DegraphmalizeAction action) {
         final ID id = action.id();
 
-//        if(log.isTraceEnabled())
-            GraphQueries.dumpGraph(objectMapper, graph);
+        GraphQueries.dumpGraph(objectMapper, graph);
 
         // extract the graph elements
-        log.debug("Extracting graph elements");
-        
-        final Subgraph sg = subgraphmanager.createSubgraph(id);
-        action.typeConfig().extract(action, sg);
-        
-        log.debug("Completed extraction of graph elements");
-        
-        subgraphmanager.commitSubgraph(sg);
-        log.debug("Committed subgraph to graph");
-        
-//        if(log.isTraceEnabled())
-            GraphQueries.dumpGraph(objectMapper, graph);
+        final ArrayList<Subgraph> sgs = new ArrayList<Subgraph>();
+        for(TypeConfig c : action.configs())
+        {
+            final Subgraph sg = c.extract(action.document());
+            sgs.add(sg);
 
+            if(log.isDebugEnabled())
+            {
+                final int edges = Iterables.size(sg.edges());
+                log.debug("Computing subgraph for /{}/{}, containing {} edges",
+                        new Object[]{c.targetIndex(), c.targetType(), edges});
+            }
+        }
+
+        final Subgraph merged = Subgraphs.merge(sgs);
+
+        if(log.isDebugEnabled())
+        {
+            final int edges = Iterables.size(merged.edges());
+            log.debug("Completed extraction of graph elements, {} subgraphs extracted, total size {} edges", sgs.size(), edges);
+        }
+
+        subgraphmanager.commitSubgraph(action.id(), merged);
+        log.info("Committed subgraph to graph");
+        
+        GraphQueries.dumpGraph(objectMapper, graph);
     }
 
     private List<Future<RecomputeResult>> recomputeAffectedDocuments(List<RecomputeRequest> recomputeRequests) throws InterruptedException
@@ -324,41 +331,41 @@ public class Degraphmalizer implements Degraphmalizr
 
         // we add ourselves as the first job in the list
         final VID vid = new VID(objectMapper, root);
-        recomputeRequests.add(new RecomputeRequest(vid, action.typeConfig()));
+        for(TypeConfig c : action.configs())
+            recomputeRequests.add(new RecomputeRequest(vid, c));
 
-        for(WalkConfig walkCfg : action.typeConfig().walks().values())
+        // traverse graph in both direction, starting at the root
+        log.debug("Computing tree in direction IN, starting at {}", root);
+        final Tree<Pair<Edge,Vertex>> up = GraphQueries.childrenFrom(graph, root, Direction.IN);
+
+        log.debug("Computing tree in direction OUT, starting at {}", root);
+        final Tree<Pair<Edge,Vertex>> down = GraphQueries.childrenFrom(graph, root, Direction.OUT);
+
+        if(log.isDebugEnabled())
         {
-            // by walking in the opposite direction we can find all nodes affected by this change
-            final Direction direction = walkCfg.direction().opposite();
+            final int up_size = Iterables.size(Trees.bfsWalk(up));
+            final int down_size = Iterables.size(Trees.bfsWalk(down));
+            log.debug("Found tree of size {} for IN direction and size {} for OUT direction", up_size, down_size);
+        }
 
-            // traverse graph in the other direction, starting at the root
-            log.debug("Computing tree in direction {}, starting at {}", direction, root);
-            final Tree<Pair<Edge,Vertex>> tree = GraphQueries.childrenFrom(graph, root, direction);
+        // create "dirty document" messages for each node in the tree
+        for (Pair<Edge, Vertex> pathElement : Iterables.concat(Trees.bfsWalk(up), Trees.bfsWalk(down)))
+        {
+            final Vertex v = pathElement.b;
 
-            if(log.isDebugEnabled())
-            {
-                final int size = Iterables.size(Trees.bfsWalk(tree));
-                log.debug("Found tree of size {}", size);
-            }
+            // skip the root of the tree, ie. ourselves:
+            if(v.equals(root))
+                continue;
 
-            // create "dirty document" messages for each node in the tree
-            for (Pair<Edge, Vertex> pathElement : Trees.bfsWalk(tree))
-            {
-                final Vertex v = pathElement.b;
+            final VID v_id = new VID(objectMapper, v);
 
-                // skip the root of the tree, ie. ourselves:
-                if(v.equals(root))
-                    continue;
+            // we already know this document does not exist in ES, skip
+            if(v_id.ID().version() == 0)
+                continue;
 
-                final VID v_id = new VID(objectMapper, v);
-
-                // we already know this document does not exist in ES, skip
-                if(v_id.ID().version() == 0)
-                    continue;
-
-                // alright, mark for computation
-                recomputeRequests.add(new RecomputeRequest(v_id, action.typeConfig()));
-            }
+            // alright, mark for computation
+            for(TypeConfig c : action.configs())
+                recomputeRequests.add(new RecomputeRequest(v_id, c));
         }
 
         log.debug("Action for id {} caused recompute for {} documents", action.id(), recomputeRequests.size());
