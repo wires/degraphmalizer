@@ -132,41 +132,39 @@ Alright, all components have been installed. Now you might want to configure a f
 You can configure the Degraphmalizer plugin using the following settings in the elasticsearch configuration file `elasticsearch.yml`:
 
 `plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerScheme`
-URI scheme used to access the Degraphmalizer, either `http` or `https`
-Default: `http`
 
-<table>
-    <tr>
-        <td><pre>plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerHost</pre></td>
-        <td>Hostname used to access the Degraphmalizer</td>
-        <td><pre>localhost</pre></td>
-    </tr>
-    <tr>
-        <td><pre>plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerPort</pre></td>
-        <td>Port used to access the Degraphmalizer</td>
-        <td><pre>9821</pre></td>
-    </tr>
-    <tr>
-        <td><pre>plugin.degraphmalizer.DegraphmalizerPlugin.delayOnFailureInMillis</pre></td>
-        <td>Delay in milliseconds before retrying failed requests to the Degraphmalizer</td>
-        <td><pre>10000</pre></td>
-    </tr>
-    <tr>
-        <td><pre>plugin.degraphmalizer.DegraphmalizerPlugin.queueLimit</pre></td>
-        <td>Number of updates to queue in memory per index before spooling to disk</td>
-        <td><pre>100000</pre></td>
-    </tr>
-    <tr>
-        <td><pre>plugin.degraphmalizer.DegraphmalizerPlugin.logPath</pre></td>
-        <td>Path for error logs and overflow spool files</td>
-        <td><pre>/export/elasticsearch/degraphmalizer</pre></td>
-    </tr>
-    <tr>
-        <td><pre>plugin.degraphmalizer.DegraphmalizerPlugin.maxRetries</pre></td>
-        <td>Number of times to retry sending an update to the Degraphmalizer before considering it failed</td>
-        <td><pre>10</pre></td>
-    </tr>
-</table>
+- URI scheme used to access the Degraphmalizer, either `http` or `https`
+- Default: `http`
+
+`plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerHost`
+
+- Hostname used to access the Degraphmalizer
+- Default: `localhost`
+
+`plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerPort`
+
+- Port used to access the Degraphmalizer
+- Default: `9821`
+
+`plugin.degraphmalizer.DegraphmalizerPlugin.delayOnFailureInMillis`
+
+- Delay in milliseconds before retrying failed requests to the Degraphmalizer
+- Default: `10000`
+
+`plugin.degraphmalizer.DegraphmalizerPlugin.queueLimit`
+
+- Number of updates to queue in memory per index before spooling to disk
+- Default: `100000`
+
+`plugin.degraphmalizer.DegraphmalizerPlugin.logPath`
+
+- Path for error logs and overflow spool files
+- Default: `/export/elasticsearch/degraphmalizer`
+
+`plugin.degraphmalizer.DegraphmalizerPlugin.maxRetries`
+
+- Number of times to retry sending an update to the Degraphmalizer before considering it failed
+- Default: `10`
 
 ## Configure degraphmalizer-core
 
