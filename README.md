@@ -81,8 +81,120 @@ documents which we can directly query. This process is called
 "denormalization" and we are using a graph to do it, hence:
 degraphmalizer :)
 
+# Overview of all moving parts
 
-# Alright, Some more details plz
+The Degraphmalizer works by getting notifications from elasticsearch that a document has changed. You need four things:
+
+  1. elasticsearch
+  2. degraphmalizer-elasticsearch-plugin installed in elasticsearch
+  3. degraphmalizer-core
+  4. degraphmalizer configuration files that tell degraphmalizer-core what to do
+
+# Build
+
+Build requirements:
+
+* [Oracle JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html) 6 (since Neo4j is not yet compatible with Java 7)
+* [Maven](http://maven.apache.org)
+
+Run `mvn package` to build the artifacts. You'll find the resulting jar files in the `target` directories of the subdirectories of the modules.
+
+# Installation
+
+So you want to have your very own Degraphmalizer setup? You've come to the right place!
+
+## Install elasticsearch
+
+If you don't have an elasticsearch installation yet you can [download elasticsearch](http://www.elasticsearch.org/download/) and extract the archive. Use `~/opt/elasticsearch/` for example.
+
+## Install degraphmalizer-elasticsearch-plugin
+
+Unzip the degraphmalizer-elasticsearch-plugin jar with dependencies into a subdirectory in your elasticsearch plugins directory (e.g. `~/opt/elasticsearch/plugins/degraphmalizer`). You should get something like this:
+
+    ~/opt/elasticsearch/plugins/degraphmalizer/
+    |-- commons-codec-1.6.jar
+    |-- commons-logging-1.1.1.jar
+    |-- elasticsearch-degraphmalizer-0.20.2-0.1-SNAPSHOT.jar
+    |-- httpclient-4.2.3.jar
+    `-- httpcore-4.2.2.jar
+
+## Install degraphmalizer-core
+
+TODO
+- Put degraphmalizer-core jar with dedepencies in some directory
+
+# Configuration
+
+Alright, all components have been installed. Now you might want to configure a few things. Read on.
+
+## Configure degraphmalizer-elasticsearch-plugin
+
+You can configure the Degraphmalizer plugin using the following settings in the elasticsearch configuration file `elasticsearch.yml`:
+
+<table>
+    <tr>
+        <th>Setting</th>
+        <th>Description</th>
+        <th>Default value</th>
+    </tr>
+    <tr>
+        <td><pre>plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerScheme</pre></td>
+        <td>URI scheme used to access the Degraphmalizer, either <pre>http</pre> or <pre>https</pre></td>
+        <td><pre>http</pre></td>
+    </tr>
+    <tr>
+        <td><pre>plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerHost</pre></td>
+        <td>Hostname used to access the Degraphmalizer</td>
+        <td><pre>localhost</pre></td>
+    </tr>
+    <tr>
+        <td><pre>plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerPort</pre></td>
+        <td>Port used to access the Degraphmalizer</td>
+        <td><pre>9821</pre></td>
+    </tr>
+    <tr>
+        <td><pre>plugin.degraphmalizer.DegraphmalizerPlugin.delayOnFailureInMillis</pre></td>
+        <td>Delay in milliseconds before retrying failed requests to the Degraphmalizer</td>
+        <td><pre>10000</pre></td>
+    </tr>
+    <tr>
+        <td><pre>plugin.degraphmalizer.DegraphmalizerPlugin.queueLimit</pre></td>
+        <td>Number of updates to queue in memory per index before spooling to disk</td>
+        <td><pre>100000</pre></td>
+    </tr>
+    <tr>
+        <td><pre>plugin.degraphmalizer.DegraphmalizerPlugin.logPath</pre></td>
+        <td>Path for error logs and overflow spool files</td>
+        <td><pre>/export/elasticsearch/degraphmalizer</pre></td>
+    </tr>
+    <tr>
+        <td><pre>plugin.degraphmalizer.DegraphmalizerPlugin.maxRetries</pre></td>
+        <td>Number of times to retry sending an update to the Degraphmalizer before considering it failed</td>
+        <td><pre>10</pre></td>
+    </tr>
+</table>
+
+## Configure degraphmalizer-core
+
+TODO
+- Add Degraphmalizer configuration files to tell degraphmalizer-core what to do
+
+# Running
+
+Everything has been installed, it's all configured, let's run this thing!
+
+## Running elasticsearch
+
+For testing you can then start Elasticsearch with the "Run in foreground" option, like this: cd ~/opt/elasticsearch; bin/elasticsearch -f
+
+You then see the log output on the console, `ctrl+c` to quit the elasticsearch node. Without `-f` elasticsearch starts as a background daemon, which is recommended for production.
+
+## Running degraphmalizer-core
+
+TODO
+- Explain flags / `--help`
+
+# Alright, some more details please
 
 The degraphmalizer is configured through javascript. Here is an example
 configuration that would transform Alice and Bob's index as above:
@@ -176,7 +288,7 @@ We receive a document, then
 We can be quite smart about which documents to fetch first etc, but we
 are not doing this ATM. patches welcome!
 
-# The graph db
+# The graph database
 
 The graph should be a DAG, should you have a cycle then this will
 cause a walk hitting the cycle to loop and explode. Boom.
@@ -201,13 +313,3 @@ tree from a node.
 - Watch every "index" request
 - Perform degraphmalizing on one machine
 - Replicate the graph to some other machines
-
-You can configure the Degraphmalizer plugin using the following settings in `elasticsearch.yml`:
-
-- `plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerScheme`: URI scheme used to access the Degraphmalizer, either `http` or `https` (default: `http`)
-- `plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerHost`: Hostname used to access the Degraphmalizer (default: `localhost`)
-- `plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerPort`: Port used to access the Degraphmalizer (default: `9821`)
-- `plugin.degraphmalizer.DegraphmalizerPlugin.delayOnFailureInMillis`: Delay in milliseconds before retrying failed requests to the Degraphmalizer (default: `10000`)
-- `plugin.degraphmalizer.DegraphmalizerPlugin.queueLimit`: Number of updates to queue in memory per index before spooling to disk (default: `100000`)
-- `plugin.degraphmalizer.DegraphmalizerPlugin.logPath`: Path for error logs and overflow spool files (default: `/export/elasticsearch/degraphmalizer`)
-- `plugin.degraphmalizer.DegraphmalizerPlugin.maxRetries`: Number of times to retry sending an update to the Degraphmalizer before considering it failed (default: `10`)
