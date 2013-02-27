@@ -282,7 +282,7 @@ public final class Trees
 								
 								// add children to end of the queue
 								for (A c : viewer.children(a))
-									if(q.offer(c))
+									if(!q.offer(c))
                                         throw new UnreachableCodeReachedException();
 								
 								return a;
