@@ -128,7 +128,7 @@ public class Degraphmalizer implements Degraphmalizr
     private boolean inList(RecomputeRequest r, List<RecomputeRequest> rs)
     {
         for(RecomputeRequest q : rs)
-            if(q.root.ID().equals(r.root.ID()))
+            if(q.root.id().equals(r.root.id()))
                 return true;
 
         return false;
@@ -360,7 +360,7 @@ public class Degraphmalizer implements Degraphmalizr
             final VID v_id = new VID(objectMapper, v);
 
             // we already know this document does not exist in ES, skip
-            if(v_id.ID().version() == 0)
+            if(v_id.id().version() == 0)
                 continue;
 
             // alright, mark for computation

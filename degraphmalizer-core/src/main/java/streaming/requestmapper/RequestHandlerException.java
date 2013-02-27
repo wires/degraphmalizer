@@ -5,15 +5,18 @@ import org.jboss.netty.handler.codec.http.HttpResponseStatus;
 /**
  * @author Ernst Bunders
  */
-public class RequestHandlerException extends Exception {
-    private final HttpResponseStatus status;
+public class RequestHandlerException extends Exception
+{
+    protected final int code;
 
-    public RequestHandlerException(String s, HttpResponseStatus status) {
-        super(s);
-        this.status = status;
+    public RequestHandlerException(String msg, HttpResponseStatus s)
+    {
+        super(msg);
+        this.code = s.getCode();
     }
 
-    public final HttpResponseStatus getStatus() {
-        return status;
+    public final HttpResponseStatus getStatus()
+    {
+        return HttpResponseStatus.valueOf(code);
     }
 }

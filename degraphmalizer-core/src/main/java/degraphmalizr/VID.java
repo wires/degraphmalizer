@@ -41,7 +41,7 @@ public class VID
         return id.equals(GraphQueries.getID(om, v));
     }
 
-    public final ID ID()
+    public final ID id()
     {
         return id;
     }

@@ -1,7 +1,11 @@
 package degraphmalizr;
 
-public class ID
+import java.io.Serializable;
+
+public class ID implements Serializable
 {
+    static final long serialVersionUID = 1;
+
     private final String index;
     private final String type;
     private final String id;

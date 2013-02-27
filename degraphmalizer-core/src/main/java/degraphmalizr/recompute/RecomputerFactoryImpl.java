@@ -112,7 +112,7 @@ public class RecomputerFactoryImpl implements Recomputer
             // something failed, so we abort the whole re-computation
             if (isAbsent)
             {
-                log.debug("Some results were absent, aborting re-computation for {}", request.root.ID());
+                log.debug("Some results were absent, aborting re-computation for {}", request.root.id());
 
                 // TODO return list of expired nodes/IDs
                 //return factory.recomputeExpired(request, Collections.<ID>emptyList());
@@ -126,7 +126,7 @@ public class RecomputerFactoryImpl implements Recomputer
         private IndexResponse writeToES(ObjectNode document)
         {
             final TypeConfig conf = request.config;
-            final ID sourceID = request.root.ID();
+            final ID sourceID = request.root.id();
             final ID targetID = sourceID.index(conf.targetIndex()).type(conf.targetType());
 
             // write the source version to the document

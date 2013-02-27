@@ -77,7 +77,7 @@ public class RRFactory implements RecomputeResultFactory
     }
 
     // immutable container class, holding "success" data.
-    private class RecomputeSuccess implements RecomputeResult.Success
+    private static class RecomputeSuccess implements RecomputeResult.Success
     {
         final IndexResponse ir;
         final JsonNode source;
@@ -118,7 +118,7 @@ public class RRFactory implements RecomputeResultFactory
     }
 
     // immutable container class that holds a recompute result
-    private class RecomputeResultImpl implements RecomputeResult
+    private static class RecomputeResultImpl implements RecomputeResult
     {
         final RecomputeRequest action;
         final Optional<Throwable> exception;

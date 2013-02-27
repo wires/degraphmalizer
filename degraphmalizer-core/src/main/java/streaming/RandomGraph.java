@@ -5,6 +5,8 @@ import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 
 class RandomGraph extends TinkerGraph
 {
+    static final long serialVersionUID = 1;
+
     /**
      *
      * @param N hoeveel nodes
