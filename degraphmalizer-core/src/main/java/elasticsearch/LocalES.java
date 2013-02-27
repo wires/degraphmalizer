@@ -1,15 +1,11 @@
 package elasticsearch;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.Singleton;
+import com.google.inject.*;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
-
-import static org.elasticsearch.node.NodeBuilder.*;
 
 /**
  * Configure local ES
@@ -25,7 +21,6 @@ public class LocalES extends AbstractModule
     final Client provideElasticInterface()
     {
         final Settings.Builder settings = ImmutableSettings.settingsBuilder()
-                //.put("path.data", dataDir.getAbsolutePath())
                 .put("node.http.enabled", true)
                 .put("index.store.type", "memory")
                 .put("index.number_of_shards", 1)
