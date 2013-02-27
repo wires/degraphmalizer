@@ -90,6 +90,9 @@ public class Degraphmalizer implements Degraphmalizr
             }
         }
 
+        if(Iterables.isEmpty(configs))
+            throw new InvalidRequest("No matching configuration for index=" + id.index() + ", type=" + id.type());
+
         if(log.isDebugEnabled())
             log.debug(logMessage.toString());
 
