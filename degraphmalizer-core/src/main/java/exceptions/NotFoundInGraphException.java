@@ -8,7 +8,7 @@ import degraphmalizr.ID;
  */
 public class NotFoundInGraphException extends DegraphmalizerException
 {
-    final ID id;
+    final protected ID id;
 
     public NotFoundInGraphException(ID id)
     {
