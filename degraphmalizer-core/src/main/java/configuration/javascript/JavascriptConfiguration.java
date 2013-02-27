@@ -8,6 +8,7 @@ import com.google.common.base.Optional;
 import com.tinkerpop.blueprints.*;
 import configuration.*;
 import elasticsearch.ResolvedPathElement;
+import exceptions.ConfigurationException;
 import graphs.ops.Subgraph;
 import graphs.ops.Subgraphs;
 import org.elasticsearch.action.get.GetResponse;
@@ -37,25 +38,25 @@ public class JavascriptConfiguration implements Configuration
 
     public JavascriptConfiguration(ObjectMapper om, File directory) throws IOException
     {
-        File[] directories = directory.listFiles();
-        if (directories!=null) {
-            for(File dir : directory.listFiles())
-            {
-                // skip non directories
-                if(!dir.isDirectory())
-                    continue;
+        final File[] directories = directory.listFiles();
+        if (directories == null)
+            throw new ConfigurationException("Configuration directory " + directory.getCanonicalPath() + " does not exist");
 
-                // each subdirectory encodes an index
-                final String dirname = dir.getName();
-                if (FIXTURES_DIR_NAME.equals(dirname)) {
-                    fixtureConfig = new JavascriptFixtureConfiguration(dir);
-                    log.debug(fixtureConfig.toString());
-                }else{
-                    indices.put(dirname, new JavascriptIndexConfig(om, dirname, dir));
-                }
+        for(File dir : directory.listFiles())
+        {
+            // skip non directories
+            if(!dir.isDirectory())
+                continue;
+
+            // each subdirectory encodes an index
+            final String dirname = dir.getName();
+            if (FIXTURES_DIR_NAME.equals(dirname))
+            {
+                fixtureConfig = new JavascriptFixtureConfiguration(dir);
+                log.debug(fixtureConfig.toString());
             }
-        } else {
-            log.error("Configuration directory {} does not exist",directory.getCanonicalPath());
+            else
+                indices.put(dirname, new JavascriptIndexConfig(om, dirname, dir));
         }
     }
 
@@ -170,6 +171,12 @@ class JavascriptIndexConfig implements IndexConfig
 		
 		return compile(cx, scope, reader, fn);
 	}
+
+    @Override
+    public String toString()
+    {
+        return "JavascriptIndexConfig(index=" + index +")";
+    }
 }
 
 class JavascriptTypeConfig implements TypeConfig
