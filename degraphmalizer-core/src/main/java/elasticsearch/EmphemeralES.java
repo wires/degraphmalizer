@@ -24,11 +24,13 @@ public class EmphemeralES extends AbstractModule
     final Client provideElasticInterface()
     {
         // create temporary directory and use this as ES datadir
-        final File dataDir = Files.createTempDir();
+        final File tempDir = Files.createTempDir();
 
         // otherwise run as much as possible in memory
         final Settings.Builder settings = ImmutableSettings.settingsBuilder()
-                .put("path.data", dataDir.getAbsolutePath())
+                .put("path.data", path(tempDir, "data"))
+                .put("path.logs", path(tempDir, "logs"))
+                .put("path.work", path(tempDir, "work"))
                 .put("node.http.enabled", false)
                 .put("gateway.type", "none")
                 .put("index.store.type", "memory")
@@ -38,5 +40,10 @@ public class EmphemeralES extends AbstractModule
         final Node node = NodeBuilder.nodeBuilder().local(true).settings(settings).node();
 
         return node.client();
+    }
+
+    private String path(File tempDir, String subdir)
+    {
+        return tempDir.getAbsolutePath() + File.separator + subdir;
     }
 }
