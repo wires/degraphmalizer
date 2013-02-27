@@ -1,5 +1,6 @@
 package degraphmalizr.test;
 
+import ch.qos.logback.classic.Level;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.*;
 import com.google.inject.matcher.Matchers;
@@ -29,8 +30,15 @@ import static org.fest.assertions.Assertions.assertThat;
 
 class LocalNode
 {
+    private static void setLogLevel(String logger, Level level)
+    {
+        ((ch.qos.logback.classic.Logger)LoggerFactory.getLogger(logger)).setLevel(level);
+    }
+
     public static LocalNode localNode()
     {
+        setLogLevel("org.elasticsearch", Level.WARN);
+
         final ArrayList<Module> modules = new ArrayList<Module>();
 
         // some defaults
@@ -47,7 +55,7 @@ class LocalNode
 
         // the injector
         final Injector injector = com.google.inject.Guice.createInjector(modules);
-
+        
         return injector.getInstance(LocalNode.class);
     }
 
