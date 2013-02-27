@@ -1,6 +1,6 @@
 package exceptions;
 
-public class InvalidRequest extends RuntimeException
+public class InvalidRequest extends DegraphmalizerException
 {
     public InvalidRequest(String msg)
     {
