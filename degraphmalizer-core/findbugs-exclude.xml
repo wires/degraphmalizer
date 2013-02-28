@@ -1,6 +1,6 @@
 <FindBugsFilter>
     <Match>
-        <Class name="driver.server.Server">
+        <Class name="dgm.driver.server.Server">
             <!-- netty uses shutDown(), blueprints uses shutdown(), I can't help that -->
             <Method name="shutDown"/>
         </Class>

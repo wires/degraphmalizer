@@ -196,7 +196,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>driver.Main</mainClass>
+                            <mainClass>dgm.driver.Main</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
@@ -214,7 +214,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <mainClass>driver.Main</mainClass>
+                    <mainClass>dgm.driver.Main</mainClass>
                 </configuration>
             </plugin>
 
