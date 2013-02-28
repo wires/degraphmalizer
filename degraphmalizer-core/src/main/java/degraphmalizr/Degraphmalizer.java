@@ -71,30 +71,12 @@ public class Degraphmalizer implements Degraphmalizr
     @Override
     public final DegraphmalizeAction degraphmalize(DegraphmalizeActionType actionType, ID id, DegraphmalizeStatus callback)
     {
-        StringBuilder logMessage = null;
-
-        if(log.isDebugEnabled())
-        {
-            logMessage = new StringBuilder("Matching request from ");
-            logMessage.append(id);
-            logMessage.append(" -> ");
-        }
-
+        // find all matching configurations
         final Iterable<TypeConfig> configs = Configurations.configsFor(cfgProvider.get(), id.index(), id.type());
-        for(TypeConfig cfg : configs)
-        {
-            if((logMessage != null) && log.isDebugEnabled())
-            {
-                logMessage.append("/").append(cfg.targetIndex()).append("/");
-                logMessage.append(cfg.targetType()).append(", ");
-            }
-        }
 
+        // we cannot handle this request!
         if(Iterables.isEmpty(configs))
             throw new InvalidRequest("No matching configuration for index=" + id.index() + ", type=" + id.type());
-
-        if(log.isDebugEnabled())
-            log.debug(logMessage.toString());
 
         // construct the action object
         final DegraphmalizeAction action = new DegraphmalizeAction(actionType, id, configs, callback);
