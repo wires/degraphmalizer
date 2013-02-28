@@ -25,6 +25,7 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 
+import static dgm.GraphUtilities.toJSON;
 
 
 public class RecomputerFactoryImpl implements Recomputer
@@ -130,7 +131,7 @@ public class RecomputerFactoryImpl implements Recomputer
             final ID targetID = sourceID.index(conf.targetIndex()).type(conf.targetType());
 
             // write the source version to the document
-            document.put("_fromSource", JSONUtilities.toJSON(objectMapper, sourceID));
+            document.put("_fromSource", toJSON(objectMapper, sourceID));
             final String documentSource = document.toString();
 
             // write document to Elasticsearch

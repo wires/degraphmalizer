@@ -401,8 +401,8 @@ public class SubgraphManagerTest
     {
         final Vertex vertex = lg.G.addVertex(id);
         final ObjectMapper om = new ObjectMapper();
-        final String identifier = JSONUtilities.toJSON(om, isSymbolic ? getSymbolicID(id) : id).toString();
-        final String symbolicIdentifier = JSONUtilities.toJSON(om, getSymbolicID(id)).toString();
+        final String identifier = toJSON(om, isSymbolic ? getSymbolicID(id) : id).toString();
+        final String symbolicIdentifier = toJSON(om, getSymbolicID(id)).toString();
 
         vertex.setProperty(IDENTIFIER, identifier);
         vertex.setProperty(OWNER, identifier);
@@ -461,8 +461,8 @@ public class SubgraphManagerTest
         p.assertOK(center);
 
         final ObjectMapper om = new ObjectMapper();
-        final String identifier = JSONUtilities.toJSON(om, id).toString();
-        final String symbolicidentifier = JSONUtilities.toJSON(om, getSymbolicID(id)).toString();
+        final String identifier = toJSON(om, id).toString();
+        final String symbolicidentifier = toJSON(om, getSymbolicID(id)).toString();
 
         checkElementProperty(center, IDENTIFIER, identifier);
         checkElementProperty(center, OWNER, identifier);

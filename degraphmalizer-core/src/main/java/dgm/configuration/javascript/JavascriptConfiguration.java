@@ -23,6 +23,8 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import static dgm.GraphUtilities.toJSON;
+
 /**
  * Load configuration from javascript files in a directory
  */
@@ -502,9 +504,9 @@ class JavascriptPropertyConfig implements PropertyConfig
                     final Vertex vertex = input.vertex();
 
                     if (edge != null)
-                        n.put("edge", JSONUtilities.toJSON(om, edge));
+                        n.put("edge", toJSON(om, edge));
                     if (vertex != null)
-                        n.put("vertex", JSONUtilities.toJSON(om, vertex));
+                        n.put("vertex", toJSON(om, vertex));
                     return n;
                 }
                 catch (IOException e)

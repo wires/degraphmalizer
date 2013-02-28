@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.tinkerpop.blueprints.Edge;
-import com.tinkerpop.blueprints.Vertex;
 import dgm.degraphmalizr.recompute.RecomputeResult;
 import org.elasticsearch.action.index.IndexResponse;
 import org.mozilla.javascript.*;
@@ -45,39 +43,6 @@ public final class JSONUtilities
 
         // convert JSON string to JsonNode
         return om.readTree(objectJson);
-    }
-
-    public static ObjectNode toJSON(final ObjectMapper om, final Edge edge)
-    {
-        final ObjectNode objectNode = om.createObjectNode();
-
-        final EdgeID edgeID = GraphUtilities.getEdgeID(om, edge);
-
-        final ID tail = edgeID.tail();
-        objectNode.put("tail", toJSON(om, tail));
-
-        final String label = edgeID.label();
-        objectNode.put("label", label);
-
-        final ID head = edgeID.head();
-        objectNode.put("head", toJSON(om, head));
-
-        return objectNode;
-    }
-
-    public static ArrayNode toJSON(ObjectMapper om, Vertex vertex)
-    {
-        final ID id = GraphUtilities.getID(om, vertex);
-        return toJSON(om, id);
-    }
-
-    public static ArrayNode toJSON(ObjectMapper om, ID id)
-    {
-        return om.createArrayNode()
-                .add(id.index())
-                .add(id.type())
-                .add(id.id())
-                .add(id.version());
     }
 
     public static ObjectNode renderException(ObjectMapper om, Throwable t)
@@ -152,7 +117,7 @@ public final class JSONUtilities
             final ArrayNode ids = objectMapper.createArrayNode();
             n.put("success", false);
             for(ID id : ourResult.expired().get())
-                ids.add(JSONUtilities.toJSON(objectMapper, id));
+                ids.add(GraphUtilities.toJSON(objectMapper, id));
             return n;
         }
 

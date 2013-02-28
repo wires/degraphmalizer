@@ -2,6 +2,8 @@ package dgm;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tinkerpop.blueprints.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -159,18 +161,18 @@ public final class GraphUtilities
     private static String getStringRepresentation(ObjectMapper om, final EdgeID edgeID)
     {
         final StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(JSONUtilities.toJSON(om, edgeID.tail()).toString())
+        stringBuilder.append(toJSON(om, edgeID.tail()).toString())
                      .append("--")
                      .append(edgeID.label())
                      .append("->")
-                     .append(JSONUtilities.toJSON(om, edgeID.head()).toString());
+                     .append(toJSON(om, edgeID.head()).toString());
         return stringBuilder.toString();
     }
 
 
     private static Vertex findVertexOnProperty(ObjectMapper om, Graph G, ID id, String propertyName)
     {
-        final String idStr = JSONUtilities.toJSON(om, id).toString();
+        final String idStr = toJSON(om, id).toString();
         final Iterator<Vertex> vi = G.getVertices(propertyName, idStr).iterator();
         if(!vi.hasNext())
             return null;
@@ -194,7 +196,7 @@ public final class GraphUtilities
      */
     public static Iterable<Vertex> findOwnedVertices(ObjectMapper om, Graph G, ID owner)
     {
-        return G.getVertices(SYMBOLIC_OWNER, JSONUtilities.toJSON(om, getSymbolicID(owner)).toString());
+        return G.getVertices(SYMBOLIC_OWNER, toJSON(om, getSymbolicID(owner)).toString());
     }
 
     /**
@@ -202,7 +204,7 @@ public final class GraphUtilities
      */
     public static Iterable<Edge> findOwnedEdges(ObjectMapper om, Graph G, ID owner)
     {
-        return G.getEdges(SYMBOLIC_OWNER, JSONUtilities.toJSON(om, getSymbolicID(owner)).toString());
+        return G.getEdges(SYMBOLIC_OWNER, toJSON(om, getSymbolicID(owner)).toString());
     }
 
     /**
@@ -248,10 +250,10 @@ public final class GraphUtilities
 
     public static void setID(ObjectMapper om, Vertex vertex, ID id)
     {
-        final String json = JSONUtilities.toJSON(om, id).toString();
+        final String json = toJSON(om, id).toString();
         vertex.setProperty(IDENTIFIER, json);
 
-        final String symbolic = JSONUtilities.toJSON(om, getSymbolicID(id)).toString();
+        final String symbolic = toJSON(om, getSymbolicID(id)).toString();
         vertex.setProperty(SYMBOLIC_IDENTIFER, symbolic);
     }
 
@@ -266,8 +268,8 @@ public final class GraphUtilities
 
     public static void setOwner(ObjectMapper om, Element element, ID id)
     {
-        element.setProperty(OWNER, JSONUtilities.toJSON(om, id).toString());
-        element.setProperty(SYMBOLIC_OWNER, JSONUtilities.toJSON(om, getSymbolicID(id)).toString());
+        element.setProperty(OWNER, toJSON(om, id).toString());
+        element.setProperty(SYMBOLIC_OWNER, toJSON(om, getSymbolicID(id)).toString());
     }
 
     /**
@@ -415,5 +417,38 @@ public final class GraphUtilities
             EdgeID idWithSymbolicHead = new EdgeID(symbolicID, id.label(), id.head());
             setEdgeId(om, idWithSymbolicHead, edge);
         }
+    }
+
+    public static ArrayNode toJSON(ObjectMapper om, ID id)
+    {
+        return om.createArrayNode()
+                .add(id.index())
+                .add(id.type())
+                .add(id.id())
+                .add(id.version());
+    }
+
+    public static ObjectNode toJSON(final ObjectMapper om, final Edge edge)
+    {
+        final ObjectNode objectNode = om.createObjectNode();
+
+        final EdgeID edgeID = GraphUtilities.getEdgeID(om, edge);
+
+        final ID tail = edgeID.tail();
+        objectNode.put("tail", toJSON(om, tail));
+
+        final String label = edgeID.label();
+        objectNode.put("label", label);
+
+        final ID head = edgeID.head();
+        objectNode.put("head", toJSON(om, head));
+
+        return objectNode;
+    }
+
+    public static ArrayNode toJSON(ObjectMapper om, Vertex vertex)
+    {
+        final ID id = GraphUtilities.getID(om, vertex);
+        return toJSON(om, id);
     }
 }
