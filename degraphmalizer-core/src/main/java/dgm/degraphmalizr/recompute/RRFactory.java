@@ -3,7 +3,7 @@ package dgm.degraphmalizr.recompute;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Optional;
-import dgm.degraphmalizr.ID;
+import dgm.ID;
 import org.elasticsearch.action.index.IndexResponse;
 
 import java.util.List;

@@ -1,6 +1,5 @@
-package dgm.graphs.ops;
+package dgm;
 
-import dgm.degraphmalizr.ID;
 import dgm.exceptions.DegraphmalizerException;
 
 public interface SubgraphManager

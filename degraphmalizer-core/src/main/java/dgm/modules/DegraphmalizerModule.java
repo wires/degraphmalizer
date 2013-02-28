@@ -1,6 +1,8 @@
-package dgm.degraphmalizr;
+package dgm.modules;
 
 import com.google.inject.AbstractModule;
+import dgm.Degraphmalizr;
+import dgm.degraphmalizr.Degraphmalizer;
 import dgm.degraphmalizr.recompute.*;
 
 public class DegraphmalizerModule extends AbstractModule

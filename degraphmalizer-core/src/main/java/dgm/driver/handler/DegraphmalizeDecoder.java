@@ -7,7 +7,7 @@ import org.jboss.netty.handler.codec.http.HttpMethod;
 import org.jboss.netty.handler.codec.http.HttpRequest;
 import org.jboss.netty.handler.codec.oneone.OneToOneDecoder;
 
-import dgm.degraphmalizr.ID;
+import dgm.ID;
 import dgm.degraphmalizr.degraphmalize.DegraphmalizeActionType;
 import dgm.degraphmalizr.degraphmalize.JobRequest;
 import dgm.exceptions.DegraphmalizerException;

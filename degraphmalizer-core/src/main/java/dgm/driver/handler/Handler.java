@@ -1,7 +1,7 @@
 package dgm.driver.handler;
 
 import com.google.inject.Inject;
-import dgm.degraphmalizr.Degraphmalizr;
+import dgm.Degraphmalizr;
 import dgm.degraphmalizr.degraphmalize.*;
 import dgm.degraphmalizr.recompute.RecomputeRequest;
 import dgm.degraphmalizr.recompute.RecomputeResult;

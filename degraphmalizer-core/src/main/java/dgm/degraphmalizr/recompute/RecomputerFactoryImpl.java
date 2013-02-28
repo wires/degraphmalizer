@@ -6,12 +6,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Optional;
 import com.google.common.collect.Iterables;
 import com.tinkerpop.blueprints.*;
+import dgm.*;
 import dgm.configuration.*;
-import dgm.configuration.javascript.JSONUtilities;
-import dgm.degraphmalizr.ID;
-import dgm.elasticsearch.QueryFunction;
-import dgm.elasticsearch.ResolvedPathElement;
-import dgm.graphs.GraphQueries;
+import dgm.modules.elasticsearch.QueryFunction;
+import dgm.modules.elasticsearch.ResolvedPathElement;
+import dgm.GraphUtilities;
 import dgm.modules.bindingannotations.Fetches;
 import dgm.modules.bindingannotations.Recomputes;
 import dgm.trees.*;
@@ -83,7 +82,7 @@ public class RecomputerFactoryImpl implements Recomputer
             {
                 // walk graph, and fetch all the children in the opposite direction of the walk
                 final Tree<Pair<Edge, Vertex>> tree =
-                        GraphQueries.childrenFrom(graph, request.root.vertex(), walkCfg.getValue().direction());
+                        GraphUtilities.childrenFrom(graph, request.root.vertex(), walkCfg.getValue().direction());
 
                 // write size information to log
                 if (log.isDebugEnabled())

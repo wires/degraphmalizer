@@ -6,14 +6,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.collect.Iterables;
 import com.google.inject.Provider;
 import com.tinkerpop.blueprints.*;
+import dgm.*;
 import dgm.configuration.*;
-import dgm.configuration.javascript.JSONUtilities;
 import dgm.degraphmalizr.degraphmalize.*;
 import dgm.degraphmalizr.recompute.*;
-import dgm.elasticsearch.QueryFunction;
+import dgm.graphs.*;
+import dgm.modules.elasticsearch.QueryFunction;
 import dgm.exceptions.*;
-import dgm.graphs.GraphQueries;
-import dgm.graphs.ops.*;
+import dgm.GraphUtilities;
 import dgm.modules.bindingannotations.*;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
@@ -259,7 +259,7 @@ public class Degraphmalizer implements Degraphmalizr
     private void generateSubgraph(DegraphmalizeAction action) {
         final ID id = action.id();
 
-        GraphQueries.dumpGraph(objectMapper, graph);
+        GraphUtilities.dumpGraph(objectMapper, graph);
 
         // extract the graph elements
         final ArrayList<Subgraph> sgs = new ArrayList<Subgraph>();
@@ -287,7 +287,7 @@ public class Degraphmalizer implements Degraphmalizr
         subgraphmanager.commitSubgraph(action.id(), merged);
         log.info("Committed subgraph to graph");
         
-        GraphQueries.dumpGraph(objectMapper, graph);
+        GraphUtilities.dumpGraph(objectMapper, graph);
     }
 
     private List<Future<RecomputeResult>> recomputeAffectedDocuments(List<RecomputeRequest> recomputeRequests) throws InterruptedException
@@ -308,7 +308,7 @@ public class Degraphmalizer implements Degraphmalizr
         final ID id = action.id();
 
         // we now start traversals for each walk to find documents affected by this change
-        final Vertex root = GraphQueries.findVertex(objectMapper, graph, id);
+        final Vertex root = GraphUtilities.findVertex(objectMapper, graph, id);
         if (root == null)
             // TODO this shouldn't occur, because the subgraph implicitly commits a vertex to the graph
             throw new NotFoundInGraphException(id);
@@ -322,10 +322,10 @@ public class Degraphmalizer implements Degraphmalizr
 
         // traverse graph in both direction, starting at the root
         log.debug("Computing tree in direction IN, starting at {}", root);
-        final Tree<Pair<Edge,Vertex>> up = GraphQueries.childrenFrom(graph, root, Direction.IN);
+        final Tree<Pair<Edge,Vertex>> up = GraphUtilities.childrenFrom(graph, root, Direction.IN);
 
         log.debug("Computing tree in direction OUT, starting at {}", root);
-        final Tree<Pair<Edge,Vertex>> down = GraphQueries.childrenFrom(graph, root, Direction.OUT);
+        final Tree<Pair<Edge,Vertex>> down = GraphUtilities.childrenFrom(graph, root, Direction.OUT);
 
         if(log.isDebugEnabled())
         {

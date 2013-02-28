@@ -1,4 +1,4 @@
-package dgm.neo4j;
+package dgm.modules.neo4j;
 
 import com.google.common.io.Files;
 import com.google.inject.*;

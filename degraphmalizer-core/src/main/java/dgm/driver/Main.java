@@ -2,20 +2,19 @@ package dgm.driver;
 
 import com.beust.jcommander.JCommander;
 import com.google.inject.*;
-import com.google.inject.matcher.Matchers;
 import com.tinkerpop.blueprints.Graph;
-import dgm.degraphmalizr.DegraphmalizerModule;
+import dgm.modules.DegraphmalizerModule;
 import dgm.driver.handler.HandlerModule;
 import dgm.driver.server.Server;
 import dgm.driver.server.ServerModule;
-import dgm.elasticsearch.LocalES;
-import dgm.elasticsearch.NodeES;
+import dgm.modules.elasticsearch.LocalES;
+import dgm.modules.elasticsearch.NodeES;
 import dgm.fixutures.FixtureLoaderModule;
 import dgm.fixutures.FixturesLoader;
 import dgm.jmx.GraphBuilder;
 import dgm.modules.*;
-import dgm.neo4j.CommonNeo4j;
-import dgm.neo4j.EmbeddedNeo4J;
+import dgm.modules.neo4j.CommonNeo4j;
+import dgm.modules.neo4j.EmbeddedNeo4J;
 import org.elasticsearch.client.Client;
 import org.nnsoft.guice.sli4j.slf4j.Slf4jLoggingModule;
 import org.slf4j.Logger;
@@ -127,7 +126,7 @@ public final class Main
             {
                 log.info("Starting JMX");
                 final MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-                final ObjectName name = new ObjectName("graph.mbeans:type=GraphBuilder");
+                final ObjectName name = new ObjectName("graph.mbeans:type=RandomizedGraphBuilder");
                 final GraphBuilder gb = injector.getInstance(GraphBuilder.class);
                 mbs.registerMBean(gb, name);
                 log.info("JMX bean {} started", name);

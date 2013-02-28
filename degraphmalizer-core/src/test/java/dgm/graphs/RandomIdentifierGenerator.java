@@ -1,4 +1,4 @@
-package dgm.graphs.ops;
+package dgm.graphs;
 
 import java.util.Random;
 

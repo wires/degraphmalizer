@@ -1,7 +1,7 @@
 package dgm.configuration;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import dgm.graphs.ops.Subgraph;
+import dgm.Subgraph;
 
 import java.util.Map;
 

@@ -2,7 +2,7 @@ package dgm.jmx;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tinkerpop.blueprints.Graph;
-import dgm.graphs.GraphQueries;
+import dgm.GraphUtilities;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
@@ -67,6 +67,6 @@ public class GraphBuilder implements GraphBuilderMBean
 
     @Override
     public final void dumpGraph() {
-        GraphQueries.dumpGraph(om, graph);
+        GraphUtilities.dumpGraph(om, graph);
     }
 }

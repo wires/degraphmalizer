@@ -1,19 +1,19 @@
-package dgm.graphs.ops;
+package dgm.graphs;
 
-import dgm.degraphmalizr.EdgeID;
-import dgm.degraphmalizr.ID;
+import dgm.EdgeID;
+import dgm.ID;
 
 import java.util.*;
 
 /**
  *
  */
-public class GraphBuilder
+public class RandomizedGraphBuilder
 {
     final Random random;
     final HashMap<String, String> environment = new HashMap<String, String>();
 
-    public GraphBuilder(int randomSeed)
+    public RandomizedGraphBuilder(int randomSeed)
     {
         random = new Random(randomSeed);
     }

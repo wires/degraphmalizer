@@ -2,9 +2,10 @@ package dgm.configuration.javascript;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dgm.degraphmalizr.ID;
-import dgm.graphs.ops.MutableSubgraph;
-import dgm.graphs.ops.Subgraph;
+import dgm.ID;
+import dgm.JSONUtilities;
+import dgm.graphs.MutableSubgraph;
+import dgm.Subgraph;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 

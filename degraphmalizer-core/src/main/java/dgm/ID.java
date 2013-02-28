@@ -1,4 +1,4 @@
-package dgm.degraphmalizr;
+package dgm;
 
 import java.io.Serializable;
 

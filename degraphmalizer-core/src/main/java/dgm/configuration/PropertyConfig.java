@@ -2,7 +2,7 @@ package dgm.configuration;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import dgm.elasticsearch.ResolvedPathElement;
+import dgm.modules.elasticsearch.ResolvedPathElement;
 import dgm.trees.Tree;
 
 /**

@@ -2,7 +2,7 @@ package dgm.modules;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.*;
-import dgm.elasticsearch.QueryFunction;
+import dgm.modules.elasticsearch.QueryFunction;
 import dgm.modules.bindingannotations.*;
 
 import java.util.concurrent.*;

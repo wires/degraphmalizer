@@ -1,4 +1,4 @@
-package dgm.elasticsearch;
+package dgm.modules.elasticsearch;
 
 import com.google.common.io.Files;
 import com.google.inject.*;

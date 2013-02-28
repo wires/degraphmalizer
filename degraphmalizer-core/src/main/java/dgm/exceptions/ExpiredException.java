@@ -1,6 +1,6 @@
 package dgm.exceptions;
 
-import dgm.degraphmalizr.ID;
+import dgm.ID;
 import scala.actors.threadpool.Arrays;
 
 import java.util.Iterator;

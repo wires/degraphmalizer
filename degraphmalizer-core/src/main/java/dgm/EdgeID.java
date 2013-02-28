@@ -1,4 +1,4 @@
-package dgm.degraphmalizr;
+package dgm;
 
 public class EdgeID
 {

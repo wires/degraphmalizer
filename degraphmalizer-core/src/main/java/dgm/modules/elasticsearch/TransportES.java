@@ -1,4 +1,4 @@
-package dgm.elasticsearch;
+package dgm.modules.elasticsearch;
 
 import com.google.inject.*;
 import org.elasticsearch.action.admin.cluster.state.ClusterStateResponse;

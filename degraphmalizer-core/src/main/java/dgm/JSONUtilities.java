@@ -1,4 +1,4 @@
-package dgm.configuration.javascript;
+package dgm;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -6,10 +6,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
-import dgm.degraphmalizr.EdgeID;
-import dgm.degraphmalizr.ID;
 import dgm.degraphmalizr.recompute.RecomputeResult;
-import dgm.graphs.GraphQueries;
 import org.elasticsearch.action.index.IndexResponse;
 import org.mozilla.javascript.*;
 
@@ -54,7 +51,7 @@ public final class JSONUtilities
     {
         final ObjectNode objectNode = om.createObjectNode();
 
-        final EdgeID edgeID = GraphQueries.getEdgeID(om, edge);
+        final EdgeID edgeID = GraphUtilities.getEdgeID(om, edge);
 
         final ID tail = edgeID.tail();
         objectNode.put("tail", toJSON(om, tail));
@@ -70,7 +67,7 @@ public final class JSONUtilities
 
     public static ArrayNode toJSON(ObjectMapper om, Vertex vertex)
     {
-        final ID id = GraphQueries.getID(om, vertex);
+        final ID id = GraphUtilities.getID(om, vertex);
         return toJSON(om, id);
     }
 

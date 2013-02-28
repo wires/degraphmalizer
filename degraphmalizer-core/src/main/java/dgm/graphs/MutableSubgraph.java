@@ -1,7 +1,8 @@
-package dgm.graphs.ops;
+package dgm.graphs;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import dgm.degraphmalizr.ID;
+import dgm.ID;
+import dgm.Subgraph;
 
 import java.util.*;
 

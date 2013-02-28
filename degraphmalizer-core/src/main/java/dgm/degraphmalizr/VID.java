@@ -3,7 +3,8 @@ package dgm.degraphmalizr;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.Vertex;
-import dgm.graphs.GraphQueries;
+import dgm.GraphUtilities;
+import dgm.ID;
 
 /**
  * Vertex and it's ID.
@@ -18,7 +19,7 @@ public class VID
     public VID(ObjectMapper om, Vertex v)
     {
         this.om = om;
-        this.id = GraphQueries.getID(om, v);
+        this.id = GraphUtilities.getID(om, v);
         this.v = v;
     }
 
@@ -33,12 +34,12 @@ public class VID
     {
         this.om = om;
         this.id = id;
-        this.v = GraphQueries.findVertex(om, G, id);
+        this.v = GraphUtilities.findVertex(om, G, id);
     }
 
     public boolean isCorrect()
     {
-        return id.equals(GraphQueries.getID(om, v));
+        return id.equals(GraphUtilities.getID(om, v));
     }
 
     public final ID id()

@@ -57,7 +57,7 @@ public class Options
         // try to set the defaults for a cluster
         transport.add(properties.getProperty("elasticsearch.host", "localhost"));
         transport.add(properties.getProperty("elasticsearch.port", "9300"));
-        transport.add(properties.getProperty("elasticsearch.cluster", "dgm/elasticsearch"));
+        transport.add(properties.getProperty("elasticsearch.cluster", "dgm/modules/elasticsearch"));
 
         config = properties.getProperty("paths.config", "conf");
         graphdb = properties.getProperty("paths.graphdb", "data/graphdb");

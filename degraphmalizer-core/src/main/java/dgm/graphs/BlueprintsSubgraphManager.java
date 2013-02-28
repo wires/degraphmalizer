@@ -1,11 +1,10 @@
-package dgm.graphs.ops;
+package dgm.graphs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tinkerpop.blueprints.*;
-import dgm.degraphmalizr.EdgeID;
-import dgm.degraphmalizr.ID;
+import dgm.*;
 import dgm.exceptions.DegraphmalizerException;
-import dgm.graphs.GraphQueries;
+import dgm.GraphUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import dgm.trees.Pair;
@@ -14,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.tinkerpop.blueprints.TransactionalGraph.Conclusion.*;
-import static dgm.graphs.GraphQueries.*;
+import static dgm.GraphUtilities.*;
 
 public class BlueprintsSubgraphManager implements SubgraphManager
 {
@@ -148,7 +147,7 @@ public class BlueprintsSubgraphManager implements SubgraphManager
             if (canDeleteVertex(v, id, edgesToDelete))
                 graph.removeVertex(v);
             else
-                GraphQueries.makeSymbolic(om, v);
+                GraphUtilities.makeSymbolic(om, v);
         }
     }
 

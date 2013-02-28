@@ -1,4 +1,4 @@
-package dgm.elasticsearch;
+package dgm.modules.elasticsearch;
 
 import com.google.common.base.Optional;
 import org.elasticsearch.action.get.GetResponse;

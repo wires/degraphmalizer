@@ -1,6 +1,6 @@
 package dgm.degraphmalizr.degraphmalize;
 
-import dgm.degraphmalizr.ID;
+import dgm.ID;
 
 public class JobRequest {
     private final DegraphmalizeActionType actionType;

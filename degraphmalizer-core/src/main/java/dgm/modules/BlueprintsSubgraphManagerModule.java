@@ -3,8 +3,8 @@ package dgm.modules;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.*;
 import com.tinkerpop.blueprints.TransactionalGraph;
-import dgm.graphs.ops.BlueprintsSubgraphManager;
-import dgm.graphs.ops.SubgraphManager;
+import dgm.graphs.BlueprintsSubgraphManager;
+import dgm.SubgraphManager;
 
 public class BlueprintsSubgraphManagerModule extends AbstractModule
 {

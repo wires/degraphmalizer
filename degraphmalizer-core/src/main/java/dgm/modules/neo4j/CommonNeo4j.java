@@ -1,9 +1,9 @@
-package dgm.neo4j;
+package dgm.modules.neo4j;
 
 import com.google.inject.*;
 import com.tinkerpop.blueprints.*;
 import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
-import dgm.graphs.GraphQueries;
+import dgm.GraphUtilities;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -27,8 +27,8 @@ public class CommonNeo4j extends AbstractModule
 
         // quickly get vertices by ID
         final String[] props = new String[] {
-                GraphQueries.OWNER, GraphQueries.SYMBOLIC_OWNER,
-                GraphQueries.IDENTIFIER, GraphQueries.SYMBOLIC_IDENTIFER };
+                GraphUtilities.OWNER, GraphUtilities.SYMBOLIC_OWNER,
+                GraphUtilities.IDENTIFIER, GraphUtilities.SYMBOLIC_IDENTIFER };
 
         for(String prop : props)
         {

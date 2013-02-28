@@ -1,8 +1,7 @@
-package dgm.graphs.ops;
+package dgm.graphs;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import dgm.degraphmalizr.EdgeID;
-import dgm.degraphmalizr.ID;
+import dgm.*;
 import dgm.exceptions.UnreachableCodeReachedException;
 import org.neo4j.helpers.collection.Iterables;
 import org.slf4j.Logger;

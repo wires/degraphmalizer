@@ -1,6 +1,6 @@
 package dgm.exceptions;
 
-import dgm.degraphmalizr.ID;
+import dgm.ID;
 
 /**
  * Nodes were found in the graph with a version that cannot be found in Elasticsearch.

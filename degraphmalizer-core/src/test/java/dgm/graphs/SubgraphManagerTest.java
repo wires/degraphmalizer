@@ -1,20 +1,17 @@
-package dgm.graphs.ops;
+package dgm.graphs;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tinkerpop.blueprints.*;
-import dgm.configuration.javascript.JSONUtilities;
-import dgm.degraphmalizr.EdgeID;
-import dgm.degraphmalizr.ID;
+import dgm.*;
 import dgm.exceptions.DegraphmalizerException;
-import dgm.graphs.GraphQueries;
 import org.neo4j.helpers.collection.Iterables;
 import org.testng.annotations.*;
 
 import java.io.IOException;
 import java.util.*;
 
-import static dgm.graphs.GraphQueries.*;
+import static dgm.GraphUtilities.*;
 import static org.fest.assertions.Assertions.assertThat;
 
 public class SubgraphManagerTest
@@ -388,9 +385,9 @@ public class SubgraphManagerTest
         assertThat(vertex1).isNotNull();
         assertThat(vertex2).isNotNull();
 
-        assertThat(GraphQueries.isSymbolic(om, vertex0)).isFalse();
-        assertThat(GraphQueries.isSymbolic(om, vertex1)).isTrue();
-        assertThat(GraphQueries.isSymbolic(om, vertex2)).isFalse();
+        assertThat(GraphUtilities.isSymbolic(om, vertex0)).isFalse();
+        assertThat(GraphUtilities.isSymbolic(om, vertex1)).isTrue();
+        assertThat(GraphUtilities.isSymbolic(om, vertex2)).isFalse();
 
         // Check edges
         final Edge edge0 = findEdge(om, lg.G, e0);

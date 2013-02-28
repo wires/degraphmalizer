@@ -2,7 +2,7 @@ package dgm.degraphmalizr.degraphmalize;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import dgm.configuration.TypeConfig;
-import dgm.degraphmalizr.ID;
+import dgm.ID;
 
 import java.util.concurrent.Future;
 

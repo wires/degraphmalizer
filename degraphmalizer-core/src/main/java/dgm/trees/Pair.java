@@ -1,7 +1,7 @@
 package dgm.trees;
 
 import com.tinkerpop.blueprints.*;
-import dgm.graphs.GraphQueries;
+import dgm.GraphUtilities;
 
 /**
  * A pair of values
@@ -38,7 +38,7 @@ public class Pair<A,B>
 	{
 		if (x instanceof Vertex)
 		{
-			final Object value = ((Vertex)x).getProperty(GraphQueries.IDENTIFIER);
+			final Object value = ((Vertex)x).getProperty(GraphUtilities.IDENTIFIER);
 			return value != null ? value.toString().trim() : "null";
 		}
 

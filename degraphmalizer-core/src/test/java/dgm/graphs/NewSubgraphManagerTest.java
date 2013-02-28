@@ -1,11 +1,10 @@
-package dgm.graphs.ops;
+package dgm.graphs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tinkerpop.blueprints.*;
-import dgm.degraphmalizr.EdgeID;
-import dgm.degraphmalizr.ID;
+import dgm.*;
 import dgm.exceptions.DegraphmalizerException;
-import dgm.graphs.GraphQueries;
+import org.fest.assertions.Assertions;
 import org.testng.annotations.*;
 
 import java.util.Random;
@@ -17,11 +16,12 @@ public class NewSubgraphManagerTest
 {
     final Random random = new Random(System.currentTimeMillis());
     LocalGraph lg;
-    GraphBuilder gb;
+    RandomizedGraphBuilder gb;
+
     @BeforeMethod
     public void clearGraph()
     {
-        gb = new GraphBuilder(random.nextInt());
+        gb = new RandomizedGraphBuilder(random.nextInt());
         lg = LocalGraph.localNode();
     }
 
@@ -34,14 +34,14 @@ public class NewSubgraphManagerTest
     @Test
     public void testGraphBuilder()
     {
-        final GraphBuilder gb = new GraphBuilder(0);
+        final RandomizedGraphBuilder gb = new RandomizedGraphBuilder(0);
         final EdgeID e1 = gb.edge("   (a,b,c,0) -- label --> (a,b,c,0)   ");
 
         assertThat(e1.head()).isEqualTo(e1.tail());
         assertThat(e1.head().version()).isEqualTo(0);
         assertThat(e1.tail().version()).isEqualTo(0);
 
-        final GraphBuilder gb2 = new GraphBuilder(1);
+        final RandomizedGraphBuilder gb2 = new RandomizedGraphBuilder(1);
         final EdgeID e2 = gb2.edge("   (a,b,c,0) -- label --> (a,b,c,0)   ");
 
         assertThat(e1.head()).isNotEqualTo(e2.head());
@@ -130,8 +130,8 @@ public class NewSubgraphManagerTest
     // add the edge to the subgraph, the other side of the edge will be made symbolic
     protected void addEdgeToSubgraph(MutableSubgraph sg, ID sg_id, EdgeID edge_id)
     {
-        final Direction d = GraphQueries.directionOppositeTo(edge_id, sg_id);
-        final ID other = GraphQueries.getSymbolicID(GraphQueries.getOppositeId(edge_id, sg_id));
+        final Direction d = GraphUtilities.directionOppositeTo(edge_id, sg_id);
+        final ID other = GraphUtilities.getSymbolicID(GraphUtilities.getOppositeId(edge_id, sg_id));
         final Subgraph.Direction dd = d.opposite().equals(Direction.IN) ? Subgraph.Direction.INWARDS : Subgraph.Direction.OUTWARDS;
         sg.beginEdge(edge_id.label(), other, dd);
     }
@@ -139,15 +139,15 @@ public class NewSubgraphManagerTest
     protected void assertThatGraphContains(Graph G, EdgeID edge_id)
     {
         final ObjectMapper om = new ObjectMapper();
-        final Vertex head = GraphQueries.findVertex(om, G, edge_id.head());
-        final Vertex tail = GraphQueries.findVertex(om, G, edge_id.tail());
-        final Edge edge = GraphQueries.findEdge(om, G, edge_id);
+        final Vertex head = GraphUtilities.findVertex(om, G, edge_id.head());
+        final Vertex tail = GraphUtilities.findVertex(om, G, edge_id.tail());
+        final Edge edge = GraphUtilities.findEdge(om, G, edge_id);
 
-        assertThat(head).isNotNull();
-        assertThat(tail).isNotNull();
-        assertThat(edge).isNotNull();
+        Assertions.assertThat(head).isNotNull();
+        Assertions.assertThat(tail).isNotNull();
+        Assertions.assertThat(edge).isNotNull();
 
-        assertThat(edge.getVertex(Direction.IN)).isEqualTo(head);
-        assertThat(edge.getVertex(Direction.OUT)).isEqualTo(tail);
+        Assertions.assertThat(edge.getVertex(Direction.IN)).isEqualTo(head);
+        Assertions.assertThat(edge.getVertex(Direction.OUT)).isEqualTo(tail);
     }
 }

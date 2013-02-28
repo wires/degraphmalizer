@@ -1,4 +1,4 @@
-package dgm.elasticsearch;
+package dgm.modules.elasticsearch;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
@@ -6,8 +6,8 @@ import com.google.common.base.Optional;
 import com.google.inject.Inject;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
-import dgm.degraphmalizr.ID;
-import dgm.graphs.GraphQueries;
+import dgm.GraphUtilities;
+import dgm.ID;
 import dgm.trees.Pair;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
@@ -49,7 +49,7 @@ public class QueryFunction implements Function<Pair<Edge,Vertex>, Optional<Resol
         }
 
         // retrieve id property
-        final ID id = GraphQueries.getID(objectMapper, pair.b);
+        final ID id = GraphUtilities.getID(objectMapper, pair.b);
 
         // vertices without ID's cannot be looked up
         if(id == null)

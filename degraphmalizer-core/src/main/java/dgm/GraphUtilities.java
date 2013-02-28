@@ -1,11 +1,8 @@
-package dgm.graphs;
+package dgm;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tinkerpop.blueprints.*;
-import dgm.configuration.javascript.JSONUtilities;
-import dgm.degraphmalizr.EdgeID;
-import dgm.degraphmalizr.ID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import dgm.trees.Pair;
@@ -14,9 +11,9 @@ import dgm.trees.Tree;
 import java.io.IOException;
 import java.util.*;
 
-public final class GraphQueries
+public final class GraphUtilities
 {
-    private static final Logger log = LoggerFactory.getLogger(GraphQueries.class);
+    private static final Logger log = LoggerFactory.getLogger(GraphUtilities.class);
 
     public static final String PREFIX             = "_";
     public static final String IDENTIFIER         = PREFIX + "identifier";
@@ -24,7 +21,7 @@ public final class GraphQueries
     public static final String OWNER              = PREFIX + "owner";
     public static final String SYMBOLIC_OWNER     = PREFIX + "symbolicOwner";
 
-    private GraphQueries() {}
+    private GraphUtilities() {}
 
 	/**
 	 * Compute the vertices reached from <code>s</code> in one step in direction <code>d</code>.
@@ -129,7 +126,7 @@ public final class GraphQueries
     {
         for (String key : element.getPropertyKeys())
         {
-            if (! key.startsWith(GraphQueries.PREFIX))
+            if (! key.startsWith(GraphUtilities.PREFIX))
                 element.removeProperty(key);
         }
 
@@ -327,7 +324,7 @@ public final class GraphQueries
     }
 
     /**
-     * Return true if {@link GraphQueries#setOwner} can be called on this vertex without violating semantics:
+     * Return true if {@link GraphUtilities#setOwner} can be called on this vertex without violating semantics:
      *
      * You should only set the owner if:
      * <ul>

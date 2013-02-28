@@ -5,7 +5,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Charsets;
-import dgm.configuration.javascript.JSONUtilities;
+import dgm.JSONUtilities;
 import dgm.exceptions.DegraphmalizerException;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.*;

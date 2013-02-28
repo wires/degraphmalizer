@@ -1,10 +1,11 @@
-package dgm.graphs.ops;
+package dgm.graphs;
 
 import com.google.inject.*;
 import com.tinkerpop.blueprints.*;
+import dgm.SubgraphManager;
 import dgm.modules.BlueprintsSubgraphManagerModule;
-import dgm.neo4j.CommonNeo4j;
-import dgm.neo4j.EphemeralEmbeddedNeo4J;
+import dgm.modules.neo4j.CommonNeo4j;
+import dgm.modules.neo4j.EphemeralEmbeddedNeo4J;
 
 import java.util.ArrayList;
 
