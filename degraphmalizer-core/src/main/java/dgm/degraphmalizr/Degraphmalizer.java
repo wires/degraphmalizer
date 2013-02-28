@@ -17,6 +17,7 @@ import dgm.graphs.ops.*;
 import dgm.modules.bindingannotations.*;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
+import org.nnsoft.guice.sli4j.core.InjectLogger;
 import org.slf4j.Logger;
 import dgm.trees.*;
 
@@ -27,7 +28,7 @@ import java.util.concurrent.*;
 
 public class Degraphmalizer implements Degraphmalizr
 {
-    @Inject
+    @InjectLogger
 	Logger log;
 
     protected final Client client;

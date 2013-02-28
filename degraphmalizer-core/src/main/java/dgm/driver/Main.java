@@ -88,8 +88,7 @@ public final class Main
         // some defaults
         modules.add(new CommonNeo4j());
         modules.add(new BlueprintsSubgraphManagerModule());
-        modules.add(new Slf4jLoggingModule(Matchers.any()));
-        modules.add(new LogconfModule());
+        modules.add(new Slf4jLoggingModule());
         modules.add(new DegraphmalizerModule());
         modules.add(new ThreadpoolModule());
         modules.add(new FixtureLoaderModule(createRunMode(opt)));

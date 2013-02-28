@@ -3,7 +3,6 @@ package dgm.degraphmalizr.test;
 import ch.qos.logback.classic.Level;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.*;
-import com.google.inject.matcher.Matchers;
 import com.tinkerpop.blueprints.Graph;
 import dgm.degraphmalizr.*;
 import dgm.degraphmalizr.degraphmalize.*;
@@ -17,6 +16,7 @@ import dgm.neo4j.EphemeralEmbeddedNeo4J;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
+import org.nnsoft.guice.sli4j.core.InjectLogger;
 import org.nnsoft.guice.sli4j.slf4j.Slf4jLoggingModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,15 +49,16 @@ class LocalNode
         modules.add(new CommonNeo4j());
         modules.add(new EphemeralEmbeddedNeo4J());
         modules.add(new StaticJSConfModule("src/test/resources/conf/"));
-        modules.add(new Slf4jLoggingModule(Matchers.any()));
-
-        modules.add(new LogconfModule());
+        modules.add(new Slf4jLoggingModule());
 
         // the injector
         final Injector injector = com.google.inject.Guice.createInjector(modules);
         
         return injector.getInstance(LocalNode.class);
     }
+
+    @InjectLogger
+    Logger log;
 
     @Inject
     Degraphmalizr d;
@@ -77,29 +78,28 @@ public class DegraphmalizerTest
         @Override
         public void recomputeStarted(RecomputeRequest action)
         {
-            log.info("restart");
+            ln.log.info("restart");
         }
 
         @Override
         public void recomputeComplete(RecomputeResult result)
         {
-            log.info("rcomplete");
+            ln.log.info("rcomplete");
         }
 
         @Override
         public void complete(DegraphmalizeResult result)
         {
-            log.info("dcomplete");
+            ln.log.info("dcomplete");
         }
 
         @Override
         public void exception(DegraphmalizeResult result)
         {
-            log.warn("Exception: {}", result.exception().getMessage());
+            ln.log.warn("Exception: {}", result.exception().getMessage());
             result.exception().printStackTrace();
         }
     }
-    private final static Logger log = LoggerFactory.getLogger(DegraphmalizerTest.class);
 
     LocalNode ln;
 
@@ -110,7 +110,7 @@ public class DegraphmalizerTest
 	}
 
     @Test
-	public void aTest() throws ExecutionException, InterruptedException, DegraphmalizerException
+	public void fullTest() throws ExecutionException, InterruptedException, DegraphmalizerException
     {
         final String target = "test-target";
         final String idx = "test-index";
@@ -128,17 +128,17 @@ public class DegraphmalizerTest
         final IndexResponse ir = ln.es.prepareIndex(idx,tp,id)
                 .setSource("{\"children\":[1,2,3]}").execute().actionGet();
 
-        log.info("Indexed /{}/{}/{} as version {} into ES", new Object[]{idx, tp, id, ir.version()});
+        ln.log.info("Indexed /{}/{}/{} as version {} into ES", new Object[]{idx, tp, id, ir.version()});
 
         final IndexResponse ir1 = ln.es.prepareIndex(idx,tp,"1")
                 .setSource("{\"cheese\":\"gorgonzola\"}").execute().actionGet();
 
-        log.info("Indexed /{}/{}/1 as version {} into ES", new Object[]{idx, tp, ir1.version()});
+        ln.log.info("Indexed /{}/{}/1 as version {} into ES", new Object[]{idx, tp, ir1.version()});
 
         final IndexResponse ir2 = ln.es.prepareIndex(idx,tp,"2")
                 .setSource("{\"cheese\":\"mozarella\"}").execute().actionGet();
 
-        log.info("Indexed /{}/{}/2 as version {} into ES", new Object[]{idx, tp, ir2.version()});
+        ln.log.info("Indexed /{}/{}/2 as version {} into ES", new Object[]{idx, tp, ir2.version()});
 
         // degraphmalize "1" and wait for and print result
         final ArrayList<DegraphmalizeAction> actions = new ArrayList<DegraphmalizeAction>();
@@ -150,7 +150,7 @@ public class DegraphmalizerTest
 
         for(final DegraphmalizeAction a : actions)
         {
-            log.info("Degraphmalize of {}: {}", a.id(), a.resultDocument().get());
+            ln.log.info("Degraphmalize of {}: {}", a.id(), a.resultDocument().get());
         }
 
         for(final DegraphmalizeAction a : actions)

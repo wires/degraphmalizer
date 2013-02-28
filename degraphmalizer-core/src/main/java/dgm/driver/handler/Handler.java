@@ -6,12 +6,13 @@ import dgm.degraphmalizr.degraphmalize.*;
 import dgm.degraphmalizr.recompute.RecomputeRequest;
 import dgm.degraphmalizr.recompute.RecomputeResult;
 import org.jboss.netty.channel.*;
+import org.nnsoft.guice.sli4j.core.InjectLogger;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class Handler extends SimpleChannelHandler
 {
-    private static final Logger log = LoggerFactory.getLogger(Handler.class);
+    @InjectLogger
+    private static Logger log;
 
     private final Degraphmalizr degraphmalizr;
 

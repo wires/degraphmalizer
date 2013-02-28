@@ -14,10 +14,11 @@ import dgm.elasticsearch.ResolvedPathElement;
 import dgm.graphs.GraphQueries;
 import dgm.modules.bindingannotations.Fetches;
 import dgm.modules.bindingannotations.Recomputes;
+import dgm.trees.*;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
+import org.nnsoft.guice.sli4j.core.InjectLogger;
 import org.slf4j.Logger;
-import dgm.trees.*;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -29,7 +30,7 @@ import java.util.concurrent.ExecutorService;
 
 public class RecomputerFactoryImpl implements Recomputer
 {
-    @Inject
+    @InjectLogger
     Logger log;
 
     protected final Client client;

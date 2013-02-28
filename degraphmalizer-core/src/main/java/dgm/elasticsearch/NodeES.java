@@ -6,8 +6,6 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.NodeBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 
@@ -19,8 +17,6 @@ public class NodeES extends AbstractModule
     protected final String cluster;
     protected final String host;
     protected final int port;
-
-    static Logger log = LoggerFactory.getLogger(TransportES.class);
 
     public NodeES(String cluster, String host, int port)
     {

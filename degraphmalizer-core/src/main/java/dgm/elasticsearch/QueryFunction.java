@@ -8,10 +8,11 @@ import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
 import dgm.degraphmalizr.ID;
 import dgm.graphs.GraphQueries;
+import dgm.trees.Pair;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
+import org.nnsoft.guice.sli4j.core.InjectLogger;
 import org.slf4j.Logger;
-import dgm.trees.Pair;
 
 /**
  * Retrieve document from elasticsearch, based on Vertex
@@ -23,14 +24,15 @@ import dgm.trees.Pair;
  */
 public class QueryFunction implements Function<Pair<Edge,Vertex>, Optional<ResolvedPathElement>>
 {
-    protected final Logger log;
+    @InjectLogger
+    protected Logger log;
+
     protected final Client searchIndex;
     protected final ObjectMapper objectMapper;
 
     @Inject
-    public QueryFunction(Logger log, Client searchIndex, ObjectMapper objectMapper)
+    public QueryFunction(Client searchIndex, ObjectMapper objectMapper)
     {
-        this.log = log;
         this.searchIndex = searchIndex;
         this.objectMapper = objectMapper;
     }

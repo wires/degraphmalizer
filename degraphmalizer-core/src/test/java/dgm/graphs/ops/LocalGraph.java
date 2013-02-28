@@ -3,7 +3,6 @@ package dgm.graphs.ops;
 import com.google.inject.*;
 import com.tinkerpop.blueprints.*;
 import dgm.modules.BlueprintsSubgraphManagerModule;
-import dgm.modules.LogconfModule;
 import dgm.neo4j.CommonNeo4j;
 import dgm.neo4j.EphemeralEmbeddedNeo4J;
 
@@ -18,8 +17,6 @@ public class LocalGraph {
         modules.add(new BlueprintsSubgraphManagerModule());
         modules.add(new CommonNeo4j());
         modules.add(new EphemeralEmbeddedNeo4J());
-
-        modules.add(new LogconfModule());
 
         // the injector
         final Injector injector = com.google.inject.Guice.createInjector(modules);

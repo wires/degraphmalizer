@@ -10,8 +10,6 @@ import dgm.degraphmalizr.recompute.RecomputeResult;
 import dgm.exceptions.DegraphmalizerException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.index.IndexResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -29,30 +27,28 @@ public class ConfigExtractMergingTest
         @Override
         public void recomputeStarted(RecomputeRequest action)
         {
-            log.info("restart");
+            ln.log.info("restart");
         }
 
         @Override
         public void recomputeComplete(RecomputeResult result)
         {
-            log.info("rcomplete");
+            ln.log.info("rcomplete");
         }
 
         @Override
         public void complete(DegraphmalizeResult result)
         {
-            log.info("dcomplete");
+            ln.log.info("dcomplete");
         }
 
         @Override
         public void exception(DegraphmalizeResult result)
         {
-            log.warn("Exception: {}", result.exception().getMessage());
+            ln.log.warn("Exception: {}", result.exception().getMessage());
             result.exception().printStackTrace();
         }
     }
-
-    private final static Logger log = LoggerFactory.getLogger(ConfigExtractMergingTest.class);
 
     LocalNode ln;
 
@@ -65,17 +61,17 @@ public class ConfigExtractMergingTest
         ((TransactionalGraph)ln.G).stopTransaction(TransactionalGraph.Conclusion.SUCCESS);
 	}
 
-    public IndexResponse index(String idx, String tp, String id)
+    IndexResponse index(String idx, String tp, String id)
     {
         final IndexResponse ir = ln.es.prepareIndex(idx,tp,id)
                 .setSource("{\"identifier\":\"" + idx + "," + tp + "," + id + "\"}").execute().actionGet();
 
-        log.info("Indexed /{}/{}/{} as version {} into ES", new Object[]{idx, tp, id, ir.version()});
+        ln.log.info("Indexed /{}/{}/{} as version {} into ES", new Object[]{idx, tp, id, ir.version()});
 
         return ir;
     }
 
-    public void createIndex(String idx)
+    void createIndex(String idx)
     {
         // create target index if it doesn't exist
         if (!ln.es.admin().indices().prepareExists(idx).execute().actionGet().exists())
@@ -86,7 +82,7 @@ public class ConfigExtractMergingTest
         }
     }
 
-    public void dumpGraph()
+    void dumpGraph()
     {
         for(Vertex v : ln.G.getVertices())
         {
@@ -131,7 +127,7 @@ public class ConfigExtractMergingTest
         actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(src, type, "2", v2), callback));
 
         for(final DegraphmalizeAction a : actions)
-            log.info("Degraphmalize of {} completed: {}", a.id(), a.resultDocument().get());
+            ln.log.info("Degraphmalize of {} completed: {}", a.id(), a.resultDocument().get());
 
         dumpGraph();
 
