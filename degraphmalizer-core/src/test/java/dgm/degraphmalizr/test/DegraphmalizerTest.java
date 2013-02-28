@@ -4,15 +4,16 @@ import ch.qos.logback.classic.Level;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.inject.*;
 import com.tinkerpop.blueprints.Graph;
-import dgm.degraphmalizr.*;
+import dgm.Degraphmalizr;
+import dgm.ID;
 import dgm.degraphmalizr.degraphmalize.*;
 import dgm.degraphmalizr.recompute.RecomputeRequest;
 import dgm.degraphmalizr.recompute.RecomputeResult;
-import dgm.elasticsearch.EmphemeralES;
+import dgm.modules.elasticsearch.EmphemeralES;
 import dgm.exceptions.DegraphmalizerException;
 import dgm.modules.*;
-import dgm.neo4j.CommonNeo4j;
-import dgm.neo4j.EphemeralEmbeddedNeo4J;
+import dgm.modules.neo4j.CommonNeo4j;
+import dgm.modules.neo4j.EphemeralEmbeddedNeo4J;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
@@ -68,39 +69,41 @@ class LocalNode
 
     @Inject
     Graph G;
-}
 
-@Test
-public class DegraphmalizerTest
-{
+    final DegraphmalizeStatus callback = new Fixme();
+
     class Fixme implements DegraphmalizeStatus
     {
         @Override
         public void recomputeStarted(RecomputeRequest action)
         {
-            ln.log.info("restart");
+            log.info("restart");
         }
 
         @Override
         public void recomputeComplete(RecomputeResult result)
         {
-            ln.log.info("rcomplete");
+            log.info("rcomplete");
         }
 
         @Override
         public void complete(DegraphmalizeResult result)
         {
-            ln.log.info("dcomplete");
+            log.info("dcomplete");
         }
 
         @Override
         public void exception(DegraphmalizeResult result)
         {
-            ln.log.warn("Exception: {}", result.exception().getMessage());
+            log.warn("Exception: {}", result.exception().getMessage());
             result.exception().printStackTrace();
         }
     }
+}
 
+@Test
+public class DegraphmalizerTest
+{
     LocalNode ln;
 
 	@BeforeClass
@@ -143,10 +146,9 @@ public class DegraphmalizerTest
         // degraphmalize "1" and wait for and print result
         final ArrayList<DegraphmalizeAction> actions = new ArrayList<DegraphmalizeAction>();
 
-        final Fixme callback = new Fixme();
-        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(idx, tp, id, ir.version()), callback));
-        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(idx, tp, "1", ir1.version()), callback));
-        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(idx, tp, "2", ir2.version()), callback));
+        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(idx, tp, id, ir.version()), ln.callback));
+        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(idx, tp, "1", ir1.version()), ln.callback));
+        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(idx, tp, "2", ir2.version()), ln.callback));
 
         for(final DegraphmalizeAction a : actions)
         {

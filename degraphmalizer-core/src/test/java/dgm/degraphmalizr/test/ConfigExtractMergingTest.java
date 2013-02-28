@@ -2,11 +2,10 @@ package dgm.degraphmalizr.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tinkerpop.blueprints.*;
-import dgm.degraphmalizr.EdgeID;
-import dgm.degraphmalizr.ID;
-import dgm.degraphmalizr.degraphmalize.*;
-import dgm.degraphmalizr.recompute.RecomputeRequest;
-import dgm.degraphmalizr.recompute.RecomputeResult;
+import dgm.EdgeID;
+import dgm.ID;
+import dgm.degraphmalizr.degraphmalize.DegraphmalizeAction;
+import dgm.degraphmalizr.degraphmalize.DegraphmalizeActionType;
 import dgm.exceptions.DegraphmalizerException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.index.IndexResponse;
@@ -16,40 +15,12 @@ import org.testng.annotations.Test;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
-import static dgm.graphs.GraphQueries.getEdgeID;
+import static dgm.GraphUtilities.getEdgeID;
 import static org.fest.assertions.Assertions.assertThat;
 
 @Test
 public class ConfigExtractMergingTest
 {
-    class Fixme implements DegraphmalizeStatus
-    {
-        @Override
-        public void recomputeStarted(RecomputeRequest action)
-        {
-            ln.log.info("restart");
-        }
-
-        @Override
-        public void recomputeComplete(RecomputeResult result)
-        {
-            ln.log.info("rcomplete");
-        }
-
-        @Override
-        public void complete(DegraphmalizeResult result)
-        {
-            ln.log.info("dcomplete");
-        }
-
-        @Override
-        public void exception(DegraphmalizeResult result)
-        {
-            ln.log.warn("Exception: {}", result.exception().getMessage());
-            result.exception().printStackTrace();
-        }
-    }
-
     LocalNode ln;
 
 	@BeforeClass
@@ -119,12 +90,10 @@ public class ConfigExtractMergingTest
         final long v1 = index(src, type, "1").version();
         final long v2 = index(src, type, "2").version();
 
-        final Fixme callback = new Fixme();
-
         // degraphmalize "1" and wait for and print result
         final ArrayList<DegraphmalizeAction> actions = new ArrayList<DegraphmalizeAction>();
-        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(src, type, "1", v1), callback));
-        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(src, type, "2", v2), callback));
+        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(src, type, "1", v1), ln.callback));
+        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(src, type, "2", v2), ln.callback));
 
         for(final DegraphmalizeAction a : actions)
             ln.log.info("Degraphmalize of {} completed: {}", a.id(), a.resultDocument().get());
