@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
 
 class CachedProvider<T> implements Provider<T>
 {
@@ -57,28 +58,48 @@ public class ReloadingJSConfModule extends AbstractModule implements Configurati
 
     public ReloadingJSConfModule(final String scriptFolder) throws IOException
     {
+        this.scriptFolder = scriptFolder;
+
+        /**
+         * When loading the configuration this will throw an exception with an invalid configuration, but only on startup.
+         * When already running with a configuration this will log an error message trying to load an invalid configuration, but
+         * will continue to run with the previous valid configuration.
+         */
         final Provider<Configuration> confLoader = new Provider<Configuration>() {
+            private AtomicReference<Configuration> configuration = new AtomicReference<Configuration>(createConfiguration(scriptFolder));
             @Override public Configuration get() {
                 try
                 {
-                    return new JavascriptConfiguration(new ObjectMapper(), new File(scriptFolder));
+                    final Configuration d = configuration.getAndSet(null);
+                    if (d == null)
+                        return createConfiguration(scriptFolder);
+
+                    return d;
+                }
+                catch (ConfigurationException ce)
+                {
+                    log.info("Failed to load configuration, {}", ce.getMessage());
+                    return null;
                 }
                 catch (Exception e)
                 {
-                    log.info("Failed to load configuration, {}", e.getMessage());
+                    log.info("Unknown Exception while loading configuration, {}", e);
                     return null;
                 }
             }
         };
 
         this.cachedProvider = new CachedProvider<Configuration> (confLoader);
-        this.scriptFolder = scriptFolder;
         this.poller = new PollingConfigurationMonitor(scriptFolder, 200, this);
 
         // start the poller (does nothing if it is already running)
         poller.start();
     }
-	
+
+    private Configuration createConfiguration(String scriptFolder) throws IOException {
+        return new JavascriptConfiguration(new ObjectMapper(), new File(scriptFolder));
+    }
+
     @Provides
     public final Configuration provideConfiguration() throws IOException
 	{

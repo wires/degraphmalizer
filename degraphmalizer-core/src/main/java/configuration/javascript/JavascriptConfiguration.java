@@ -124,7 +124,10 @@ class JavascriptIndexConfig implements IndexConfig
                 }
             };
 
-            for(File file: directory.listFiles(filenameFilter))
+            final File[] configFiles = directory.listFiles(filenameFilter);
+            if (configFiles == null)
+                throw new ConfigurationException("Configuration directory " + directory.getCanonicalPath() + " can not be read");
+            for(File file: configFiles)
             {
                 log.debug("Found config file [{}] for index [{}]", file.getCanonicalFile(), index);
                 final Reader reader = new FileReader(file);
