@@ -239,7 +239,7 @@ public final class GraphUtilities
         try
         {
             final JsonNode node = om.readTree(json);
-            return JSONUtilities.fromJSON(node);
+            return fromJSON(node);
         }
         catch (IOException e)
         {
@@ -284,7 +284,7 @@ public final class GraphUtilities
         try
         {
             final JsonNode node = om.readTree(String.valueOf(owner));
-            return JSONUtilities.fromJSON(node);
+            return fromJSON(node);
         }
         catch (IOException e)
         {
@@ -417,6 +417,21 @@ public final class GraphUtilities
             EdgeID idWithSymbolicHead = new EdgeID(symbolicID, id.label(), id.head());
             setEdgeId(om, idWithSymbolicHead, edge);
         }
+    }
+
+
+    public static ID fromJSON(JsonNode n)
+    {
+        if(!n.isArray())
+            return null;
+
+        final ArrayNode a = (ArrayNode)n;
+        final String index = a.get(0).textValue();
+        final String type = a.get(1).textValue();
+        final String id = a.get(2).textValue();
+        final long version = a.get(3).longValue();
+
+        return new ID(index,type,id,version);
     }
 
     public static ArrayNode toJSON(ObjectMapper om, ID id)

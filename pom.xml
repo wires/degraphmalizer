@@ -25,6 +25,8 @@
     <modules>
         <module>degraphmalizer-core</module>
         <module>degraphmalizer-elasticsearch-plugin</module>
+        <module>degraphmalizer-graphstreaming</module>
+        <module>degraphmalizer-standalone</module>
     </modules>
 
     <properties>

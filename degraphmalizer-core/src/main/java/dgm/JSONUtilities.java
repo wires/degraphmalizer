@@ -59,20 +59,6 @@ public final class JSONUtilities
         return ex;
     }
 
-    public static ID fromJSON(JsonNode n)
-    {
-        if(!n.isArray())
-            return null;
-
-        final ArrayNode a = (ArrayNode)n;
-        final String index = a.get(0).textValue();
-        final String type = a.get(1).textValue();
-        final String id = a.get(2).textValue();
-        final long version = a.get(3).longValue();
-
-        return new ID(index,type,id,version);
-    }
-
     public static ObjectNode toJSON(ObjectMapper objectMapper, RecomputeResult ourResult) throws InterruptedException, ExecutionException
     {
         if(ourResult.success().isPresent())
