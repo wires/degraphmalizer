@@ -77,7 +77,7 @@ public class Degraphmalizer implements Degraphmalizr
 
         // we cannot handle this request!
         if(Iterables.isEmpty(configs))
-            throw new InvalidRequest("No matching configuration for index=" + id.index() + ", type=" + id.type());
+            throw new NoConfiguration(id);
 
         // construct the action object
         final DegraphmalizeAction action = new DegraphmalizeAction(actionType, id, configs, callback);
