@@ -5,4 +5,8 @@
             <Method name="shutDown"/>
         </Class>
     </Match>
+    <Match>
+        <!-- in Main, everything is allowed! -->
+        <Class name="dgm.driver.Main"/>
+    </Match>
 </FindBugsFilter>
