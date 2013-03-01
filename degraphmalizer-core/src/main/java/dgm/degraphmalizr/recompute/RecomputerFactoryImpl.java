@@ -8,6 +8,7 @@ import com.google.common.collect.Iterables;
 import com.tinkerpop.blueprints.*;
 import dgm.*;
 import dgm.configuration.*;
+import dgm.exceptions.*;
 import dgm.modules.elasticsearch.QueryFunction;
 import dgm.modules.elasticsearch.ResolvedPathElement;
 import dgm.GraphUtilities;
@@ -35,7 +36,6 @@ public class RecomputerFactoryImpl implements Recomputer
 
     protected final Client client;
     protected final Graph graph;
-    protected final RecomputeResultFactory factory;
     protected final ExecutorService recomputeQueue;
     protected final ExecutorService fetchQueue;
     protected final QueryFunction queryFn;
@@ -43,7 +43,6 @@ public class RecomputerFactoryImpl implements Recomputer
 
     @Inject
     public RecomputerFactoryImpl(Client client, Graph graph,
-                                 RecomputeResultFactory resultFactory,
                                  @Fetches ExecutorService fetchQueue,
                                  @Recomputes ExecutorService recomputeQueue,
                                  ObjectMapper objectMapper,
@@ -51,7 +50,6 @@ public class RecomputerFactoryImpl implements Recomputer
     {
         this.fetchQueue = fetchQueue;
         this.recomputeQueue = recomputeQueue;
-        this.factory = resultFactory;
         this.graph = graph;
         this.client = client;
         this.queryFn = queryFunction;
@@ -153,7 +151,6 @@ public class RecomputerFactoryImpl implements Recomputer
 //            if(walkResults != null && !walkResults.isEmpty())
 //                return walkResults.values().iterator().next();
 
-
             // when no walks are defined, we just get the document ourselves.
 
             // TODO handle this properly...
@@ -163,7 +160,7 @@ public class RecomputerFactoryImpl implements Recomputer
             // retrieve the raw document from ES
             final Optional<ResolvedPathElement> r = queryFn.apply(new Pair<Edge, Vertex>(null, request.root.vertex()));
             if(!r.isPresent() || !r.get().getResponse().isPresent())
-                return null;
+                throw new SourceMissingException();
 
             return objectMapper.readTree(r.get().getResponse().get().sourceAsString());
         }
@@ -177,14 +174,9 @@ public class RecomputerFactoryImpl implements Recomputer
             // - fetch the current ElasticSearch document,
             final JsonNode rawDocument = getFromES();
 
-            if (rawDocument == null)
-                // TODO even better error handling etc.. distinguish exceptions and document really absent
-                return factory.recomputeFailed(request, RecomputeResult.Status.SOURCE_DOCUMENT_ABSENT);
-
             // - Return when this document does not need to be processed.
-            if (!request.config.filter(rawDocument)) {
-                return factory.recomputeFailed(request, RecomputeResult.Status.FILTERED);
-            }
+            if (!request.config.filter(rawDocument))
+                throw new DocumentFiltered();
 
             // Now we are going to iterate over all the walks configured for this input document. For each walk:
             // - We fetch a tree of children non-recursively from our document in the inverted direction of the walk, as Graph vertices
@@ -193,8 +185,7 @@ public class RecomputerFactoryImpl implements Recomputer
             // - We collect the result.
             final HashMap<String, JsonNode> walkResults = walkResults();
             if(walkResults == null)
-                // TODO return expired ID's
-                return factory.recomputeExpired(request, Collections.<ID>emptyList());
+                throw new ExpiredException(Collections.<ID>emptyList());
 
             // Now we are going to:
             // - Transform it, if transformation is required
@@ -206,10 +197,7 @@ public class RecomputerFactoryImpl implements Recomputer
             final JsonNode transformed = request.config.transform(rawDocument);
 
             if (!transformed.isObject())
-            {
-                log.debug("Root of processed document is not a JSON object (ie. it's a value), we are not adding the reduced properties");
-                return factory.recomputeFailed(request, RecomputeResult.Status.SOURCE_NOT_OBJECT);
-            }
+                throw new SourceNotObjectException();
 
             final ObjectNode document = (ObjectNode) transformed;
 
@@ -220,7 +208,7 @@ public class RecomputerFactoryImpl implements Recomputer
             // write the result document to the target index
             final IndexResponse ir = writeToES(document);
 
-            return factory.recomputeSuccess(request, ir, rawDocument, document, walkResults);
+            return new RecomputeResult(ir, rawDocument, document, walkResults);
         }
     }
 
@@ -234,15 +222,15 @@ public class RecomputerFactoryImpl implements Recomputer
     @Override
     public RecomputeResult recompute(final RecomputeRequest request, RecomputeCallback callback)
     {
+        final Recomputer recomputer = new Recomputer(request, callback);
+
         try
         {
-            final Recomputer recomputer = new Recomputer(request, callback);
             return recomputer.recompute();
         }
         catch (Exception e)
         {
-            log.error("Unexpected exception during recompute", e);
-            return factory.recomputeException(request, e);
+            throw new WrappedException(e);
         }
     }
 }

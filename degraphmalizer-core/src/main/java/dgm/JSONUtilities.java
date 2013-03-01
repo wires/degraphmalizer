@@ -3,14 +3,9 @@ package dgm;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import dgm.degraphmalizr.recompute.RecomputeResult;
-import org.elasticsearch.action.index.IndexResponse;
 import org.mozilla.javascript.*;
 
 import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Some helper functions to convert between Object (coming from Rhino) and {@link JsonNode}
@@ -45,20 +40,6 @@ public final class JSONUtilities
         return om.readTree(objectJson);
     }
 
-    public static ObjectNode renderException(ObjectMapper om, Throwable t)
-    {
-        final ArrayNode ss = om.createArrayNode();
-        for(StackTraceElement elt : t.getStackTrace())
-            ss.add(elt.toString());
-
-        final ObjectNode ex = om.createObjectNode();
-        ex.put("message", t.getMessage());
-        ex.put("class", t.getClass().getSimpleName());
-        ex.put("stacktrace", ss);
-
-        return ex;
-    }
-
     public static ID fromJSON(JsonNode n)
     {
         if(!n.isArray())
@@ -72,59 +53,4 @@ public final class JSONUtilities
 
         return new ID(index,type,id,version);
     }
-
-    public static ObjectNode toJSON(ObjectMapper objectMapper, RecomputeResult ourResult) throws InterruptedException, ExecutionException
-    {
-        if(ourResult.success().isPresent())
-        {
-            final ObjectNode n = objectMapper.createObjectNode();
-
-            final RecomputeResult.Success success = ourResult.success().get();
-            n.put("success", true);
-
-            // write targetID using index reponse
-            final IndexResponse ir = success.indexResponse();
-            final ObjectNode targetID = objectMapper.createObjectNode();
-            targetID.put("index", ir.index());
-            targetID.put("type", ir.type());
-            targetID.put("id", ir.id());
-            targetID.put("version", ir.version());
-            n.put("targetID", targetID);
-
-            // write dictionary of properties and their values
-            final ObjectNode properties = objectMapper.createObjectNode();
-            for(Map.Entry<String,JsonNode> entry : success.properties().entrySet())
-                properties.put(entry.getKey(), entry.getValue());
-            n.put("properties", properties);
-
-            // write dictionary of properties and their values
-            n.put("sourceDocumentAfterTransform", success.sourceDocument());
-
-            return n;
-        }
-
-        if(ourResult.exception().isPresent())
-        {
-            final Throwable t = ourResult.exception().get();
-            final ObjectNode n = JSONUtilities.renderException(objectMapper, t);
-            n.put("success", false);
-            return n;
-        }
-
-        if(ourResult.expired().isPresent())
-        {
-            final ObjectNode n = objectMapper.createObjectNode();
-            final ArrayNode ids = objectMapper.createArrayNode();
-            n.put("success", false);
-            for(ID id : ourResult.expired().get())
-                ids.add(GraphUtilities.toJSON(objectMapper, id));
-            return n;
-        }
-
-        final ObjectNode n = objectMapper.createObjectNode();
-        n.put("success", false);
-        n.put("status", ourResult.status().name());
-        return n;
-    }
-
 }

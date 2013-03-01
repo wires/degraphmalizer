@@ -2,39 +2,42 @@ package dgm.degraphmalizr.recompute;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.base.Optional;
-import dgm.ID;
 import org.elasticsearch.action.index.IndexResponse;
 
-import java.util.*;
+import java.util.Map;
 
-public interface RecomputeResult
+public class RecomputeResult
 {
-    public static interface Success
+    protected final IndexResponse ir;
+    protected final JsonNode source;
+    protected final ObjectNode result;
+    protected final Map<String, JsonNode> properties;
+
+    public RecomputeResult(IndexResponse ir, JsonNode source, ObjectNode result, Map<String, JsonNode> properties)
     {
-        IndexResponse indexResponse();
-        JsonNode sourceDocument();
-        ObjectNode resultDocument();
-        Map<String,JsonNode> properties();
+        this.ir = ir;
+        this.source = source;
+        this.result = result;
+        this.properties = properties;
     }
 
-    public static enum Status
+    public IndexResponse indexResponse()
     {
-        SUCCESS,
-        EXCEPTION,
-        EXPIRED,
-        FILTERED,
-
-        SOURCE_DOCUMENT_ABSENT,
-        SOURCE_NOT_OBJECT, // source is not a json object, e.g array or value
-        TARGET_INDEX_ABSENT
+        return ir;
     }
 
-    RecomputeRequest action();
+    public JsonNode sourceDocument()
+    {
+        return source;
+    }
 
-    Status status();
+    public ObjectNode resultDocument()
+    {
+        return result;
+    }
 
-    Optional<Success> success();
-    Optional<Throwable> exception();
-    Optional<List<ID>> expired();
+    public Map<String, JsonNode> properties()
+    {
+        return properties;
+    }
 }

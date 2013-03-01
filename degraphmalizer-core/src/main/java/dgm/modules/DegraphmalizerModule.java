@@ -11,7 +11,6 @@ public class DegraphmalizerModule extends AbstractModule
     protected final void configure()
     {
         bind(Degraphmalizr.class).to(Degraphmalizer.class).asEagerSingleton();
-        bind(RecomputeResultFactory.class).to(RRFactory.class).asEagerSingleton();
         bind(Recomputer.class).to(RecomputerFactoryImpl.class).asEagerSingleton();
     }
 }

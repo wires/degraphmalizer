@@ -10,16 +10,16 @@ import dgm.*;
 import dgm.configuration.*;
 import dgm.degraphmalizr.degraphmalize.*;
 import dgm.degraphmalizr.recompute.*;
-import dgm.graphs.*;
-import dgm.modules.elasticsearch.QueryFunction;
 import dgm.exceptions.*;
-import dgm.GraphUtilities;
+import dgm.graphs.Subgraphs;
 import dgm.modules.bindingannotations.*;
+import dgm.modules.elasticsearch.QueryFunction;
+import dgm.trees.*;
 import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.nnsoft.guice.sli4j.core.InjectLogger;
 import org.slf4j.Logger;
-import dgm.trees.*;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -383,6 +383,34 @@ public class Degraphmalizer implements Degraphmalizr
     private ObjectNode getStatusJsonNode(List<Future<RecomputeResult>> results) throws InterruptedException, ExecutionException
     {
         final RecomputeResult ourResult = results.get(0).get();
-        return JSONUtilities.toJSON(objectMapper, ourResult);
+        return toJSON(objectMapper, ourResult);
     }
+
+    public static ObjectNode toJSON(ObjectMapper objectMapper, RecomputeResult success) throws InterruptedException, ExecutionException
+    {
+        final ObjectNode n = objectMapper.createObjectNode();
+
+        n.put("success", true);
+
+        // write targetID using index reponse
+        final IndexResponse ir = success.indexResponse();
+        final ObjectNode targetID = objectMapper.createObjectNode();
+        targetID.put("index", ir.index());
+        targetID.put("type", ir.type());
+        targetID.put("id", ir.id());
+        targetID.put("version", ir.version());
+        n.put("targetID", targetID);
+
+        // write dictionary of properties and their values
+        final ObjectNode properties = objectMapper.createObjectNode();
+        for(Map.Entry<String,JsonNode> entry : success.properties().entrySet())
+            properties.put(entry.getKey(), entry.getValue());
+        n.put("properties", properties);
+
+        // write dictionary of properties and their values
+        n.put("sourceDocumentAfterTransform", success.sourceDocument());
+
+        return n;
+   }
+
 }
