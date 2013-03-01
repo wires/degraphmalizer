@@ -5,6 +5,7 @@ import com.google.inject.*;
 import dgm.configuration.*;
 import dgm.configuration.javascript.JavascriptConfiguration;
 import dgm.configuration.javascript.PollingConfigurationMonitor;
+import dgm.exceptions.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,26 +54,33 @@ public class ReloadingJSConfModule extends AbstractModule implements Configurati
     private static final Logger log = LoggerFactory.getLogger(ReloadingJSConfModule.class);
 
 	final String scriptFolder;
+    final String[] libraries;
     final PollingConfigurationMonitor poller;
     final CachedProvider<Configuration> cachedProvider;
 
-    public ReloadingJSConfModule(final String scriptFolder) throws IOException
+    final ObjectMapper om = new ObjectMapper();
+
+    public ReloadingJSConfModule(final String scriptFolder, final String... libraries) throws IOException
     {
         this.scriptFolder = scriptFolder;
+        this.libraries = libraries;
 
         /**
          * When loading the configuration this will throw an exception with an invalid configuration, but only on startup.
          * When already running with a configuration this will log an error message trying to load an invalid configuration, but
          * will continue to run with the previous valid configuration.
          */
-        final Provider<Configuration> confLoader = new Provider<Configuration>() {
-            private AtomicReference<Configuration> configuration = new AtomicReference<Configuration>(createConfiguration(scriptFolder));
+        final Provider<Configuration> confLoader = new Provider<Configuration>()
+        {
+            private AtomicReference<Configuration> configuration =
+                    new AtomicReference<Configuration>(createConfiguration(om, scriptFolder, libraries));
+
             @Override public Configuration get() {
                 try
                 {
                     final Configuration d = configuration.getAndSet(null);
                     if (d == null)
-                        return createConfiguration(scriptFolder);
+                        return createConfiguration(om, scriptFolder, libraries);
 
                     return d;
                 }
@@ -96,8 +104,33 @@ public class ReloadingJSConfModule extends AbstractModule implements Configurati
         poller.start();
     }
 
-    private Configuration createConfiguration(String scriptFolder) throws IOException {
-        return new JavascriptConfiguration(new ObjectMapper(), new File(scriptFolder));
+    static final Configuration createConfiguration(ObjectMapper om, String scriptFolder, String... libraries) throws IOException
+    {
+        return new JavascriptConfiguration(om, new File(scriptFolder), toFiles(libraries));
+    }
+
+    static final File[] toFiles(final String[] filenames)
+    {
+        final File[] fs = new File[filenames.length];
+        int i = 0;
+        for(final String fn : filenames)
+        {
+            final File f = new File(fn);
+
+            if(!f.getName().endsWith(".js"))
+                throw new ConfigurationException("Will only load .js files");
+
+            if(!f.canRead())
+                throw new ConfigurationException("Cannot read from '" + fn + "'");
+
+            if(!f.isFile())
+                throw new ConfigurationException("'" + fn + "' is not a file");
+
+            fs[i] = f;
+            i++;
+        }
+
+        return fs;
     }
 
     @Provides

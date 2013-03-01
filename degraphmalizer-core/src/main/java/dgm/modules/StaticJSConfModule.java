@@ -3,9 +3,7 @@ package dgm.modules;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.*;
 import dgm.configuration.Configuration;
-import dgm.configuration.javascript.JavascriptConfiguration;
 
-import java.io.File;
 import java.io.IOException;
 
 /**
@@ -14,10 +12,12 @@ import java.io.IOException;
 public class StaticJSConfModule extends AbstractModule
 {
 	final String scriptFolder;
+    final String[] libraries;
 	
-	public StaticJSConfModule(String scriptFolder)
+	public StaticJSConfModule(String scriptFolder, String... libraries)
 	{
 		this.scriptFolder = scriptFolder;
+        this.libraries = libraries;
 	}
 	
 	@Override
@@ -29,6 +29,6 @@ public class StaticJSConfModule extends AbstractModule
     @Inject
     final Configuration provideConfiguration(ObjectMapper om) throws IOException
 	{
-		return new JavascriptConfiguration(om, new File(scriptFolder));
+		return ReloadingJSConfModule.createConfiguration(om, scriptFolder, libraries);
 	}
 }

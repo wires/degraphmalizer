@@ -39,7 +39,7 @@ public class JavascriptConfiguration implements Configuration
 
 
 
-    public JavascriptConfiguration(ObjectMapper om, File directory) throws IOException
+    public JavascriptConfiguration(ObjectMapper om, File directory, File... libraries) throws IOException
     {
         final File[] directories = directory.listFiles();
         if (directories == null)
@@ -59,7 +59,7 @@ public class JavascriptConfiguration implements Configuration
                 log.debug(fixtureConfig.toString());
             }
             else
-                indices.put(dirname, new JavascriptIndexConfig(om, dirname, dir));
+                indices.put(dirname, new JavascriptIndexConfig(om, dirname, dir, libraries));
         }
     }
 
@@ -93,20 +93,21 @@ class JavascriptIndexConfig implements IndexConfig
 	 * @param directory Directory to watch for files
 	 * @throws IOException
 	 */
-	public JavascriptIndexConfig(ObjectMapper om, String index, File directory) throws IOException {
-
+	public JavascriptIndexConfig(ObjectMapper om, String index, File directory, File... libraries) throws IOException
+    {
         this.index = index;
         Scriptable scope = null;
 
-        try {
+        try
+        {
             final Context cx = Context.enter();
 
             // create standard ECMA scope
             scope = cx.initStandardObjects();
 
-            // load underscore and the Subgraph class
-            loadLib(cx, scope, "underscore-1.4.0.js");
-            loadLib(cx, scope, "subgraph.js");
+            // load libraries
+            for(File lib : libraries)
+                loadLib(cx, scope, lib);
 
             final Object jsLogger = Context.javaToJS(new JSLogger(), scope);
             ScriptableObject.putProperty(scope, "log", jsLogger);
@@ -169,13 +170,20 @@ class JavascriptIndexConfig implements IndexConfig
 		// compile and execute into the scope
 		return cx.compileReader(reader, fn, 0, null).exec(cx, scope);
 	}
-	
-	private Object loadLib(Context cx, Scriptable scope, String fn) throws IOException
+
+    private Object loadLibFromResource(Context cx, Scriptable scope, Class<?> cls, String fn) throws IOException
+    {
+        // get loader relative to this class
+        final Reader reader = new InputStreamReader(cls.getResourceAsStream(fn), "UTF-8");
+
+        return compile(cx, scope, reader, fn);
+    }
+
+	private Object loadLib(Context cx, Scriptable scope, File f) throws IOException
 	{
-		// get loader relative to this class
-		final Reader reader = new InputStreamReader(JavascriptIndexConfig.class.getResourceAsStream(fn), "UTF-8");
-		
-		return compile(cx, scope, reader, fn);
+		// load file from filesystem
+		final FileReader reader = new FileReader(f);
+		return compile(cx, scope, reader, f.getName());
 	}
 
     @Override

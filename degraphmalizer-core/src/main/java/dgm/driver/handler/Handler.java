@@ -59,7 +59,6 @@ public class Handler extends SimpleChannelHandler
             @Override
             public void exception(DegraphmalizeResult result)
             {
-                log.error("Exception occurred: {}", result.exception().getMessage());
                 // send exception message upstream. We cannot simply throw the exception because this is not executed
                 // in the netty selector thread
                 ctx.sendUpstream(new DefaultExceptionEvent(ctx.getChannel(), result.exception()));
@@ -68,6 +67,6 @@ public class Handler extends SimpleChannelHandler
 
         // write the action object
         final DegraphmalizeAction action = degraphmalizr.degraphmalize(jobRequest.actionType(), jobRequest.id(), callback);
-        ctx.getChannel().write(action);
+        //ctx.getChannel().write(action);
     }
 }

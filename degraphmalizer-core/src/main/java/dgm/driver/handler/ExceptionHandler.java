@@ -10,6 +10,8 @@ import dgm.exceptions.DegraphmalizerException;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.*;
 import org.jboss.netty.handler.codec.http.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.StringWriter;
 
@@ -19,6 +21,8 @@ public class ExceptionHandler extends SimpleChannelHandler
 {
     // TODO use annotated POJO messages and inject the objectmapper
     private static final ObjectMapper objectMapper = new ObjectMapper();
+
+    Logger log = LoggerFactory.getLogger(ExceptionHandler.class);
 
     @Override
     public final void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception
@@ -47,6 +51,8 @@ public class ExceptionHandler extends SimpleChannelHandler
 
         final HttpResponse response = new DefaultHttpResponse(HttpVersion.HTTP_1_0, status);
         response.setContent(ChannelBuffers.copiedBuffer(sw.toString(), Charsets.UTF_8));
+
+        log.error("Exception occurred", t);
 
         if(c.isOpen() && c.isWritable())
             c.write(response).addListener(ChannelFutureListener.CLOSE);

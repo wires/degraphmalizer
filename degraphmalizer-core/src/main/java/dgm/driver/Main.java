@@ -16,6 +16,7 @@ import dgm.modules.*;
 import dgm.modules.neo4j.CommonNeo4j;
 import dgm.modules.neo4j.EmbeddedNeo4J;
 import org.elasticsearch.client.Client;
+import org.nnsoft.guice.sli4j.core.InjectLogger;
 import org.nnsoft.guice.sli4j.slf4j.Slf4jLoggingModule;
 import org.slf4j.Logger;
 
@@ -31,9 +32,10 @@ public final class Main
 {
     private static final String LOGBACK_CFG = "logback.configurationFile";
 
-    private Main() {}
+    @InjectLogger
+    Logger log;
 
-    public static void main(String[] args)
+    private Main(String[] args)
     {
         final Options opt = new Options();
 
@@ -92,13 +94,16 @@ public final class Main
         modules.add(new ThreadpoolModule());
         modules.add(new FixtureLoaderModule(createRunMode(opt)));
 
+        // list of javascript library filenames
+        final String[] libraries = opt.libraries.toArray(new String[opt.libraries.size()]);
+
         // automatic reloading
         if(opt.reloading)
         {
             System.out.println("Automatic reloading: enabled");
             try
             {
-                modules.add(new ReloadingJSConfModule(opt.config));
+                modules.add(new ReloadingJSConfModule(opt.config, libraries));
             }
             catch (IOException e)
             {
@@ -109,14 +114,14 @@ public final class Main
         else
         {
             System.out.println("Automatic reloading: disabled");
-            modules.add(new StaticJSConfModule(opt.config));
+            modules.add(new StaticJSConfModule(opt.config, libraries));
         }
 
         // the injector
         final Injector injector = Guice.createInjector(modules);
 
         // logger
-        final Logger log = injector.getInstance(Logger.class);
+        injector.injectMembers(this);
 
         // start JMX?
         if(opt.jmx)
@@ -179,6 +184,12 @@ public final class Main
         // start listening
         log.info("Starting server at {}", opt.port);
         server.startAndWait();
+
+    }
+
+    public static void main(String[] args)
+    {
+        new Main(args);
     }
 
     private static RunMode createRunMode(Options options)

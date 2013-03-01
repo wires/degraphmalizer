@@ -19,6 +19,8 @@
 		</encoder>
 	</appender>
 
+	<logger name="org.elasticsearch" level="INFO"/>
+
 	<root level="INFO">
 		<appender-ref ref="stdout"/>
 		<appender-ref ref="file"/>

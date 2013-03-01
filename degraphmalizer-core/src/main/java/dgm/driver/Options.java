@@ -34,6 +34,9 @@ public class Options
     @Parameter(names = {"-f", "--fixtures"}, description = "Load fixtures on startup")
     boolean fixtures;
 
+    @Parameter(names = {"--jslib"}, description = "Load Javascript library from this file")
+    List<String> libraries = new ArrayList<String>();
+
     @Parameter(names = {"-?", "--help"}, help = true)
     boolean help;
 
@@ -57,7 +60,7 @@ public class Options
         // try to set the defaults for a cluster
         transport.add(properties.getProperty("elasticsearch.host", "localhost"));
         transport.add(properties.getProperty("elasticsearch.port", "9300"));
-        transport.add(properties.getProperty("elasticsearch.cluster", "dgm/modules/elasticsearch"));
+        transport.add(properties.getProperty("elasticsearch.cluster", "elasticsearch"));
 
         config = properties.getProperty("paths.config", "conf");
         graphdb = properties.getProperty("paths.graphdb", "data/graphdb");
