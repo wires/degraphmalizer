@@ -177,6 +177,10 @@ public class RecomputerFactoryImpl implements Recomputer
             // - fetch the current ElasticSearch document,
             final JsonNode rawDocument = getFromES();
 
+            if (rawDocument == null)
+                // TODO even better error handling etc.. distinguish exceptions and document really absent
+                return factory.recomputeFailed(request, RecomputeResult.Status.SOURCE_DOCUMENT_ABSENT);
+
             // - Return when this document does not need to be processed.
             if (!request.config.filter(rawDocument)) {
                 return factory.recomputeFailed(request, RecomputeResult.Status.FILTERED);
@@ -197,10 +201,6 @@ public class RecomputerFactoryImpl implements Recomputer
             // - Add the walk properties
             // - Add a reference to the source document.
             // - And store it as target document type in target index.
-
-            if (rawDocument == null)
-                // TODO even better error handling etc.. distinguish exceptions and document really absent
-                return factory.recomputeFailed(request, RecomputeResult.Status.SOURCE_DOCUMENT_ABSENT);
 
             // pre-process document using javascript
             final JsonNode transformed = request.config.transform(rawDocument);
