@@ -1,8 +1,9 @@
-[![TravisStatus](https://travis-ci.org/vpro/degraphmalizer.png?branch=master)](https://travis-ci.org/vpro/degraphmalizer)
+![TravisStatus](https://travis-ci.org/vpro/degraphmalizer.png?branch=master)
 
-# The Degraphmalizer!
+# Tutorial
 
-![Pipeline](pipeline.png)
+
+
 
 The degraphmalizer is an application on top of
 [Elasticsearch](http://elasticsearch.org) that can extract graph
@@ -80,6 +81,111 @@ So we duplicate the data of the separate indices into derived
 documents which we can directly query. This process is called
 "denormalization" and we are using a graph to do it, hence:
 degraphmalizer :)
+
+# Overview of all moving parts
+
+The Degraphmalizer works by getting notifications from elasticsearch that a document has changed. You need four things:
+
+  1. elasticsearch
+  2. degraphmalizer-elasticsearch-plugin installed in elasticsearch
+  3. degraphmalizer-core
+  4. degraphmalizer configuration files that tell degraphmalizer-core what to do
+
+# Build
+
+Build requirements:
+
+* [Oracle JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html) 6 (since Neo4j is not yet compatible with Java 7)
+* [Maven](http://maven.apache.org)
+
+Run `mvn package` to build the artifacts. You'll find the resulting jar files in the `target` directories of the subdirectories of the modules.
+
+# Installation
+
+So you want to have your very own Degraphmalizer setup? You've come to the right place!
+
+## Install elasticsearch
+
+If you don't have an elasticsearch installation yet you can [download elasticsearch](http://www.elasticsearch.org/download/) and extract the archive. Use `~/opt/elasticsearch/` for example.
+
+## Install degraphmalizer-elasticsearch-plugin
+
+Unzip the degraphmalizer-elasticsearch-plugin jar with dependencies into a subdirectory in your elasticsearch plugins directory (e.g. `~/opt/elasticsearch/plugins/degraphmalizer`). You should get something like this:
+
+    ~/opt/elasticsearch/plugins/degraphmalizer/
+    |-- commons-codec-1.6.jar
+    |-- commons-logging-1.1.1.jar
+    |-- elasticsearch-degraphmalizer-0.20.2-0.1-SNAPSHOT.jar
+    |-- httpclient-4.2.3.jar
+    `-- httpcore-4.2.2.jar
+
+## Install degraphmalizer-core
+
+TODO
+- Put degraphmalizer-core jar with dedepencies in some directory
+
+# Configuration
+
+Alright, all components have been installed. Now you might want to configure a few things. Read on.
+
+## Configure degraphmalizer-elasticsearch-plugin
+
+You can configure the Degraphmalizer plugin using the following settings in the elasticsearch configuration file `elasticsearch.yml`:
+
+`plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerScheme`
+
+- URI scheme used to access the Degraphmalizer, either `http` or `https`
+- Default: `http`
+
+`plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerHost`
+
+- Hostname used to access the Degraphmalizer
+- Default: `localhost`
+
+`plugin.degraphmalizer.DegraphmalizerPlugin.degraphmalizerPort`
+
+- Port used to access the Degraphmalizer
+- Default: `9821`
+
+`plugin.degraphmalizer.DegraphmalizerPlugin.delayOnFailureInMillis`
+
+- Delay in milliseconds before retrying failed requests to the Degraphmalizer
+- Default: `10000`
+
+`plugin.degraphmalizer.DegraphmalizerPlugin.queueLimit`
+
+- Number of updates to queue in memory per index before spooling to disk
+- Default: `100000`
+
+`plugin.degraphmalizer.DegraphmalizerPlugin.logPath`
+
+- Path for error logs and overflow spool files
+- Default: `/export/elasticsearch/degraphmalizer`
+
+`plugin.degraphmalizer.DegraphmalizerPlugin.maxRetries`
+
+- Number of times to retry sending an update to the Degraphmalizer before considering it failed
+- Default: `10`
+
+## Configure degraphmalizer-core
+
+TODO
+- Add Degraphmalizer configuration files to tell degraphmalizer-core what to do
+
+# Running
+
+Everything has been installed, it's all configured, let's run this thing!
+
+## Running elasticsearch
+
+For testing you can then start Elasticsearch with the "Run in foreground" option, like this: cd ~/opt/elasticsearch; bin/elasticsearch -f
+
+You then see the log output on the console, `ctrl+c` to quit the elasticsearch node. Without `-f` elasticsearch starts as a background daemon, which is recommended for production.
+
+## Running degraphmalizer-core
+
+TODO
+- Explain flags / `--help`
 
 # Alright, some more details please
 
@@ -193,3 +299,10 @@ It is up to you what information you store in the graph. You might
 want to use this to restrict the graph walk. At the moment it doesn't
 really matter much, as we just walk the entire forward or backward
 tree from a node.
+
+# The ES plugin
+
+- Push configuration to `/_degraphmalize/`
+- Watch every "index" request
+- Perform degraphmalizing on one machine
+- Replicate the graph to some other machines
