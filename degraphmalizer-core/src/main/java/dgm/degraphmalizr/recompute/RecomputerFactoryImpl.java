@@ -167,6 +167,8 @@ public class RecomputerFactoryImpl implements Recomputer
 
         public RecomputeResult recompute() throws IOException, ExecutionException, InterruptedException
         {
+            log.info("Recompute {} started", request.root.id().toString());
+
             // ideally, this is handled in a monad, but with this boolean we keep track of failures
             boolean isAbsent = false;
 
@@ -176,7 +178,10 @@ public class RecomputerFactoryImpl implements Recomputer
 
             // - Return when this document does not need to be processed.
             if (!request.config.filter(rawDocument))
+            {
+                log.info("Aborted recompute for {} because filter=false for this document", request.root.id().toString());
                 throw new DocumentFiltered();
+            }
 
             // Now we are going to iterate over all the walks configured for this input document. For each walk:
             // - We fetch a tree of children non-recursively from our document in the inverted direction of the walk, as Graph vertices
@@ -185,7 +190,10 @@ public class RecomputerFactoryImpl implements Recomputer
             // - We collect the result.
             final HashMap<String, JsonNode> walkResults = walkResults();
             if(walkResults == null)
+            {
+                log.info("Aborted recompute for {} because graph is expired for this node", request.root.id().toString());
                 throw new ExpiredException(Collections.<ID>emptyList());
+            }
 
             // Now we are going to:
             // - Transform it, if transformation is required
@@ -197,7 +205,10 @@ public class RecomputerFactoryImpl implements Recomputer
             final JsonNode transformed = request.config.transform(rawDocument);
 
             if (!transformed.isObject())
+            {
+                log.info("Aborted recompute for {} because the source document is not a JSON object", request.root.id().toString());
                 throw new SourceNotObjectException();
+            }
 
             final ObjectNode document = (ObjectNode) transformed;
 
@@ -207,6 +218,9 @@ public class RecomputerFactoryImpl implements Recomputer
 
             // write the result document to the target index
             final IndexResponse ir = writeToES(document);
+
+            log.info("Recompute completed for {}, wrote /{}/{}/{}/{}",
+                    new Object[]{request.root.id().toString(), ir.index(), ir.type(), ir.id(), ir.version()});
 
             return new RecomputeResult(ir, rawDocument, document, walkResults);
         }
