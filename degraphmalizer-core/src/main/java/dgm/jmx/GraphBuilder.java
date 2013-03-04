@@ -6,13 +6,14 @@ import dgm.GraphUtilities;
 import org.elasticsearch.ElasticSearchException;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.client.Client;
+import org.nnsoft.guice.sli4j.core.InjectLogger;
 import org.slf4j.Logger;
 
 import javax.inject.Inject;
 
 public class GraphBuilder implements GraphBuilderMBean
 {
-	@Inject
+	@InjectLogger
 	Logger log;
 	
 	protected final Client client;
