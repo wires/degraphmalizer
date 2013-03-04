@@ -3,7 +3,10 @@ package dgm.degraphmalizr;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.inject.Provider;
 import com.tinkerpop.blueprints.*;
 import dgm.*;
@@ -18,6 +21,7 @@ import dgm.trees.*;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
+import org.elasticsearch.common.Nullable;
 import org.nnsoft.guice.sli4j.core.InjectLogger;
 import org.slf4j.Logger;
 
@@ -165,6 +169,7 @@ public class Degraphmalizer implements Degraphmalizr
                     if(!inList(r, post))
                         post.add(r);
 
+                logRecomputes(action.id(), post);
                 final List<Future<RecomputeResult>> results = recomputeAffectedDocuments(post);
 
                 // TODO refactor action class
@@ -195,6 +200,21 @@ public class Degraphmalizer implements Degraphmalizr
         }
     }
 
+    private void logRecomputes(ID id, List<RecomputeRequest> recomputeRequests)
+    {
+        // fn = toString . id . root
+        final Function<RecomputeRequest,String> fn = new Function<RecomputeRequest, String>() {
+            @Override public String apply(@Nullable RecomputeRequest input) {
+                return "\n\t" + input.root.id().toString();
+            }
+        };
+
+        // intercalate "," $ map fn recomputeRequests
+        final String ids = Joiner.on("").join(Lists.transform(recomputeRequests, fn));
+
+        log.info("Degraphmalize request for {} triggered compute of: {}", id, ids);
+    }
+
     // TODO refactor (dubbeling met doUpdate) (DGM-44)
     private JsonNode doDelete(DegraphmalizeAction action) throws Exception
     {
@@ -204,10 +224,11 @@ public class Degraphmalizer implements Degraphmalizr
 
             subgraphmanager.deleteSubgraph(action.id());
 
-            final List<Future<RecomputeResult>> results = recomputeAffectedDocuments(recomputeRequests);
-
             // TODO refactor action class
             action.status().complete(DegraphmalizeResult.success(action));
+
+            logRecomputes(action.id(), recomputeRequests);
+            final List<Future<RecomputeResult>> results = recomputeAffectedDocuments(recomputeRequests);
 
             return getStatusJsonNode(results);
         }
@@ -354,7 +375,6 @@ public class Degraphmalizer implements Degraphmalizr
                 recomputeRequests.add(new RecomputeRequest(v_id, c));
         }
 
-        log.debug("Action for id {} caused recompute for {} documents", action.id(), recomputeRequests.size());
         return recomputeRequests;
     }
 
