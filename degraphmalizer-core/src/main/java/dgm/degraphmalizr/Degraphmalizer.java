@@ -118,8 +118,13 @@ public class Degraphmalizer implements Degraphmalizr
     private boolean inList(RecomputeRequest r, List<RecomputeRequest> rs)
     {
         for(RecomputeRequest q : rs)
-            if(q.root.id().equals(r.root.id()))
+        {
+            final boolean equalId = q.root.id().equals(r.root.id());
+            final boolean equalIndexConfig = q.config.targetIndex().equals(r.config.targetIndex());
+            final boolean equalTypeConfig = q.config.targetType().equals(r.config.targetType());
+            if(equalId && equalIndexConfig && equalTypeConfig)
                 return true;
+        }
 
         return false;
     }
@@ -336,7 +341,7 @@ public class Degraphmalizer implements Degraphmalizr
 
         final ArrayList<RecomputeRequest> recomputeRequests = new ArrayList<RecomputeRequest>();
 
-        // we add ourselves as the first job in the list
+        // we add ourselves (for each config) as the first job(s) in the list
         final VID vid = new VID(objectMapper, root);
         for(TypeConfig c : action.configs())
             recomputeRequests.add(new RecomputeRequest(vid, c));
@@ -371,7 +376,7 @@ public class Degraphmalizer implements Degraphmalizr
                 continue;
 
             // alright, mark for computation
-            for(TypeConfig c : action.configs())
+            for(TypeConfig c : Configurations.configsFor(cfgProvider.get(), v_id.id().index(), v_id.id().type()))
                 recomputeRequests.add(new RecomputeRequest(v_id, c));
         }
 
