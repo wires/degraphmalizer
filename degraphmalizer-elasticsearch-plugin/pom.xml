@@ -15,78 +15,39 @@
     <version>0.20.2-0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
-    <description>Elasticsearch plugin that sends HTTP requests to a Degraphmalizer instance.</description>
-
-
-    <scm>
-        <connection>scm:git:git@github.com:breun/elasticsearch-degraphmalizer.git</connection>
-        <developerConnection>scm:git:git@github.com:breun/elasticsearch-degraphmalizer.git</developerConnection>
-        <url>http://github.com/breun/elasticsearch-degraphmalizer</url>
-    </scm>
-
     <repositories>
         <repository>
             <id>sonatype</id>
             <url>http://oss.sonatype.org/content/repositories/releases/</url>
         </repository>
-        <repository>
-            <id>codehausSnapshots</id>
-            <name>Codehaus Snapshots</name>
-            <releases>
-                <enabled>true</enabled>
-                <updatePolicy>always</updatePolicy>
-                <checksumPolicy>warn</checksumPolicy>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-                <updatePolicy>always</updatePolicy>
-                <checksumPolicy>fail</checksumPolicy>
-            </snapshots>
-            <url>http://oss.sonatype.org/content/repositories/releases/</url>
-            <layout>default</layout>
-        </repository>
     </repositories>
+
+    <description>Elasticsearch plugin that sends HTTP requests to a Degraphmalizer instance.</description>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-            <version>4.2.3</version>
         </dependency>
-
         <dependency>
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
-            <version>0.19.8</version>
             <scope>provided</scope>
         </dependency>
-
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
-            <version>6.8</version>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-library</artifactId>
-            <version>1.3</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.0</version>
-                <configuration>
-                    <source>1.6</source>
-                    <target>1.6</target>
-                </configuration>
-            </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.4</version>

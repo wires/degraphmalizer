@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">	
     <modelVersion>4.0.0</modelVersion>	
+
     <parent>
         <groupId>nl.vpro</groupId>
         <artifactId>degraphmalizer-parent</artifactId>
@@ -11,108 +12,62 @@
     <artifactId>degraphmalizer-core</artifactId>
     <version>0.1-SNAPSHOT</version>
 
-    <properties>
-        <jackson.version>2.0.0</jackson.version>
-        <blueprints.version>2.2.0</blueprints.version>
-    </properties>
-
-    <dependencyManagement>
-      <dependencies>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.6.5</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.0.7</version>
-        </dependency>
-        <dependency>
-          <groupId>org.apache.lucene</groupId>
-          <artifactId>lucene-core</artifactId>
-          <version>3.6.0</version>
-        </dependency>
-      </dependencies>
-    </dependencyManagement>
-
     <dependencies>
-        <!-- command line parsing -->
         <dependency>
             <groupId>com.beust</groupId>
             <artifactId>jcommander</artifactId>
-            <version>1.27</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.4</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>13.0.1</version>
         </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
-            <version>3.0</version>
         </dependency>
         <dependency>
             <groupId>com.sun.jersey</groupId>
             <artifactId>jersey-core</artifactId>
-            <version>1.9</version>
         </dependency>
         <dependency>
             <groupId>com.tinkerpop.blueprints</groupId>
             <artifactId>blueprints-neo4j-graph</artifactId>
-            <version>${blueprints.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>net.sf.ehcache</groupId>
             <artifactId>ehcache-core</artifactId>
-            <version>2.6.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.1</version>
         </dependency>
         <dependency>
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
-            <version>0.19.8</version><!-- Keep in sync with version of your ElasticSearch production deployment -->
         </dependency>
         <dependency>
             <groupId>org.jboss.netty</groupId>
             <artifactId>netty</artifactId>
-            <version>3.2.7.Final</version>
         </dependency>
         <dependency>
             <groupId>org.mozilla</groupId>
             <artifactId>rhino</artifactId>
-            <version>1.7R4</version>
         </dependency>
         <dependency>
             <groupId>org.perf4j</groupId>
             <artifactId>perf4j</artifactId>
-            <version>0.9.16</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -125,58 +80,28 @@
         <dependency>
             <groupId>org.99soft.guice.sli4j</groupId>
             <artifactId>sli4j-slf4j</artifactId>
-            <version>3.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.xerial.snappy</groupId>
-            <artifactId>snappy-java</artifactId>
-            <version>1.0.4.1</version>
         </dependency>
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
-            <version>6.8</version>
             <scope>test</scope>
+            <!-- testng also depends on JCommander, which we already depend on, so exclude it -->
             <exclusions>
-              <exclusion>
-                <groupId>com.beust</groupId>
-                <artifactId>jcommander</artifactId>
-              </exclusion>
+                <exclusion>
+                    <groupId>com.beust</groupId>
+                    <artifactId>jcommander</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
             <groupId>org.easytesting</groupId>
             <artifactId>fest-assert</artifactId>
-            <version>1.4</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <version>2.5.2</version>
-                <configuration>
-                    <skip>false</skip>
-                    <threshold>Low</threshold>
-                    <effort>Default</effort>
-                    <xmlOutput>true</xmlOutput>
-                    <fork>false</fork>
-                    <excludeFilterFile>findbugs-exclude.xml</excludeFilterFile>
-                    <includeFilterFile>findbugs-include.xml</includeFilterFile>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
@@ -217,7 +142,6 @@
                     <mainClass>dgm.driver.Main</mainClass>
                 </configuration>
             </plugin>
-
         </plugins>
     </build>
 </project>
