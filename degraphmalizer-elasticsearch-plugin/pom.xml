@@ -12,7 +12,7 @@
 
     <groupId>org.elasticsearch</groupId>
     <artifactId>degraphmalizer-elasticsearch-plugin</artifactId>
-    <version>0.20.2-0.1-SNAPSHOT</version>
+    <version>${elasticsearch.version}-0.1-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <repositories>

@@ -114,7 +114,7 @@ Unzip the degraphmalizer-elasticsearch-plugin jar with dependencies into a subdi
     ~/opt/elasticsearch/plugins/degraphmalizer/
     |-- commons-codec-1.6.jar
     |-- commons-logging-1.1.1.jar
-    |-- elasticsearch-degraphmalizer-0.20.2-0.1-SNAPSHOT.jar
+    |-- elasticsearch-degraphmalizer-0.19.8-0.1-SNAPSHOT.jar
     |-- httpclient-4.2.3.jar
     `-- httpcore-4.2.2.jar
 
