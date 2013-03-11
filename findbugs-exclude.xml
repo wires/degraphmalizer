@@ -6,9 +6,6 @@
         </Class>
     </Match>
     <Match>
-        <Package name="org.elasticsearch.plugin.degraphmalizer.updater"/>
-    </Match>
-    <Match>
         <!-- in Main, everything is allowed! -->
         <Class name="dgm.driver.Main"/>
     </Match>

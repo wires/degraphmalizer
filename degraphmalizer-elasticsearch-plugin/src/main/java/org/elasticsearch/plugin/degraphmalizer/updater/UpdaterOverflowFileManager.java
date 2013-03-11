@@ -50,12 +50,16 @@ public class UpdaterOverflowFileManager {
     }
 
     public int countLines(File file) {
+        LineNumberReader lnr = null;
         try {
-            LineNumberReader lnr = new LineNumberReader(new FileReader(file));
-            lnr.skip(Long.MAX_VALUE);
+            lnr = new LineNumberReader(new FileReader(file));
+            while(lnr.skip(Long.MAX_VALUE)>0);
             lnr.getLineNumber();
+            lnr.close();
         } catch (IOException e) {
             LOG.error("Can't read from file {} " + file.getPath());
+        } finally {
+            closeQuietly(lnr);
         }
         return 0;
     }
@@ -110,11 +114,12 @@ public class UpdaterOverflowFileManager {
     public void load(final BlockingQueue<DelayedImpl<Change>> queue) {
         final File[] files = getOverflowFiles();
         final DelayedImpl<Change> delayedFactory = new DelayedImpl<Change>(new Change(), 0);
+        BufferedReader reader = null;
 
         if (files.length > 0) {
             final File file = files[0];
             try {
-                final BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
+                reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
                 String line = reader.readLine();
                 do {
                     try {
@@ -133,6 +138,8 @@ public class UpdaterOverflowFileManager {
                 }
             } catch (IOException e) {
                 LOG.error("Error loading overflow file {}: {}", file, e.getMessage());
+            } finally {
+                closeQuietly(reader);
             }
         }
     }
@@ -148,5 +155,15 @@ public class UpdaterOverflowFileManager {
             return NO_FILES;
         }
         return files;
+    }
+
+    private void closeQuietly(Reader input) {
+        if (input == null) {
+            return;
+        }
+       try {
+            input.close();
+        } catch (IOException ioe) {
+        }
     }
 }

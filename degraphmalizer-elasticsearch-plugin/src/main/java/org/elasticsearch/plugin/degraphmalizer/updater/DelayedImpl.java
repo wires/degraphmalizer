@@ -39,6 +39,28 @@ public class DelayedImpl<T extends StringSerialization<T>> implements Delayed, S
         return Long.valueOf(getDelay(TimeUnit.MILLISECONDS)).compareTo(other.getDelay(TimeUnit.MILLISECONDS));
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DelayedImpl delayed = (DelayedImpl) o;
+
+        if (baseMillis != delayed.baseMillis) return false;
+        if (delayInMillis != delayed.delayInMillis) return false;
+        if (!thing.equals(delayed.thing)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = thing.hashCode();
+        result = 31 * result + (int) (delayInMillis ^ (delayInMillis >>> 32));
+        result = 31 * result + (int) (baseMillis ^ (baseMillis >>> 32));
+        return result;
+    }
+
     public static <T extends StringSerialization<T>> DelayedImpl<T> immediate(final T thing) {
         return new DelayedImpl<T>(thing, 0);
     }
