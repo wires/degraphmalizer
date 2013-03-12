@@ -22,7 +22,7 @@ import java.net.URISyntaxException;
  */
 public final class Updater implements Runnable {
     private static final ESLogger LOG = Loggers.getLogger(Updater.class);
-
+    private static final int NAPTIME = 5 * 1000;
     private final HttpClient httpClient = new DefaultHttpClient();
 
     private final String uriScheme;
@@ -37,6 +37,8 @@ public final class Updater implements Runnable {
 
     private UpdaterQueue queue;
     private boolean shutdownInProgress = false;
+    private boolean sending = false;
+
 
     public Updater(final String index, final String uriScheme, final String uriHost, final int uriPort, final long retryDelayOnFailureInMillis, final String logPath, final int queueLimit, final int maxRetries) {
         this.index = index;
@@ -67,14 +69,24 @@ public final class Updater implements Runnable {
         queue.clear();
     }
 
+    public void stopSending() {
+        sending = false;
+    }
+
+    public void startSending() {
+        sending = true;
+    }
+
     public void run() {
         try {
             boolean done = false;
             while (!done) {
-
-                final Change change = queue.take().thing();
-                perform(change);
-
+                if (sending) {
+                    final Change change = queue.take().thing();
+                    perform(change);
+                } else {
+                    Thread.sleep(NAPTIME);
+                }
                 if (shutdownInProgress) {
                     queue.shutdown();
                     done = true;
@@ -158,7 +170,7 @@ public final class Updater implements Runnable {
     private void retry(final Change change) {
         if (change.retries() < maxRetries) {
             change.retried();
-            final DelayedImpl<Change> delayedChange = new DelayedImpl<Change>(change, change.retries()*retryDelayOnFailureInMillis);
+            final DelayedImpl<Change> delayedChange = new DelayedImpl<Change>(change, change.retries() * retryDelayOnFailureInMillis);
             queue.add(delayedChange);
             LOG.debug("Retrying change {} on index {} in {} milliseconds", change, index, retryDelayOnFailureInMillis);
         } else {
@@ -169,7 +181,7 @@ public final class Updater implements Runnable {
     public void logError(Change change) {
         try {
             LOG.warn("Writing failed change {} to error log {}", change, errorFile.getCanonicalPath());
-            final PrintWriter writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(errorFile,true),"UTF-8")));
+            final PrintWriter writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(errorFile, true), "UTF-8")));
             writer.println(change.toValue());
             writer.flush();
             writer.close();

@@ -35,6 +35,7 @@ public class UpdaterManager extends AbstractLifecycleComponent<UpdaterManager> i
     private int queueLimit;
     private String logPath;
     private int maxRetries;
+    private boolean sending = false;
 
     @Inject
     public UpdaterManager(final Settings settings) {
@@ -70,7 +71,23 @@ public class UpdaterManager extends AbstractLifecycleComponent<UpdaterManager> i
     protected void doClose() throws ElasticSearchException {
     }
 
-    public void startUpdater(final String index) {
+    public synchronized void startSending() {
+        LOG.info("Starting to send updates to Degraphmalizer");
+        sending = true;
+        for (Updater updater : updaters.values()) {
+            updater.startSending();
+        }
+    }
+
+    public synchronized void stopSending() {
+        LOG.info("Stopping to send updates to Degraphmalizer");
+        sending = false;
+        for (Updater updater : updaters.values()) {
+            updater.stopSending();
+        }
+    }
+
+    public synchronized void startUpdater(final String index) {
         if (updaters.containsKey(index)) {
             LOG.warn("Updater for index {} already exists", index);
             return;
@@ -78,10 +95,11 @@ public class UpdaterManager extends AbstractLifecycleComponent<UpdaterManager> i
         final Updater updater = new Updater(index, uriScheme, uriHost, uriPort, retryDelayOnFailureInMillis, logPath, queueLimit, maxRetries);
         updaters.put(index, updater);
         new Thread(updater).start();
+        if (sending) updater.startSending();
         LOG.info("Updater started for index {}", index);
     }
 
-    public void stopUpdater(final String index) {
+    public synchronized void stopUpdater(final String index) {
         final Updater updater = updaters.get(index);
         if (updater != null) {
             updater.shutdown();

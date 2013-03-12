@@ -13,5 +13,6 @@ public class DegraphmalizerPluginModule extends AbstractModule
     {
         bind(UpdaterManager.class).in(Singleton.class);
         bind(DegraphmalizerLifecycleListener.class).asEagerSingleton();
+        bind(DegraphmalizerClusterListener.class).asEagerSingleton();
     }
 }
