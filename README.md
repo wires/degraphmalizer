@@ -122,8 +122,8 @@ Unzip the degraphmalizer-elasticsearch-plugin jar with dependencies into a subdi
 
 - Pick a directory to install the degraphmalizer in, ie `/opt/degraphmalizer`
 - Create a configration directory in that directory `mkdir /opt/degraphmazizer/conf`
-- Put degraphmalizer-core jar with dedepencies in `/opt/degraphmalizer`
-- Copy the logback.xml in degraphmalizer-core to `/opt/degraphmalizer`
+- Put degraphmalizer-core jar with dependencies in that directory
+- Copy the logback.xml in degraphmalizer-core to that directory
 
 # Configuration
 
@@ -186,33 +186,34 @@ You then see the log output on the console, `ctrl+c` to quit the elasticsearch n
 ## Running degraphmalizer-core
 
 To start the degraphmalizer with default options you do it like this: `cd /opt/degraphmalizer ; java -jar degraphmalizer-core-0.1-SNAPSHOT-jar-with-dependencies.jar`
-This will start it connecting to the local elasticsearch (ie connecting to localhost:9300).
+This will start the degraphmalizer connecting to the local elasticsearch (ie connecting to localhost:9300).
 
 If you start the degraphmalizer with `--help` it will show you the command line options:
-| Option              | Explanation                                   |
-|---------------------|-----------------------------------------------|
-| -c, --config        | Specify configuration directory         |
-|                     | Default: conf |
-| -d, --development   | Run in development mode |
-|                     |   Default: false |
-| -f, --fixtures      | Load fixtures on startup                  |
-|                     |    Default: false                         |
-| -g, --graphdb       | Specify graph DB storage directory        |
-|                     |   Default: data/graphdb                   |
-| -?, --help          |                                           |
-|                     |   Default: false                          |
-| -j, --jmx           | Enable JMX monitoring bean                |
-|                     |   Default: false                          |
-| --jslib             | Load Javascript library from this file      |
-|                     |    Default: []                             |
-| -L, --logback       | Specify logback configuration file          |
-|                     |   Default: logback.xml                        |
-| -p, --port          | Listening port                               |
-|                     |   Default: 9821                             |
-| -r, --reload        | Enable automatic configuration reloading   |
-|                     |   Default: false
-| -t, --transport     | Run against remote ES (host, port, cluster)  |
-|                     |   Default: [localhost, 9300, elasticsearch] |
+<pre>
+
+-c, --config        Specify configuration directory
+                    Default: conf
+-d, --development   Run in development mode
+                    Default: false
+-f, --fixtures      Load fixtures on startup
+                    Default: false
+-g, --graphdb       Specify graph DB storage directory
+                    Default: data/graphdb
+-?, --help
+                    Default: false
+-j, --jmx           Enable JMX monitoring bean
+                    Default: false
+    --jslib         Load Javascript library from this file
+                    Default: []
+-L, --logback       Specify logback configuration file
+                    Default: logback.xml
+-p, --port          Listening port
+                    Default: 9821
+-r, --reload        Enable automatic configuration reloading
+                    Default: false
+-t, --transport     Run against remote ES (host, port, cluster)
+                    Default: [localhost, 9300, elasticsearch]
+</pre>
 
 
 # Alright, some more details please
