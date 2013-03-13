@@ -34,10 +34,10 @@ public class Options
     @Parameter(names = {"-f", "--fixtures"}, description = "Load fixtures on startup")
     boolean fixtures;
 
-    @Parameter(names = {"--jslib"}, description = "Load Javascript library from this file")
+    @Parameter(names = {"-l", "--jslib"}, description = "Load Javascript library from this file")
     List<String> libraries = new ArrayList<String>();
 
-    @Parameter(names = {"-?", "--help"}, help = true)
+    @Parameter(names = {"-?", "--help"}, description = "Show command line options", help = true)
     boolean help;
 
     public Options()

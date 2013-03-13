@@ -103,11 +103,24 @@ Run `mvn package` to build the artifacts. You'll find the resulting jar/zip file
 
 So you want to have your very own Degraphmalizer setup? You've come to the right place!
 
-## Install elasticsearch
+## The quick way
+
+The degraphmalizer provides a simple way to get started with the `development` mode.
+This mode means you will run the degraphmalizer in standalone mode with a builtin elasticsearch. It is meant to develop configurations on your local machine.
+
+In your checkout directory create a `conf` directory.
+Then do: `java -jar degraphmalizer-core/target/degraphmalizer-core/target/degraphmalizer-core-0.1-SNAPSHOT-jar-with-dependencies.jar -d -r`
+`-d` means development mode and `-r` means it will reload configurations while running
+
+You can now connect to http://localhost:9200/ voor elastic search, and http://localhost:9821/ for the degraphmalizer
+
+## The full install
+
+### Install elasticsearch
 
 If you don't have an elasticsearch installation yet you can [download elasticsearch](http://www.elasticsearch.org/download/) and extract the archive. Use `/opt/elasticsearch/` for example.
 
-## Install degraphmalizer-elasticsearch-plugin
+### Install degraphmalizer-elasticsearch-plugin
 
 Unzip the degraphmalizer-elasticsearch-plugin jar with dependencies into a subdirectory in your elasticsearch plugins directory (e.g. `/opt/elasticsearch/plugins/degraphmalizer`). You should get something like this:
 
@@ -118,7 +131,7 @@ Unzip the degraphmalizer-elasticsearch-plugin jar with dependencies into a subdi
     |-- httpclient-4.2.3.jar
     `-- httpcore-4.2.2.jar
 
-## Install degraphmalizer-core
+### Install degraphmalizer-core
 
 - Pick a directory to install the degraphmalizer in, ie `/opt/degraphmalizer`
 - Create a configration directory in that directory `mkdir /opt/degraphmazizer/conf`
@@ -170,8 +183,9 @@ You can configure the Degraphmalizer plugin using the following settings in the 
 
 ## Configure degraphmalizer-core
 
-TODO : provide example config files
 - Add Degraphmalizer configuration files to tell degraphmalizer-core what to do
+
+You can start with ones provided in this file at "The degraphmalizer configuration"
 
 # Running
 
@@ -189,8 +203,8 @@ To start the degraphmalizer with default options you do it like this: `cd /opt/d
 This will start the degraphmalizer connecting to the local elasticsearch (ie connecting to localhost:9300).
 
 If you start the degraphmalizer with `--help` it will show you the command line options:
-<pre>
 
+``
 -c, --config        Specify configuration directory
                     Default: conf
 -d, --development   Run in development mode
@@ -199,11 +213,11 @@ If you start the degraphmalizer with `--help` it will show you the command line 
                     Default: false
 -g, --graphdb       Specify graph DB storage directory
                     Default: data/graphdb
--?, --help
+-?, --help          Show commandline options
                     Default: false
 -j, --jmx           Enable JMX monitoring bean
                     Default: false
-    --jslib         Load Javascript library from this file
+-l, --jslib         Load Javascript library from this file
                     Default: []
 -L, --logback       Specify logback configuration file
                     Default: logback.xml
@@ -213,10 +227,9 @@ If you start the degraphmalizer with `--help` it will show you the command line 
                     Default: false
 -t, --transport     Run against remote ES (host, port, cluster)
                     Default: [localhost, 9300, elasticsearch]
-</pre>
+``
 
-
-# Alright, some more details please
+# The degraphmalizer configuration
 
 The degraphmalizer is configured through javascript. Here is an example
 configuration that would transform Alice and Bob's index as above:
@@ -281,7 +294,9 @@ configuration that would transform Alice and Bob's index as above:
 })
 ```
 
-# The rule that marks documents as 'dirty'
+# The internals
+
+## The rule that marks documents as 'dirty'
 
 The rule: Suppose document `x` changes. We now want to find all
 documents affected by this change. Suppose we have a property
@@ -292,7 +307,7 @@ hit `x`).
 
 So this is why we need reversible graph walks.
 
-# The pipeline
+## The pipeline
 
 We receive a document, then
 
@@ -310,7 +325,7 @@ We receive a document, then
 We can be quite smart about which documents to fetch first etc, but we
 are not doing this ATM. patches welcome!
 
-# The graph database
+## The graph database
 
 The graph should be a DAG, should you have a cycle then this will
 cause a walk hitting the cycle to loop and explode. Boom.
@@ -329,9 +344,9 @@ want to use this to restrict the graph walk. At the moment it doesn't
 really matter much, as we just walk the entire forward or backward
 tree from a node.
 
-# The ES plugin
+## The ES plugin
 
-- Push configuration to `/_degraphmalize/`
+- Push configuration to `/_degraphmalize/` (Future)
 - Watch every "index" request
 - Perform degraphmalizing on one machine
-- Replicate the graph to some other machines
+- Replicate the graph to some other machines (Future)
