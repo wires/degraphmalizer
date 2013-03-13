@@ -94,10 +94,10 @@ The Degraphmalizer works by getting notifications from elasticsearch that a docu
 
 Build requirements:
 
-* [Oracle JDK](http://www.oracle.com/technetwork/java/javase/downloads/index.html) 6 (since Neo4j is not yet compatible with Java 7)
+* [Oracle JDK 6](http://www.oracle.com/technetwork/java/javase/downloads/index.html) (since Neo4j is not yet compatible with Java 7)
 * [Maven](http://maven.apache.org)
 
-Run `mvn package` to build the artifacts. You'll find the resulting jar files in the `target` directories of the subdirectories of the modules.
+Run `mvn package` to build the artifacts. You'll find the resulting jar/zip files in the `target` directories of the subdirectories of the modules.
 
 # Installation
 
@@ -105,13 +105,13 @@ So you want to have your very own Degraphmalizer setup? You've come to the right
 
 ## Install elasticsearch
 
-If you don't have an elasticsearch installation yet you can [download elasticsearch](http://www.elasticsearch.org/download/) and extract the archive. Use `~/opt/elasticsearch/` for example.
+If you don't have an elasticsearch installation yet you can [download elasticsearch](http://www.elasticsearch.org/download/) and extract the archive. Use `/opt/elasticsearch/` for example.
 
 ## Install degraphmalizer-elasticsearch-plugin
 
-Unzip the degraphmalizer-elasticsearch-plugin jar with dependencies into a subdirectory in your elasticsearch plugins directory (e.g. `~/opt/elasticsearch/plugins/degraphmalizer`). You should get something like this:
+Unzip the degraphmalizer-elasticsearch-plugin jar with dependencies into a subdirectory in your elasticsearch plugins directory (e.g. `/opt/elasticsearch/plugins/degraphmalizer`). You should get something like this:
 
-    ~/opt/elasticsearch/plugins/degraphmalizer/
+    /opt/elasticsearch/plugins/degraphmalizer/
     |-- commons-codec-1.6.jar
     |-- commons-logging-1.1.1.jar
     |-- elasticsearch-degraphmalizer-0.19.8-0.1-SNAPSHOT.jar
@@ -120,8 +120,10 @@ Unzip the degraphmalizer-elasticsearch-plugin jar with dependencies into a subdi
 
 ## Install degraphmalizer-core
 
-TODO
-- Put degraphmalizer-core jar with dedepencies in some directory
+- Pick a directory to install the degraphmalizer in, ie `/opt/degraphmalizer`
+- Create a configration directory in that directory `mkdir /opt/degraphmazizer/conf`
+- Put degraphmalizer-core jar with dedepencies in `/opt/degraphmalizer`
+- Copy the logback.xml in degraphmalizer-core to `/opt/degraphmalizer`
 
 # Configuration
 
@@ -168,7 +170,7 @@ You can configure the Degraphmalizer plugin using the following settings in the 
 
 ## Configure degraphmalizer-core
 
-TODO
+TODO : provide example config files
 - Add Degraphmalizer configuration files to tell degraphmalizer-core what to do
 
 # Running
@@ -177,14 +179,41 @@ Everything has been installed, it's all configured, let's run this thing!
 
 ## Running elasticsearch
 
-For testing you can then start Elasticsearch with the "Run in foreground" option, like this: cd ~/opt/elasticsearch; bin/elasticsearch -f
+For testing you can then start Elasticsearch with the "Run in foreground" option, like this: `cd /opt/elasticsearch; bin/elasticsearch -f`
 
 You then see the log output on the console, `ctrl+c` to quit the elasticsearch node. Without `-f` elasticsearch starts as a background daemon, which is recommended for production.
 
 ## Running degraphmalizer-core
 
-TODO
-- Explain flags / `--help`
+To start the degraphmalizer with default options you do it like this: `cd /opt/degraphmalizer ; java -jar degraphmalizer-core-0.1-SNAPSHOT-jar-with-dependencies.jar`
+This will start it connecting to the local elasticsearch (ie connecting to localhost:9300).
+
+If you start the degraphmalizer with `--help` it will show you the command line options:
+| Option              | Explanation                                   |
+|---------------------|-----------------------------------------------|
+| -c, --config        | Specify configuration directory         |
+|                     | Default: conf |
+| -d, --development   | Run in development mode |
+|                     |   Default: false |
+| -f, --fixtures      | Load fixtures on startup                  |
+|                     |    Default: false                         |
+| -g, --graphdb       | Specify graph DB storage directory        |
+|                     |   Default: data/graphdb                   |
+| -?, --help          |                                           |
+|                     |   Default: false                          |
+| -j, --jmx           | Enable JMX monitoring bean                |
+|                     |   Default: false                          |
+| --jslib             | Load Javascript library from this file      |
+|                     |    Default: []                             |
+| -L, --logback       | Specify logback configuration file          |
+|                     |   Default: logback.xml                        |
+| -p, --port          | Listening port                               |
+|                     |   Default: 9821                             |
+| -r, --reload        | Enable automatic configuration reloading   |
+|                     |   Default: false
+| -t, --transport     | Run against remote ES (host, port, cluster)  |
+|                     |   Default: [localhost, 9300, elasticsearch] |
+
 
 # Alright, some more details please
 
