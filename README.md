@@ -109,7 +109,9 @@ The degraphmalizer provides a simple way to get started with the `development` m
 This mode means you will run the degraphmalizer in standalone mode with a builtin elasticsearch. It is meant to develop configurations on your local machine.
 
 In your checkout directory create a `conf` directory.
-Then do: `java -jar degraphmalizer-core/target/degraphmalizer-core/target/degraphmalizer-core-0.1-SNAPSHOT-jar-with-dependencies.jar -d -r`
+Then do:
+`java -jar degraphmalizer-core/target/degraphmalizer-core-0.1-SNAPSHOT-jar-with-dependencies.jar -d -r`
+
 `-d` means development mode and `-r` means it will reload configurations while running
 
 You can now connect to http://localhost:9200/ voor elastic search, and http://localhost:9821/ for the degraphmalizer
@@ -204,7 +206,7 @@ This will start the degraphmalizer connecting to the local elasticsearch (ie con
 
 If you start the degraphmalizer with `--help` it will show you the command line options:
 
-``
+```
 -c, --config        Specify configuration directory
                     Default: conf
 -d, --development   Run in development mode
@@ -227,11 +229,34 @@ If you start the degraphmalizer with `--help` it will show you the command line 
                     Default: false
 -t, --transport     Run against remote ES (host, port, cluster)
                     Default: [localhost, 9300, elasticsearch]
-``
+```
 
 # The degraphmalizer configuration
 
-The degraphmalizer is configured through javascript. Here is an example
+The degraphmalizer is configured through javascript, for each target index there is a directory containing javascript files.
+You make a javascript configuration file for each source index and type you want to process.
+
+## Reference
+A javascript configuration has the following variables:
+- `sourceIndex` to tell which index this configuration will process
+- `sourceType` to tell which type of document this configuration will process
+- `extract` containing a function which gets passed a document and a subgraph.
+  This function is called to extract edges from the document and put them in a subgraph.
+- `filter` containing a function which gets passed the document. This function is called and returns
+  `true` if the document is to be extracted, transformed and walked. If you omit this function all documents will be processed.
+- `walks` which contains a list of objects each containing a 'walk' consisting of a direction variable and a properties variable
+  containing a set of fields which will be put in the destination document. Each field has a function `reduce` which gets passed the document tree.
+  The reduce function returns a single field or a complete JSON object to add to the destination document.
+- `transform` containing a function which gets passed the document, this function returns a new document which will get merged with the
+  fields from the walks and form the destination document. Do note that the other functions get passed the original document, not the transformed one.
+  In absence of this function the original document gets copied to the destination document.
+
+## Common functions
+
+Common functions can be put in a separate javascript file which can be loaded through the `--jslib` option on the commandline. The fuctions defined in the
+library will be available in all configuration javascripts.
+
+## The Alice and Bob example
 configuration that would transform Alice and Bob's index as above:
 
 `conf/alice-target/author.conf.js`:
@@ -263,31 +288,33 @@ configuration that would transform Alice and Bob's index as above:
 	// we now define some walks
 	walks: [
 		{
-			/* there are two options here: forward or backward
-			   forward follows edges from tail to head, and vv.
+			/* there are two options here: OUT or IN
+			   OUT follows edges from tail to head, and vv.
 			   
 			   In the future you can define your own walks here,
 			   using a DSL that automatically gives reverse walk
-			*/ 
-			direction: "forward",
+			*/
+			"bookwalk": {
+                "direction": "OUT",
 
-			/* for each walk, we can define a number of properties
-			   that need to be computed based on the walk */
-			properties: {
-				"books": {
-				
-					// this function is given a graph or tree
-					// of documents from which it should compute
-					// the property value
-					reduce: function(doc_tree)
-					{
-						// return a flat list of dicts with id and title keys
-						return bfs_walk(doc_tree).map(function(book) {
-							id: book['id']
-							title: book['title']
-						})
-					}
-				}
+                /* for each walk, we can define a number of properties
+                   that need to be computed based on the walk */
+                "properties": {
+                    "books": {
+
+                        // this function is given a graph or tree
+                        // of documents from which it should compute
+                        // the property value
+                        reduce: function(doc_tree)
+                        {
+                            // return a flat list of dicts with id and title keys
+                            return bfs_walk(doc_tree).map(function(book) {
+                                id: book['id']
+                                title: book['title']
+                            })
+                        }
+                    }
+                }
 			}
 		}]
 	}
@@ -346,7 +373,33 @@ tree from a node.
 
 ## The ES plugin
 
-- Push configuration to `/_degraphmalize/` (Future)
+The Elasticsearch plugin provides the Degraphmalizer with notifications of the changes in Elasticsearch.
+It consists of the following components:
+
+### Listeners
+
+3 Types:
+- One index lifecycle listener, which will watch for changes in the indexes and their shards and will register/deregister an indexshard listener for each indexshard.
+- An indexshard listener for every indexshard to watch for document changes in the index, it sends these to the manager
+- One cluster listener to look for the presence of a running Degrahphmalizer, and tell the manager about it.
+
+### Updater
+
+For each index there will be an updater which will receive the document changes from the manager and forward them
+to the degraphmalizer. It maintains an internal queue for this for when the Degraphmalizer is not available. This queue will overflow
+to disk if it gets to large.
+
+### Manager
+
+There is a manager which manages the updaters, and passes changes to the right updater. It will also pause the updaters when
+there is no Degraphmalizer active (it gets called by the cluster listener for this).
+
+### JMX Bean
+
+For monitoring the queue sizes.
+
+# The future
+- Push configuration to `/_degraphmalize/`
+- Replicate the graph to some other machines
 - Watch every "index" request
 - Perform degraphmalizing on one machine
-- Replicate the graph to some other machines (Future)
