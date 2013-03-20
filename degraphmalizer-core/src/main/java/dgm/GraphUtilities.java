@@ -5,13 +5,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tinkerpop.blueprints.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
+import com.tinkerpop.blueprints.impls.neo4j.Neo4jVertexIterable;
 import dgm.trees.Pair;
 import dgm.trees.Tree;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.index.ReadableIndex;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
 
 public final class GraphUtilities
 {
@@ -22,6 +29,13 @@ public final class GraphUtilities
     public static final String SYMBOLIC_IDENTIFER = PREFIX + "symbolic";
     public static final String OWNER              = PREFIX + "owner";
     public static final String SYMBOLIC_OWNER     = PREFIX + "symbolicOwner";
+
+    public static final String KEY_INDEX = PREFIX + "index";
+    public static final String KEY_TYPE = PREFIX + "type";
+    public static final String KEY_ID = PREFIX + "id";
+    public static final String KEY_VERSION = PREFIX + "version";
+
+    public static final int RESERVED_COUNT = 8;
 
     private GraphUtilities() {}
 
@@ -55,7 +69,20 @@ public final class GraphUtilities
         return new Tree<Pair<Edge,Vertex>>(new Pair<Edge,Vertex>(e, s), children);
     }
 
+    public static Iterable<Vertex> findVerticesInIndex(Graph graph, String index) {
+        return graph.getVertices(KEY_INDEX,index);
+    }
 
+    public static Iterable<Vertex> findVerticesInIndex(Graph graph, String index, String type) {
+        if (graph instanceof MetaGraph && graph instanceof Neo4jGraph) {
+            GraphDatabaseService graphDatabaseService = ((MetaGraph<GraphDatabaseService>)graph).getRawGraph();
+            ReadableIndex<Node> indexer = graphDatabaseService.index().getNodeAutoIndexer().getAutoIndex();
+            Iterable<Node> itty = indexer.query(KEY_INDEX+":"+index+" AND "+KEY_TYPE+":"+type);
+            // TODO check for transaction, this is done in Neo4jgraph normally but we can't access that method.
+            return new Neo4jVertexIterable( itty, (Neo4jGraph)graph, false);
+        }
+        return null;
+    }
 
     /**
      * Set the property of an element to a json value.
@@ -255,10 +282,19 @@ public final class GraphUtilities
 
         final String symbolic = toJSON(om, getSymbolicID(id)).toString();
         vertex.setProperty(SYMBOLIC_IDENTIFER, symbolic);
+        setKey(vertex, id);
     }
 
     public static void setEdgeId(ObjectMapper om, EdgeID edgeID, Edge edge) {
         edge.setProperty(IDENTIFIER, getStringRepresentation(om, edgeID));
+        // TODO keys for the edges ?
+    }
+
+    private static void setKey(Element element, ID id) {
+        element.setProperty(KEY_INDEX, id.index());
+        element.setProperty(KEY_TYPE, id.type());
+        element.setProperty(KEY_ID, id.id());
+        element.setProperty(KEY_VERSION, id.version());
     }
 
     public static ID getSymbolicID(ID id)

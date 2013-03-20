@@ -1,18 +1,24 @@
 package dgm.graphs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tinkerpop.blueprints.*;
+import com.google.common.base.Function;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.tinkerpop.blueprints.Direction;
+import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.TransactionalGraph;
+import com.tinkerpop.blueprints.Vertex;
 import dgm.*;
 import dgm.exceptions.DegraphmalizerException;
-import dgm.GraphUtilities;
+import dgm.trees.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import dgm.trees.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.tinkerpop.blueprints.TransactionalGraph.Conclusion.*;
+import static com.tinkerpop.blueprints.TransactionalGraph.Conclusion.FAILURE;
+import static com.tinkerpop.blueprints.TransactionalGraph.Conclusion.SUCCESS;
 import static dgm.GraphUtilities.*;
 
 public class BlueprintsSubgraphManager implements SubgraphManager
@@ -93,6 +99,23 @@ public class BlueprintsSubgraphManager implements SubgraphManager
                 return true;
 
         return false;
+    }
+
+    public List<ID> findVertexIDsAffectedByDelete(final ID id) {
+        final Pair<List<Vertex>, List<Edge>> elementsToDelete = findOwnedElements(id);
+        List<Vertex> verticesToDelete = elementsToDelete.a;
+        List<Edge> edgesToDelete = elementsToDelete.b;
+
+        List<Vertex> danglingVertices = findDanglingVertices(id, edgesToDelete);
+        verticesToDelete.addAll(danglingVertices);
+
+
+        return ImmutableList.copyOf(Lists.transform(verticesToDelete, new Function<Vertex, ID>() {
+            @Override
+            public ID apply(Vertex input) {
+                return GraphUtilities.getID(om, input);
+            }
+        }));
     }
 
     @Override

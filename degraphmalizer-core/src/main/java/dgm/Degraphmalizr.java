@@ -5,5 +5,5 @@ import dgm.exceptions.DegraphmalizerException;
 
 public interface Degraphmalizr
 {
-    DegraphmalizeAction degraphmalize(DegraphmalizeActionType actionType, ID id, DegraphmalizeStatus callback) throws DegraphmalizerException;
+    DegraphmalizeAction degraphmalize(DegraphmalizeActionType actionType, DegraphmalizeActionScope actionScope, ID id, DegraphmalizeStatus callback) throws DegraphmalizerException;
 }

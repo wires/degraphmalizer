@@ -28,8 +28,7 @@ public class Configurations
         // find all matching configs
         for(IndexConfig i : cfg.indices().values())
             for(TypeConfig t : i.types().values())
-                if(srcIndex.equals(t.sourceIndex()) && srcType.equals(t.sourceType()))
-                {
+                if (srcIndex.equals(t.sourceIndex()) && (srcType == null || srcType.equals(t.sourceType()))) {
                     if((logMessage != null))
                     {
                         logMessage.append(" /").append(t.targetIndex());

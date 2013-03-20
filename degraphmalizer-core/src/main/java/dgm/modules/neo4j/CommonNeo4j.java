@@ -28,7 +28,9 @@ public class CommonNeo4j extends AbstractModule
         // quickly get vertices by ID
         final String[] props = new String[] {
                 GraphUtilities.OWNER, GraphUtilities.SYMBOLIC_OWNER,
-                GraphUtilities.IDENTIFIER, GraphUtilities.SYMBOLIC_IDENTIFER };
+                GraphUtilities.IDENTIFIER, GraphUtilities.SYMBOLIC_IDENTIFER,
+                GraphUtilities.KEY_INDEX, GraphUtilities.KEY_TYPE,
+                GraphUtilities.KEY_ID, GraphUtilities.KEY_VERSION };
 
         for(String prop : props)
         {

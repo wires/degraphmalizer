@@ -440,6 +440,12 @@ public class SubgraphManagerTest
         assertThat(elt.getProperty(key)).isEqualTo(expectedValue);
     }
 
+    private void checkElementProperty(Element elt, String key, Long expectedValue)
+    {
+        assertThat(elt.getPropertyKeys()).contains(key);
+        assertThat(elt.getProperty(key)).isEqualTo(expectedValue);
+    }
+
     /**
      * this method:
      * - creates a subgraph with given id.
@@ -469,7 +475,12 @@ public class SubgraphManagerTest
         checkElementProperty(center, SYMBOLIC_OWNER, symbolicidentifier);
         checkElementProperty(center, SYMBOLIC_IDENTIFER, symbolicidentifier);
 
-        assertThat(center.getPropertyKeys()).hasSize(4 + p.properties.size());
+        checkElementProperty(center, KEY_INDEX, id.index());
+        checkElementProperty(center, KEY_TYPE, id.type());
+        checkElementProperty(center, KEY_ID, id.id());
+        checkElementProperty(center, KEY_VERSION, id.version());
+
+        assertThat(center.getPropertyKeys()).hasSize(RESERVED_COUNT + p.properties.size());
 
         return sg;
     }

@@ -126,6 +126,58 @@ public class NewSubgraphManagerTest
         assertThatGraphContains(lg.G, edge);
     }
 
+    @Test
+    public void testFindOperations() throws DegraphmalizerException {
+        // create some edge1
+        final EdgeID edge1 = gb.edge("(a,b,c,1) -- label --> (a,e,f,2)");
+        final ID source = edge1.tail();
+        final ID target1 = edge1.head();
+
+        // create and commit a subgraph containing the "a,e,f,2" vertex
+        lg.sgm.commitSubgraph(target1, new MutableSubgraph());
+
+        // create subgraph containing the "a,b,c,1" vertex
+        final MutableSubgraph source_sg = new MutableSubgraph();
+
+        // add the edge
+        addEdgeToSubgraph(source_sg, source, edge1);
+
+        // modify the graph
+        lg.sgm.commitSubgraph(source, source_sg);
+
+        final EdgeID edge2 = gb.edge("(a,b,c,1) -- label --> (a,b,f,2)");
+        final ID target2 = edge2.head();
+        // create and commit a subgraph containing the "a,b,f,2" vertex
+        lg.sgm.commitSubgraph(target2, new MutableSubgraph());
+
+        // add the edge
+        addEdgeToSubgraph(source_sg, source, edge2);
+
+        // modify the graph
+        lg.sgm.commitSubgraph(source, source_sg);
+
+        // find all vertices within the 'a' index.
+        Iterable<Vertex> it1 = GraphUtilities.findVerticesInIndex(lg.G, source.index());
+        Assertions.assertThat(countIterator(it1)).isEqualTo(3);
+
+        // find all vertices within the 'a' index and the 'b' type.
+        Iterable<Vertex> it2  = GraphUtilities.findVerticesInIndex(lg.G, source.index(), source.type());
+        Assertions.assertThat(countIterator(it2)).isEqualTo(2);
+
+        // find all vertices within the 'a' index and the 'e' type.
+        Iterable<Vertex> it3 = GraphUtilities.findVerticesInIndex(lg.G, source.index(), target1.type());
+        Assertions.assertThat(countIterator(it3)).isEqualTo(1);
+
+    }
+
+    private int countIterator(Iterable<Vertex> iterable) {
+        int count=0;
+        for (Vertex vertex : iterable) {
+            count++;
+        }
+        return count;
+    }
+
 
     // add the edge to the subgraph, the other side of the edge will be made symbolic
     protected void addEdgeToSubgraph(MutableSubgraph sg, ID sg_id, EdgeID edge_id)

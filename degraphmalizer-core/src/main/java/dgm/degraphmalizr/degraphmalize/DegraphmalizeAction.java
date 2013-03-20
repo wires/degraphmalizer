@@ -9,6 +9,7 @@ import java.util.concurrent.Future;
 public class DegraphmalizeAction
 {
     protected final DegraphmalizeActionType actionType;
+    protected final DegraphmalizeActionScope actionScope;
 
     protected final Iterable<TypeConfig> configs;
     protected final ID id;
@@ -19,9 +20,10 @@ public class DegraphmalizeAction
     // TODO fix in Degraphmalizer.degraphmalizeJob
     public Future<JsonNode> result;
 
-    public DegraphmalizeAction(DegraphmalizeActionType actionType, ID id, Iterable<TypeConfig> configs, DegraphmalizeStatus callback)
+    public DegraphmalizeAction(DegraphmalizeActionType actionType, DegraphmalizeActionScope actionScope, ID id, Iterable<TypeConfig> configs, DegraphmalizeStatus callback)
     {
         this.actionType = actionType;
+        this.actionScope = actionScope;
         this.id = id;
         this.configs = configs;
         this.status = callback;
@@ -34,6 +36,10 @@ public class DegraphmalizeAction
 
     public DegraphmalizeActionType type() {
         return actionType;
+    }
+
+    public DegraphmalizeActionScope scope() {
+        return actionScope;
     }
 
     public final Iterable<TypeConfig> configs()

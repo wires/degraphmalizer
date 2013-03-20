@@ -5,6 +5,7 @@ import com.tinkerpop.blueprints.*;
 import dgm.EdgeID;
 import dgm.ID;
 import dgm.degraphmalizr.degraphmalize.DegraphmalizeAction;
+import dgm.degraphmalizr.degraphmalize.DegraphmalizeActionScope;
 import dgm.degraphmalizr.degraphmalize.DegraphmalizeActionType;
 import dgm.exceptions.DegraphmalizerException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
@@ -92,8 +93,8 @@ public class ConfigExtractMergingTest
 
         // degraphmalize "1" and wait for and print result
         final ArrayList<DegraphmalizeAction> actions = new ArrayList<DegraphmalizeAction>();
-        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(src, type, "1", v1), ln.callback));
-        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, new ID(src, type, "2", v2), ln.callback));
+        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, DegraphmalizeActionScope.DOCUMENT, new ID(src, type, "1", v1), ln.callback));
+        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, DegraphmalizeActionScope.DOCUMENT, new ID(src, type, "2", v2), ln.callback));
 
         for(final DegraphmalizeAction a : actions)
             ln.log.info("Degraphmalize of {} completed: {}", a.id(), a.resultDocument().get());
