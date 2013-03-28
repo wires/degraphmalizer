@@ -2,26 +2,31 @@ package dgm.degraphmalizr.degraphmalize;
 
 import dgm.ID;
 
-public class JobRequest {
-    private final DegraphmalizeActionType actionType;
-    private final DegraphmalizeActionScope actionScope;
+public class JobRequest
+{
+    private final DegraphmalizeRequestType requestType;
+    private final DegraphmalizeRequestScope requestScope;
     private final ID id;
 
-    public JobRequest(DegraphmalizeActionType actionType, DegraphmalizeActionScope actionScope, ID id) {
-        this.actionType = actionType;
-        this.actionScope = actionScope;
+    public JobRequest(DegraphmalizeRequestType requestType, DegraphmalizeRequestScope requestScope, ID id)
+    {
+        this.requestType = requestType;
+        this.requestScope = requestScope;
         this.id = id;
     }
 
-    public DegraphmalizeActionType actionType() {
-        return actionType;
+    public DegraphmalizeRequestType actionType()
+    {
+        return requestType;
     }
 
-    public DegraphmalizeActionScope actionScope() {
-        return actionScope;
+    public DegraphmalizeRequestScope actionScope()
+    {
+        return requestScope;
     }
 
-    public ID id() {
+    public ID id()
+    {
         return id;
     }
 }

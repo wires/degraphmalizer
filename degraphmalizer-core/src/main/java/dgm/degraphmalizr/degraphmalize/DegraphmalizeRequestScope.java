@@ -8,18 +8,19 @@ package dgm.degraphmalizr.degraphmalize;
  * User: rico
  * Date: 14/03/2013
  */
-public enum DegraphmalizeActionScope {
+public enum DegraphmalizeRequestScope
+{
     INDEX
     {
         @Override
-        public boolean isInScope(DegraphmalizeActionScope scope) {
+        public boolean isInScope(DegraphmalizeRequestScope scope) {
             return INDEX.equals(scope);
         }
     },
     TYPE_IN_INDEX
     {
         @Override
-        public boolean isInScope(DegraphmalizeActionScope scope)
+        public boolean isInScope(DegraphmalizeRequestScope scope)
         {
             return INDEX.equals(scope) || TYPE_IN_INDEX.equals(scope);
         }
@@ -27,18 +28,18 @@ public enum DegraphmalizeActionScope {
     DOCUMENT_ANY_VERSION
     {
         @Override
-        public boolean isInScope(DegraphmalizeActionScope scope)
+        public boolean isInScope(DegraphmalizeRequestScope scope)
         {
             return INDEX.equals(scope) || TYPE_IN_INDEX.equals(scope) || DOCUMENT_ANY_VERSION.equals(scope);
         }
     },
     DOCUMENT {
         @Override
-        public boolean isInScope(DegraphmalizeActionScope scope)
+        public boolean isInScope(DegraphmalizeRequestScope scope)
         {
             return INDEX.equals(scope) || TYPE_IN_INDEX.equals(scope) || DOCUMENT_ANY_VERSION.equals(scope) || DOCUMENT.equals(scope);
         }
     };
 
-    public abstract boolean isInScope(DegraphmalizeActionScope scope);
+    public abstract boolean isInScope(DegraphmalizeRequestScope scope);
 }

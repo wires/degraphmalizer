@@ -3,6 +3,7 @@ package dgm.degraphmalizr.test;
 import ch.qos.logback.classic.Level;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -12,7 +13,6 @@ import dgm.Degraphmalizr;
 import dgm.GraphUtilities;
 import dgm.ID;
 import dgm.degraphmalizr.degraphmalize.*;
-import dgm.degraphmalizr.recompute.RecomputeRequest;
 import dgm.degraphmalizr.recompute.RecomputeResult;
 import dgm.exceptions.DegraphmalizerException;
 import dgm.modules.BlueprintsSubgraphManagerModule;
@@ -35,7 +35,10 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static org.fest.assertions.Assertions.assertThat;
 
@@ -81,33 +84,26 @@ class LocalNode
     @Inject
     Graph G;
 
-    final DegraphmalizeStatus callback = new Fixme();
+    final DegraphmalizeCallback callback = new Fixme();
 
-    class Fixme implements DegraphmalizeStatus
+    class Fixme implements DegraphmalizeCallback
     {
-        @Override
-        public void recomputeStarted(RecomputeRequest action)
-        {
-            log.info("restart");
-        }
-
-        @Override
-        public void recomputeComplete(RecomputeResult result)
-        {
-            log.info("rcomplete");
-        }
 
         @Override
         public void complete(DegraphmalizeResult result)
         {
-            log.info("dcomplete");
+            log.info("complete");
         }
 
         @Override
-        public void exception(DegraphmalizeResult result)
+        public void started(DegraphmalizeRequest request)
         {
-            log.warn("Exception: {}", result.exception().getMessage());
-            result.exception().printStackTrace();
+            log.info("started");
+        }
+
+        @Override
+        public void failed(DegraphmalizerException exception) {
+            log.info("failed");
         }
     }
 }
@@ -161,33 +157,35 @@ public class DegraphmalizerTest
         ln.log.info("Indexed /{}/{}/2 as version {} into ES", new Object[]{idx, tp, ir2.version()});
 
         // degraphmalize "1" and wait for and print result
-        final ArrayList<DegraphmalizeAction> actions = new ArrayList<DegraphmalizeAction>();
+        final List<Future<DegraphmalizeResult>> actions = new ArrayList<Future<DegraphmalizeResult>>();
 
-        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, DegraphmalizeActionScope.DOCUMENT, new ID(idx, tp, id, ir.version()), ln.callback));
-        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, DegraphmalizeActionScope.DOCUMENT, new ID(idx, tp, "1", ir1.version()), ln.callback));
-        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, DegraphmalizeActionScope.DOCUMENT, new ID(idx, tp, "2", ir2.version()), ln.callback));
+        actions.add(ln.d.degraphmalize(DegraphmalizeRequestType.UPDATE, DegraphmalizeRequestScope.DOCUMENT, new ID(idx, tp, id, ir.version()), ln.callback));
+        actions.add(ln.d.degraphmalize(DegraphmalizeRequestType.UPDATE, DegraphmalizeRequestScope.DOCUMENT, new ID(idx, tp, "1", ir1.version()), ln.callback));
+        actions.add(ln.d.degraphmalize(DegraphmalizeRequestType.UPDATE, DegraphmalizeRequestScope.DOCUMENT, new ID(idx, tp, "2", ir2.version()), ln.callback));
 
-        for(final DegraphmalizeAction a : actions)
+        for(final Future<DegraphmalizeResult> a : actions)
         {
-            ln.log.info("Degraphmalize of {}: {}", a.id(), a.resultDocument().get());
+            DegraphmalizeResult result = a.get();
+            ln.log.info("Degraphmalize complete for : " + result.root());
         }
 
-        for(final DegraphmalizeAction a : actions)
+        ObjectMapper mapper = new ObjectMapper();
+        for(final Future<DegraphmalizeResult> a : actions)
         {
-            final JsonNode result = a.resultDocument().get();
-
-            assertThat(result.get("success").toString()).isEqualTo("true");
+            final DegraphmalizeResult degraphmalizeResult = a.get();
+            // Get first node in results
+            final ObjectNode result = toJSON(mapper, degraphmalizeResult.results().get(0).get());
 
             assertThat(result.get("properties").has("nodes-in")).isTrue();
             assertThat(result.get("properties").has("nodes-out")).isTrue();
 
-            if(a.id().id().equals("1234"))
+            if(degraphmalizeResult.root().id().equals("1234"))
             {
                 assertThat(numberOfChildren(result, "nodes-out")).isZero();
                 assertThat(numberOfChildren(result, "nodes-in")).isEqualTo(3);
             }
 
-            if(a.id().id().equals("1"))
+            if(degraphmalizeResult.root().id().equals("1"))
             {
                 assertThat(numberOfChildren(result, "nodes-out")).isEqualTo(1);
                 assertThat(numberOfChildren(result, "nodes-in")).isZero();
@@ -237,37 +235,36 @@ public class DegraphmalizerTest
 
         ln.log.info("Indexed /{}/{}/3 as version {} into ES", new Object[]{idx, othertp, ir3.version()});
 
-        final ArrayList<DegraphmalizeAction> actions = new ArrayList<DegraphmalizeAction>();
+        final List<Future<DegraphmalizeResult>> actions = new ArrayList<Future<DegraphmalizeResult>>();
 
-        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, DegraphmalizeActionScope.DOCUMENT, new ID(idx, tp, id, ir.version()), ln.callback));
-        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, DegraphmalizeActionScope.DOCUMENT, new ID(idx, tp, "1", ir1.version()), ln.callback));
-        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, DegraphmalizeActionScope.DOCUMENT, new ID(idx, tp, "2", ir2.version()), ln.callback));
-        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, DegraphmalizeActionScope.DOCUMENT, new ID(idx, othertp, "3", ir3.version()), ln.callback));
+        actions.add(ln.d.degraphmalize(DegraphmalizeRequestType.UPDATE, DegraphmalizeRequestScope.DOCUMENT, new ID(idx, tp, id, ir.version()), ln.callback));
+        actions.add(ln.d.degraphmalize(DegraphmalizeRequestType.UPDATE, DegraphmalizeRequestScope.DOCUMENT, new ID(idx, tp, "1", ir1.version()), ln.callback));
+        actions.add(ln.d.degraphmalize(DegraphmalizeRequestType.UPDATE, DegraphmalizeRequestScope.DOCUMENT, new ID(idx, tp, "2", ir2.version()), ln.callback));
+        actions.add(ln.d.degraphmalize(DegraphmalizeRequestType.UPDATE, DegraphmalizeRequestScope.DOCUMENT, new ID(idx, othertp, "3", ir3.version()), ln.callback));
 
 
-        for(final DegraphmalizeAction a : actions)
+        for(final Future<DegraphmalizeResult> a : actions)
         {
-            ln.log.info("Degraphmalize of {}: {}", a.id(), a.resultDocument().get());
+            DegraphmalizeResult result = a.get();
+            ln.log.info("Degraphmalize complete for : "+result.root());
         }
 
         GraphUtilities.dumpGraph(new ObjectMapper(), ln.G);
 
         actions.clear();
-        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.DELETE, DegraphmalizeActionScope.DOCUMENT_ANY_VERSION, new ID(idx, tp, id, 0), ln.callback));
-        for(final DegraphmalizeAction a : actions)
+        actions.add(ln.d.degraphmalize(DegraphmalizeRequestType.DELETE, DegraphmalizeRequestScope.DOCUMENT_ANY_VERSION, new ID(idx, tp, id, 0), ln.callback));
+        for(final Future<DegraphmalizeResult> a : actions)
         {
-            JsonNode result = a.resultDocument().get();
-            assertThat(result.get("success").toString()).isEqualTo("true");
-            ln.log.info("Degraphmalize of {}: {}", a.id(), result);
+            DegraphmalizeResult result = a.get();
+            ln.log.info("Degraphmalize of {}: {}", result.root(), result);
         }
 
         actions.clear();
-        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.DELETE, DegraphmalizeActionScope.TYPE_IN_INDEX, new ID(idx, tp, null, 0), ln.callback));
-        for(final DegraphmalizeAction a : actions)
+        actions.add(ln.d.degraphmalize(DegraphmalizeRequestType.DELETE, DegraphmalizeRequestScope.TYPE_IN_INDEX, new ID(idx, tp, null, 0), ln.callback));
+        for(final Future<DegraphmalizeResult> a : actions)
         {
-            JsonNode result = a.resultDocument().get();
-            assertThat(result.get("success").toString()).isEqualTo("true");
-            ln.log.info("Degraphmalize of {}: {}", a.id(), result);
+            DegraphmalizeResult result = a.get();
+            ln.log.info("Degraphmalize of {}: {}", result.root(), result);
         }
 
         // Only the vertex of the othertp type should be present.
@@ -275,12 +272,11 @@ public class DegraphmalizerTest
         assertThat(countIterator(iterable)).isEqualTo(1);
 
         actions.clear();
-        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.DELETE, DegraphmalizeActionScope.INDEX, new ID(idx, null, null, 0), ln.callback));
-        for(final DegraphmalizeAction a : actions)
+        actions.add(ln.d.degraphmalize(DegraphmalizeRequestType.DELETE, DegraphmalizeRequestScope.INDEX, new ID(idx, null, null, 0), ln.callback));
+        for(final Future<DegraphmalizeResult> a : actions)
         {
-            JsonNode result = a.resultDocument().get();
-            assertThat(result.get("success").toString()).isEqualTo("true");
-            ln.log.info("Degraphmalize of {}: {}", a.id(), result);
+            DegraphmalizeResult result = a.get();
+            ln.log.info("Degraphmalize of {}: {}", result.root(), result);
         }
 
         // No more vertices
@@ -307,4 +303,30 @@ public class DegraphmalizerTest
     {
         return result.get("properties").get(property).get("full_tree").get("_children").size();
     }
+
+    public static ObjectNode toJSON(ObjectMapper objectMapper, RecomputeResult success) throws InterruptedException, ExecutionException
+    {
+        final ObjectNode n = objectMapper.createObjectNode();
+
+        // write targetID using index reponse
+        final IndexResponse ir = success.indexResponse();
+        final ObjectNode targetID = objectMapper.createObjectNode();
+        targetID.put("index", ir.index());
+        targetID.put("type", ir.type());
+        targetID.put("id", ir.id());
+        targetID.put("version", ir.version());
+        n.put("targetID", targetID);
+
+        // write dictionary of properties and their values
+        final ObjectNode properties = objectMapper.createObjectNode();
+        for(Map.Entry<String,JsonNode> entry : success.properties().entrySet())
+            properties.put(entry.getKey(), entry.getValue());
+        n.put("properties", properties);
+
+        // write dictionary of properties and their values
+        n.put("sourceDocumentAfterTransform", success.sourceDocument());
+
+        return n;
+   }
 }
+

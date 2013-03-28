@@ -2,7 +2,6 @@ package dgm.degraphmalizr;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
 import com.google.common.base.Predicate;
@@ -33,7 +32,6 @@ import dgm.trees.Pair;
 import dgm.trees.Tree;
 import dgm.trees.Trees;
 import org.elasticsearch.action.get.GetResponse;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.Nullable;
 import org.nnsoft.guice.sli4j.core.InjectLogger;
@@ -47,12 +45,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import static dgm.degraphmalizr.degraphmalize.DegraphmalizeActionScope.DOCUMENT;
+import static dgm.degraphmalizr.degraphmalize.DegraphmalizeRequestScope.DOCUMENT;
 
 public class Degraphmalizer implements Degraphmalizr
 {
     @InjectLogger
-	Logger log;
+    Logger log;
 
     protected final Client client;
 
@@ -70,8 +68,8 @@ public class Degraphmalizer implements Degraphmalizr
 
     final ObjectMapper objectMapper;
 
-	@Inject
-	public Degraphmalizer(Client client, SubgraphManager subgraphmanager, Graph graph,
+    @Inject
+    public Degraphmalizer(Client client, SubgraphManager subgraphmanager, Graph graph,
                           @Degraphmalizes ExecutorService degraphmalizeQueue,
                           @Fetches ExecutorService fetchQueue,
                           @Recomputes ExecutorService recomputeQueue,
@@ -79,155 +77,148 @@ public class Degraphmalizer implements Degraphmalizr
                           ObjectMapper objectMapper,
                           Recomputer recomputer,
                           Provider<Configuration> configProvider)
-	{
+    {
         this.fetchQueue = fetchQueue;
         this.recomputeQueue = recomputeQueue;
         this.degraphmalizeQueue = degraphmalizeQueue;
         this.graph = graph;
         this.subgraphmanager = subgraphmanager;
-		this.client = client;
+        this.client = client;
         this.recomputer = recomputer;
         this.cfgProvider = configProvider;
         this.queryFn = queryFunction;
         this.objectMapper = objectMapper;
-	}
+    }
 
     @Override
-    public final DegraphmalizeAction degraphmalize(DegraphmalizeActionType actionType, DegraphmalizeActionScope actionScope, ID id, DegraphmalizeStatus callback)
+    public final Future<DegraphmalizeResult> degraphmalize(DegraphmalizeRequestType requestType, DegraphmalizeRequestScope requestScope, ID id, DegraphmalizeCallback callback)
     {
         // find all matching configurations
         final Iterable<TypeConfig> configs = Configurations.configsFor(cfgProvider.get(), id.index(), id.type());
 
         // we cannot handle this request!
-        if(Iterables.isEmpty(configs))
+        if (Iterables.isEmpty(configs))
             throw new NoConfiguration(id);
 
         // construct the action object
-        final DegraphmalizeAction action = new DegraphmalizeAction(actionType, actionScope, id, configs, callback);
+        final DegraphmalizeRequest action = new DegraphmalizeRequest(requestType, requestScope, id, configs);
 
         // convert object into task and queue
-        action.result = degraphmalizeQueue.submit(degraphmalizeJob(action));
-
-        return action;
+        return degraphmalizeQueue.submit(degraphmalizeJob(action, callback));
     }
 
-    private Callable<JsonNode> degraphmalizeJob(final DegraphmalizeAction action)
-	{
-		return new Callable<JsonNode>()
-		{
-			@Override
-			public JsonNode call() throws Exception
-			{
-                final DegraphmalizeActionType actionType = action.type();
-
-                switch(actionType)
+    private Callable<DegraphmalizeResult> degraphmalizeJob(final DegraphmalizeRequest action, final DegraphmalizeCallback callback)
+    {
+        return new Callable<DegraphmalizeResult>()
+        {
+            @Override
+            public DegraphmalizeResult call() throws Exception
+            {
+                try
                 {
-                    case UPDATE:
-                        return doUpdate(action);
-
-                    case DELETE:
-                        return doDelete(action);
+                    final DegraphmalizeRequestType requestType = action.type();
+                    callback.started(action);
+                    DegraphmalizeResult result;
+                    switch (requestType)
+                    {
+                        case UPDATE:
+                            result = doUpdate(action);
+                            break;
+                        case DELETE:
+                            result = doDelete(action);
+                            break;
+                        default:
+                            throw new UnreachableCodeReachedException();
+                    }
+                    // collect all recompute states.
+                    for (Future<RecomputeResult> recomputeResultFuture : result.results())
+                    {
+                        recomputeResultFuture.get();
+                    }
+                    callback.complete(result);
+                    return result;
+                } catch (final DegraphmalizerException e)
+                {
+                    callback.failed(e);
+                    throw e;
+                } catch (final Exception e)
+                {
+                    WrappedException we = new WrappedException(e);
+                    callback.failed(we);
+                    throw we;
                 }
-
-                throw new UnreachableCodeReachedException();
             }
-		};
-	}
+        };
+    }
 
     private boolean inList(RecomputeRequest r, List<RecomputeRequest> rs)
     {
-        for(RecomputeRequest q : rs)
+        for (RecomputeRequest q : rs)
         {
             final boolean equalId = q.root.id().equals(r.root.id());
             final boolean equalIndexConfig = q.config.targetIndex().equals(r.config.targetIndex());
             final boolean equalTypeConfig = q.config.targetType().equals(r.config.targetType());
-            if(equalId && equalIndexConfig && equalTypeConfig)
+            if (equalId && equalIndexConfig && equalTypeConfig)
                 return true;
         }
 
         return false;
     }
 
-    private List<RecomputeRequest> determineRecomputeActionsOrEmpty(DegraphmalizeAction action)
+    private List<RecomputeRequest> determineRecomputeActionsOrEmpty(DegraphmalizeRequest action)
     {
         try
         {
             return determineRecomputeActions(action);
-        }
-        catch(NotFoundInGraphException e)
+        } catch (NotFoundInGraphException e)
         {
             return Collections.emptyList();
         }
     }
 
-    private JsonNode doUpdate(DegraphmalizeAction action) throws Exception
+    private DegraphmalizeResult doUpdate(DegraphmalizeRequest action) throws Exception
     {
-        try
+        log.info("Processing update request for id {} scope {} ", action.id(), action.scope());
+
+        List<Future<RecomputeResult>> results;
+        switch (action.scope())
         {
-            log.info("Processing update request for id {} scope {} ", action.id(), action.scope());
-
-            List<Future<RecomputeResult>> results;
-            switch (action.scope())
-            {
-                case INDEX:
-                    Iterable<Vertex> vertexIterator = GraphUtilities.findVerticesInIndex(graph, action.id().index());
-                    results = updateDocuments(vertexIterator, action);
-                    break;
-                case TYPE_IN_INDEX:
-                    Iterable<Vertex> vertexIterator2 = GraphUtilities.findVerticesInIndex(graph, action.id().index(), action.id().type());
-                    results = updateDocuments(vertexIterator2, action);
-                    break;
-                case DOCUMENT_ANY_VERSION:
-                    Vertex vertex = GraphUtilities.resolveVertex(objectMapper, graph, action.id());
-                    results = updateDocument(createDocumentActionForVertex(action.type(), vertex, action.status()));
-                    break;
-                case DOCUMENT:
-                    results = updateDocument(action);
-                    break;
-                default:
-                    throw new UnreachableCodeReachedException();
-            }
-
-            if (results.isEmpty())
-            {
-                return objectMapper.createObjectNode().put("success",true);
-            }
-            return getStatusJsonNode(results);
+            case INDEX:
+                Iterable<Vertex> vertexIterator = GraphUtilities.findVerticesInIndex(graph, action.id().index());
+                results = updateDocuments(vertexIterator, action);
+                break;
+            case TYPE_IN_INDEX:
+                Iterable<Vertex> vertexIterator2 = GraphUtilities.findVerticesInIndex(graph, action.id().index(), action.id().type());
+                results = updateDocuments(vertexIterator2, action);
+                break;
+            case DOCUMENT_ANY_VERSION:
+                Vertex vertex = GraphUtilities.resolveVertex(objectMapper, graph, action.id());
+                results = updateDocument(createDocumentRequestForVertex(action.type(), vertex));
+                break;
+            case DOCUMENT:
+                results = updateDocument(action);
+                break;
+            default:
+                throw new UnreachableCodeReachedException();
         }
-        catch (final DegraphmalizerException e)
-        {
-            final DegraphmalizeResult result = DegraphmalizeResult.failure(action, e);
-
-            // report failure
-            action.status().exception(result);
-
-            // rethrow, this will captured by Future<>.get()
-            throw e;
-        }
-        catch (final Exception e)
-        {
-            final DegraphmalizeResult result = DegraphmalizeResult.failure(action, new WrappedException(e));
-
-            // report failure
-            action.status().exception(result);
-
-            // rethrow, this will captured by Future<>.get()
-            throw e;
-        }
+        return new DegraphmalizeResult(action.id(), results);
     }
 
-    private List<Future<RecomputeResult>> updateDocuments(Iterable<Vertex> iterator, DegraphmalizeAction action) throws ExecutionException, InterruptedException, IOException {
+    private List<Future<RecomputeResult>> updateDocuments(Iterable<Vertex> iterator, DegraphmalizeRequest action) throws ExecutionException, InterruptedException, IOException
+    {
         final List<Future<RecomputeResult>> results = new ArrayList<Future<RecomputeResult>>();
-        for (Vertex vertex : iterator) {
-             results.addAll(updateDocument(createDocumentActionForVertex(action.type(), vertex, action.status())));
+        for (Vertex vertex : iterator)
+        {
+            results.addAll(updateDocument(createDocumentRequestForVertex(action.type(), vertex)));
         }
         return results;
     }
 
-    private List<Future<RecomputeResult>> updateDocument(DegraphmalizeAction action) throws IOException, ExecutionException, InterruptedException {
+    private List<Future<RecomputeResult>> updateDocument(DegraphmalizeRequest action) throws IOException, ExecutionException, InterruptedException
+    {
         if (!action.scope().equals(DOCUMENT))
         {
-            throw new InvalidRequest("Action : "+action.type()+" is not valid for a scope of "+action.scope());
+            throw new InvalidRequest("Action : " + action.type() + " is not valid for a scope of " + action.scope());
         }
 
         // Get document from elasticsearch
@@ -236,42 +227,35 @@ public class Degraphmalizer implements Degraphmalizr
         // couldn't find source document, so we are done
         if (jsonNode == null)
         {
-            // TODO cleanup status/result/action objects.
-            action.status().complete(DegraphmalizeResult.success(action));
             return Collections.emptyList();
-        }
-        else
+        } else
         {
             // find all document connected to this document before changing the graph
             final List<RecomputeRequest> pre = determineRecomputeActionsOrEmpty(action);
 
-            action.setDocument(jsonNode);
-
             // update the graph
-            generateSubgraph(action);
+            generateSubgraph(action, jsonNode);
 
             final List<RecomputeRequest> post = determineRecomputeActions(action);
 
             // add all the missing requests from pre to post
-            for(RecomputeRequest r : pre)
-                if(!inList(r, post))
+            for (RecomputeRequest r : pre)
+                if (!inList(r, post))
                     post.add(r);
 
             logRecomputes(action.id(), post);
-            final List<Future<RecomputeResult>> results = recomputeAffectedDocuments(post);
-
-            // TODO refactor action class
-            action.status().complete(DegraphmalizeResult.success(action));
-
-            return results;
+            return recomputeAffectedDocuments(post);
         }
     }
 
     private void logRecomputes(ID id, List<RecomputeRequest> recomputeRequests)
     {
         // fn = toString . id . root
-        final Function<RecomputeRequest,String> fn = new Function<RecomputeRequest, String>() {
-            @Override public String apply(@Nullable RecomputeRequest input) {
+        final Function<RecomputeRequest, String> fn = new Function<RecomputeRequest, String>()
+        {
+            @Override
+            public String apply(@Nullable RecomputeRequest input)
+            {
                 return "\n\t" + input.root.id().toString();
             }
         };
@@ -282,92 +266,62 @@ public class Degraphmalizer implements Degraphmalizr
         log.info("Degraphmalize request for {} triggered compute of: {}", id, ids);
     }
 
-    private DegraphmalizeAction createDocumentActionForVertex(DegraphmalizeActionType degraphmalizeActionType, Vertex vertex, DegraphmalizeStatus status) {
+    private DegraphmalizeRequest createDocumentRequestForVertex(DegraphmalizeRequestType degraphmalizeRequestType, Vertex vertex)
+    {
         ID id = GraphUtilities.getID(objectMapper, vertex);
         Iterable<TypeConfig> typeConfigs = Configurations.configsFor(cfgProvider.get(), id.index(), id.type());
-        DegraphmalizeAction newAction = new DegraphmalizeAction(degraphmalizeActionType, DOCUMENT, id, typeConfigs, status);
-        return newAction;
+        return new DegraphmalizeRequest(degraphmalizeRequestType, DOCUMENT, id, typeConfigs);
     }
 
     // TODO refactor (dubbeling met doUpdate)
-    private JsonNode doDelete(DegraphmalizeAction action) throws Exception
+    private DegraphmalizeResult doDelete(DegraphmalizeRequest action) throws Exception
     {
-        try
+        log.info("Processing delete request for id {} scope {} ", action.id(), action.scope());
+
+        List<Future<RecomputeResult>> results;
+        switch (action.scope())
         {
-            log.info("Processing delete request for id {} scope {} ", action.id(), action.scope());
-
-            List<Future<RecomputeResult>> results;
-            switch (action.scope())
-            {
-                case INDEX:
-                    Iterable<Vertex> vertexIterator = GraphUtilities.findVerticesInIndex(graph, action.id().index());
-                    results = deleteDocuments(vertexIterator, action);
-                    break;
-                case TYPE_IN_INDEX:
-                    Iterable<Vertex> vertexIterator2 = GraphUtilities.findVerticesInIndex(graph, action.id().index(), action.id().type());
-                    results = deleteDocuments(vertexIterator2, action);
-                    break;
-                case DOCUMENT_ANY_VERSION:
-                    Vertex vertex = GraphUtilities.resolveVertex(objectMapper, graph, action.id());
-                    results = deleteDocument(createDocumentActionForVertex(action.type(), vertex, action.status()));
-                    break;
-                case DOCUMENT:
-                    results = deleteDocument(action);
-                    break;
-                default:
-                    throw new UnreachableCodeReachedException();
-            }
-            if (results.isEmpty())
-            {
-                return objectMapper.createObjectNode().put("success",true);
-            }
-            return getStatusJsonNode(results);
+            case INDEX:
+                Iterable<Vertex> vertexIterator = GraphUtilities.findVerticesInIndex(graph, action.id().index());
+                results = deleteDocuments(vertexIterator, action);
+                break;
+            case TYPE_IN_INDEX:
+                Iterable<Vertex> vertexIterator2 = GraphUtilities.findVerticesInIndex(graph, action.id().index(), action.id().type());
+                results = deleteDocuments(vertexIterator2, action);
+                break;
+            case DOCUMENT_ANY_VERSION:
+                Vertex vertex = GraphUtilities.resolveVertex(objectMapper, graph, action.id());
+                results = deleteDocument(createDocumentRequestForVertex(action.type(), vertex));
+                break;
+            case DOCUMENT:
+                results = deleteDocument(action);
+                break;
+            default:
+                throw new UnreachableCodeReachedException();
         }
-        catch (final NotFoundInGraphException e)
-        {
-            // TODO move to proper place
-            log.warn("While doing delete, could not find central node for ID {}", e.id());
-            action.status().complete(DegraphmalizeResult.success(action));
-            return objectMapper.createObjectNode().put("jelle", "was here");
-        }
-        catch (final DegraphmalizerException e)
-        {
-            final DegraphmalizeResult result = DegraphmalizeResult.failure(action, e);
-
-            // report failure
-            action.status().exception(result);
-
-            // rethrow, this will captured by Future<>.get()
-            throw e;
-        }
-        catch (final Exception e)
-        {
-            final DegraphmalizeResult result = DegraphmalizeResult.failure(action, new WrappedException(e));
-
-            // report failure
-            action.status().exception(result);
-
-            // rethrow, this will captured by Future<>.get()
-            throw e;
-        }
+        return new DegraphmalizeResult(action.id(), results);
     }
 
-    private List<Future<RecomputeResult>> deleteDocuments(Iterable<Vertex> iterator, DegraphmalizeAction action) throws ExecutionException, InterruptedException {
+    private List<Future<RecomputeResult>> deleteDocuments(Iterable<Vertex> iterator, DegraphmalizeRequest action) throws ExecutionException, InterruptedException
+    {
         final List<Future<RecomputeResult>> results = new ArrayList<Future<RecomputeResult>>();
-        for (Vertex vertex : iterator) {
-             results.addAll(deleteDocument(createDocumentActionForVertex(action.type(), vertex, action.status())));
+        for (Vertex vertex : iterator)
+        {
+            results.addAll(deleteDocument(createDocumentRequestForVertex(action.type(), vertex)));
         }
         return results;
     }
 
-    private List<Future<RecomputeResult>> deleteDocument(DegraphmalizeAction action) throws ExecutionException, InterruptedException {
+    private List<Future<RecomputeResult>> deleteDocument(DegraphmalizeRequest action) throws ExecutionException, InterruptedException
+    {
         if (!action.scope().equals(DOCUMENT))
         {
-            throw new InvalidRequest("Delete a document is not valid for a scope of "+action.scope());
+            throw new InvalidRequest("Delete a document is not valid for a scope of " + action.scope());
         }
+
         List<RecomputeRequest> recomputeRequests = determineRecomputeActions(action);
         // TODO refactor refactor!
-        List<ID> verticesDeleted = ((BlueprintsSubgraphManager)subgraphmanager).findVertexIDsAffectedByDelete(action.id());
+        List<ID> verticesDeleted = ((BlueprintsSubgraphManager) subgraphmanager).findVertexIDsAffectedByDelete(action.id());
 
         subgraphmanager.deleteSubgraph(action.id());
 
@@ -375,19 +329,17 @@ public class Degraphmalizer implements Degraphmalizr
 
         logRecomputes(action.id(), recomputeRequests);
 
-        final List<Future<RecomputeResult>> results = recomputeAffectedDocuments(recomputeRequests);
-
-        // TODO refactor action class
-        action.status().complete(DegraphmalizeResult.success(action));
-
-        return results;
+        return recomputeAffectedDocuments(recomputeRequests);
     }
 
-    private List<RecomputeRequest> removeDeletedVerticesFromRequest(final List<ID> deleted, List<RecomputeRequest> requests) {
+    private List<RecomputeRequest> removeDeletedVerticesFromRequest(final List<ID> deleted, List<RecomputeRequest> requests)
+    {
         final Set<ID> deletedIDs = new HashSet<ID>(deleted);
-        Iterables.removeIf(requests, new Predicate<RecomputeRequest>() {
+        Iterables.removeIf(requests, new Predicate<RecomputeRequest>()
+        {
             @Override
-            public boolean apply(RecomputeRequest input) {
+            public boolean apply(RecomputeRequest input)
+            {
                 return deletedIDs.contains(input.root.id());
             }
         });
@@ -410,19 +362,18 @@ public class Degraphmalizer implements Degraphmalizr
         return objectMapper.readTree(resp.getSourceAsString());
     }
 
-    private void generateSubgraph(DegraphmalizeAction action) {
-        final ID id = action.id();
-
+    private void generateSubgraph(DegraphmalizeRequest action, JsonNode document)
+    {
         GraphUtilities.dumpGraph(objectMapper, graph);
 
         // extract the graph elements
         final ArrayList<Subgraph> sgs = new ArrayList<Subgraph>();
-        for(TypeConfig c : action.configs())
+        for (TypeConfig c : action.configs())
         {
-            final Subgraph sg = c.extract(action.document());
+            final Subgraph sg = c.extract(document);
             sgs.add(sg);
 
-            if(log.isDebugEnabled())
+            if (log.isDebugEnabled())
             {
                 final int edges = Iterables.size(sg.edges());
                 log.debug("Computing subgraph for /{}/{}, containing {} edges",
@@ -432,7 +383,7 @@ public class Degraphmalizer implements Degraphmalizr
 
         final Subgraph merged = Subgraphs.merge(sgs);
 
-        if(log.isDebugEnabled())
+        if (log.isDebugEnabled())
         {
             final int edges = Iterables.size(merged.edges());
             log.debug("Completed extraction of graph elements, {} subgraphs extracted, total size {} edges", sgs.size(), edges);
@@ -449,7 +400,7 @@ public class Degraphmalizer implements Degraphmalizr
         // create Callable from the actions
         // TODO call 'recompute started' for each action to update the status
         final ArrayList<Callable<RecomputeResult>> jobs = new ArrayList<Callable<RecomputeResult>>();
-        for(RecomputeRequest r : recomputeRequests)
+        for (RecomputeRequest r : recomputeRequests)
             jobs.add(recomputeDocument(r));
 
         // recompute all affected documents and wait for results
@@ -457,7 +408,7 @@ public class Degraphmalizer implements Degraphmalizr
         return recomputeQueue.invokeAll(jobs);
     }
 
-    private ArrayList<RecomputeRequest> determineRecomputeActions(DegraphmalizeAction action)
+    private ArrayList<RecomputeRequest> determineRecomputeActions(DegraphmalizeRequest action)
     {
         final ID id = action.id();
 
@@ -471,17 +422,17 @@ public class Degraphmalizer implements Degraphmalizr
 
         // we add ourselves (for each config) as the first job(s) in the list
         final VID vid = new VID(objectMapper, root);
-        for(TypeConfig c : action.configs())
+        for (TypeConfig c : action.configs())
             recomputeRequests.add(new RecomputeRequest(vid, c));
 
         // traverse graph in both direction, starting at the root
         log.debug("Computing tree in direction IN, starting at {}", root);
-        final Tree<Pair<Edge,Vertex>> up = GraphUtilities.childrenFrom(graph, root, Direction.IN);
+        final Tree<Pair<Edge, Vertex>> up = GraphUtilities.childrenFrom(graph, root, Direction.IN);
 
         log.debug("Computing tree in direction OUT, starting at {}", root);
-        final Tree<Pair<Edge,Vertex>> down = GraphUtilities.childrenFrom(graph, root, Direction.OUT);
+        final Tree<Pair<Edge, Vertex>> down = GraphUtilities.childrenFrom(graph, root, Direction.OUT);
 
-        if(log.isDebugEnabled())
+        if (log.isDebugEnabled())
         {
             final int up_size = Iterables.size(Trees.bfsWalk(up));
             final int down_size = Iterables.size(Trees.bfsWalk(down));
@@ -494,17 +445,17 @@ public class Degraphmalizer implements Degraphmalizr
             final Vertex v = pathElement.b;
 
             // skip the root of the tree, ie. ourselves:
-            if(v.equals(root))
+            if (v.equals(root))
                 continue;
 
             final VID v_id = new VID(objectMapper, v);
 
             // we already know this document does not exist in ES, skip
-            if(v_id.id().version() == 0)
+            if (v_id.id().version() == 0)
                 continue;
 
             // alright, mark for computation
-            for(TypeConfig c : Configurations.configsFor(cfgProvider.get(), v_id.id().index(), v_id.id().type()))
+            for (TypeConfig c : Configurations.configsFor(cfgProvider.get(), v_id.id().index(), v_id.id().type()))
                 recomputeRequests.add(new RecomputeRequest(v_id, c));
         }
 
@@ -526,44 +477,12 @@ public class Degraphmalizer implements Degraphmalizr
             public RecomputeResult call()
             {
                 // TODO pass callback
-                final RecomputeCallback cb = new RecomputeCallback(){};
+                final RecomputeCallback cb = new RecomputeCallback()
+                {
+                };
                 return recomputer.recompute(action, cb);
             }
         };
     }
-
-    // TODO deprecate, also kill the method in JSONUtilities
-    private ObjectNode getStatusJsonNode(List<Future<RecomputeResult>> results) throws InterruptedException, ExecutionException
-    {
-        final RecomputeResult ourResult = results.get(0).get();
-        return toJSON(objectMapper, ourResult);
-    }
-
-    public static ObjectNode toJSON(ObjectMapper objectMapper, RecomputeResult success) throws InterruptedException, ExecutionException
-    {
-        final ObjectNode n = objectMapper.createObjectNode();
-
-        n.put("success", true);
-
-        // write targetID using index reponse
-        final IndexResponse ir = success.indexResponse();
-        final ObjectNode targetID = objectMapper.createObjectNode();
-        targetID.put("index", ir.index());
-        targetID.put("type", ir.type());
-        targetID.put("id", ir.id());
-        targetID.put("version", ir.version());
-        n.put("targetID", targetID);
-
-        // write dictionary of properties and their values
-        final ObjectNode properties = objectMapper.createObjectNode();
-        for(Map.Entry<String,JsonNode> entry : success.properties().entrySet())
-            properties.put(entry.getKey(), entry.getValue());
-        n.put("properties", properties);
-
-        // write dictionary of properties and their values
-        n.put("sourceDocumentAfterTransform", success.sourceDocument());
-
-        return n;
-   }
 
 }

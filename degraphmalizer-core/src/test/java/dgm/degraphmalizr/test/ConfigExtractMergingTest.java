@@ -1,12 +1,14 @@
 package dgm.degraphmalizr.test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tinkerpop.blueprints.*;
+import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.TransactionalGraph;
+import com.tinkerpop.blueprints.Vertex;
 import dgm.EdgeID;
 import dgm.ID;
-import dgm.degraphmalizr.degraphmalize.DegraphmalizeAction;
-import dgm.degraphmalizr.degraphmalize.DegraphmalizeActionScope;
-import dgm.degraphmalizr.degraphmalize.DegraphmalizeActionType;
+import dgm.degraphmalizr.degraphmalize.DegraphmalizeRequestScope;
+import dgm.degraphmalizr.degraphmalize.DegraphmalizeRequestType;
+import dgm.degraphmalizr.degraphmalize.DegraphmalizeResult;
 import dgm.exceptions.DegraphmalizerException;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
 import org.elasticsearch.action.index.IndexResponse;
@@ -14,7 +16,9 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static dgm.GraphUtilities.getEdgeID;
 import static org.fest.assertions.Assertions.assertThat;
@@ -92,13 +96,15 @@ public class ConfigExtractMergingTest
         final long v2 = index(src, type, "2").version();
 
         // degraphmalize "1" and wait for and print result
-        final ArrayList<DegraphmalizeAction> actions = new ArrayList<DegraphmalizeAction>();
-        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, DegraphmalizeActionScope.DOCUMENT, new ID(src, type, "1", v1), ln.callback));
-        actions.add(ln.d.degraphmalize(DegraphmalizeActionType.UPDATE, DegraphmalizeActionScope.DOCUMENT, new ID(src, type, "2", v2), ln.callback));
+        final List<Future<DegraphmalizeResult>> actions = new ArrayList<Future<DegraphmalizeResult>>();
+        actions.add(ln.d.degraphmalize(DegraphmalizeRequestType.UPDATE, DegraphmalizeRequestScope.DOCUMENT, new ID(src, type, "1", v1), ln.callback));
+        actions.add(ln.d.degraphmalize(DegraphmalizeRequestType.UPDATE, DegraphmalizeRequestScope.DOCUMENT, new ID(src, type, "2", v2), ln.callback));
 
-        for(final DegraphmalizeAction a : actions)
-            ln.log.info("Degraphmalize of {} completed: {}", a.id(), a.resultDocument().get());
-
+        for(final Future<DegraphmalizeResult> a : actions)
+        {
+            DegraphmalizeResult result = a.get();
+            System.err.println("Degraphmalize complete for : " + result.root());
+        }
         dumpGraph();
 
         assertThat(ln.G.getEdges()).hasSize(4);

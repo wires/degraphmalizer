@@ -5,9 +5,9 @@ import com.google.inject.Provider;
 import dgm.configuration.Configuration;
 import dgm.Degraphmalizr;
 import dgm.ID;
-import dgm.degraphmalizr.degraphmalize.DegraphmalizeActionScope;
-import dgm.degraphmalizr.degraphmalize.DegraphmalizeActionType;
-import dgm.degraphmalizr.degraphmalize.LoggingDegraphmalizeStatus;
+import dgm.degraphmalizr.degraphmalize.DegraphmalizeRequestScope;
+import dgm.degraphmalizr.degraphmalize.DegraphmalizeRequestType;
+import dgm.degraphmalizr.degraphmalize.LoggingDegraphmalizeCallback;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
@@ -66,7 +66,7 @@ public class RedegraphmalizePostProcessor implements PostProcessor
             {
                 ID id = new ID(hit.getIndex(), hit.getType(), hit.getId(), getVersion(hit));
                 log.debug("Re-degraphmalizing document {}", id);
-                degraphmalizr.degraphmalize(DegraphmalizeActionType.UPDATE, DegraphmalizeActionScope.DOCUMENT, id, new LoggingDegraphmalizeStatus());
+                degraphmalizr.degraphmalize(DegraphmalizeRequestType.UPDATE, DegraphmalizeRequestScope.DOCUMENT, id, new LoggingDegraphmalizeCallback());
             }
 
         } catch (Exception e)

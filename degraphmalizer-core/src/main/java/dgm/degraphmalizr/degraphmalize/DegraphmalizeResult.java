@@ -1,56 +1,29 @@
 package dgm.degraphmalizr.degraphmalize;
 
-import dgm.exceptions.DegraphmalizerException;
+import dgm.ID;
+import dgm.degraphmalizr.recompute.RecomputeResult;
+
+import java.util.List;
+import java.util.concurrent.Future;
 
 public class DegraphmalizeResult
 {
-    private final DegraphmalizeOutcome outcome;
-    private final DegraphmalizeAction action;
-    private final DegraphmalizerException exception;
+    protected final ID root;
+    protected final List<Future<RecomputeResult>> results;
 
-    public DegraphmalizeResult(DegraphmalizeOutcome outcome, DegraphmalizeAction action)
+    public DegraphmalizeResult(ID root, List<Future<RecomputeResult>> results)
     {
-        this(outcome, action, null);
+        this.root = root;
+        this.results = results;
     }
 
-    public DegraphmalizeResult(DegraphmalizeOutcome outcome, DegraphmalizeAction action, DegraphmalizerException ex)
+    public List<Future<RecomputeResult>> results()
     {
-        this.outcome = outcome;
-        this.action = action;
-        this.exception = ex;
+        return results;
     }
 
-    public DegraphmalizeOutcome outcome()
+    public ID root()
     {
-        return outcome;
-    }
-
-    public DegraphmalizeAction action()
-    {
-        return action;
-    }
-
-    public Exception exception()
-    {
-        return exception;
-    }
-
-    public static DegraphmalizeResult success(DegraphmalizeAction action)
-    {
-        return new DegraphmalizeResult(DegraphmalizeOutcome.SUCCESS, action);
-    }
-
-    public static DegraphmalizeResult failure(DegraphmalizeAction action, DegraphmalizerException e)
-    {
-        return new DegraphmalizeResult(DegraphmalizeOutcome.FAILURE, action, e);
-    }
-
-    @Override
-    public String toString() {
-        return "DegraphmalizeResult{" +
-                "outcome=" + outcome +
-                ", action=" + action +
-                ", exception=" + exception +
-                '}';
+        return root;
     }
 }
