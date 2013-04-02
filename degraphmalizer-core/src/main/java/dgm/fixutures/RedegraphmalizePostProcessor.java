@@ -2,13 +2,12 @@ package dgm.fixutures;
 
 import com.google.common.collect.Iterables;
 import com.google.inject.Provider;
-import dgm.configuration.Configuration;
 import dgm.Degraphmalizr;
 import dgm.ID;
+import dgm.configuration.Configuration;
 import dgm.degraphmalizr.degraphmalize.DegraphmalizeRequestScope;
 import dgm.degraphmalizr.degraphmalize.DegraphmalizeRequestType;
 import dgm.degraphmalizr.degraphmalize.LoggingDegraphmalizeCallback;
-import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.client.Client;
@@ -19,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import java.util.concurrent.ExecutionException;
 
 /**
  * This thing runs after fixture data has been inserted.
@@ -47,7 +45,6 @@ public class RedegraphmalizePostProcessor implements PostProcessor
     @Override
     public void run()
     {
-        //todo: The first query does not give the document version, but -1. We need a second query for each document. Is this necessary
         try
         {
             QueryBuilder qb = new MatchAllQueryBuilder();
@@ -59,12 +56,13 @@ public class RedegraphmalizePostProcessor implements PostProcessor
                     .setIndices(indices)
                     .setQuery(qb)
                     .setSize(-1)
+                    .setVersion(true)
                     .execute().actionGet();
 
 
             for (SearchHit hit : response.getHits().getHits())
             {
-                ID id = new ID(hit.getIndex(), hit.getType(), hit.getId(), getVersion(hit));
+                ID id = new ID(hit.getIndex(), hit.getType(), hit.getId(), hit.version());
                 log.debug("Re-degraphmalizing document {}", id);
                 degraphmalizr.degraphmalize(DegraphmalizeRequestType.UPDATE, DegraphmalizeRequestScope.DOCUMENT, id, new LoggingDegraphmalizeCallback());
             }
@@ -73,11 +71,6 @@ public class RedegraphmalizePostProcessor implements PostProcessor
         {
             log.error("Something went wrong re-degraphmalizing fixture documents.", e);
         }
-    }
-
-    private long getVersion(SearchHit hit) throws ExecutionException, InterruptedException
-    {
-        return client.get(new GetRequest(hit.getIndex(), hit.getType(), hit.getId())).get().getVersion();
     }
 
 }
