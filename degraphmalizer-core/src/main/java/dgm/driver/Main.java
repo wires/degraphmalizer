@@ -112,7 +112,7 @@ public final class Main
             }
         }
 
-        //fixtures?
+        // start fixtures
         if (opt.fixtures)
         {
             FixturesLoader fl = injector.getInstance(FixturesLoader.class);
@@ -179,7 +179,8 @@ public final class Main
             modules.add(new StaticConfiguration(opt.config, opt.libraries()));
 
         // fixtures
-        modules.add(new FixtureLoaderModule(createRunMode(opt)));
+        if(opt.fixtures)
+            modules.add(new FixtureLoaderModule(createRunMode(opt)));
     }
 
     public static void main(String[] args)

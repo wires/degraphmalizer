@@ -3,7 +3,11 @@ package dgm;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import org.mozilla.javascript.*;
+import org.apache.commons.lang3.StringUtils;
+import org.mozilla.javascript.Callable;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.NativeJSON;
+import org.mozilla.javascript.Scriptable;
 
 import java.io.IOException;
 
@@ -12,7 +16,9 @@ import java.io.IOException;
  */
 public final class JSONUtilities
 {
-    private JSONUtilities() {}
+    private JSONUtilities()
+    {
+    }
 
     /**
      * Transform a JSON string into a JS Object
@@ -42,15 +48,28 @@ public final class JSONUtilities
 
     public static ID fromJSON(JsonNode n)
     {
-        if(!n.isArray())
+        if (!n.isArray())
             return null;
 
-        final ArrayNode a = (ArrayNode)n;
+        final ArrayNode a = (ArrayNode) n;
         final String index = a.get(0).textValue();
         final String type = a.get(1).textValue();
         final String id = a.get(2).textValue();
         final long version = a.get(3).longValue();
 
-        return new ID(index,type,id,version);
+        return new ID(index, type, id, version);
     }
+
+    public boolean emptyValue(JsonNode node)
+    {
+        if (node.isValueNode())
+        {
+            return StringUtils.isEmpty(node.asText());
+        } else if (node.isContainerNode())
+        {
+            return node.size() == 0;
+        }
+        return false;
+    }
+
 }
