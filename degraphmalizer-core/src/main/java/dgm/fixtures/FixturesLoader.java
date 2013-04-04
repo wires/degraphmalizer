@@ -145,7 +145,7 @@ public class FixturesLoader implements ConfigurationMonitor
     }
 
     @Override
-    public void configurationChanged(ConfigurationChange change)
+    public void configurationChanged(String change)
     {
         //when the index that was just reloaded is the source index for one of the index configurations, we reinsert the
         //fixtures.

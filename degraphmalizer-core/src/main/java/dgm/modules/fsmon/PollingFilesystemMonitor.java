@@ -18,7 +18,7 @@ import java.util.Map;
 /**
  * Monitor the configuration directory for changes in the index configurations.
  */
-class PollingFilesystemMonitor implements Runnable
+public class PollingFilesystemMonitor implements Runnable
 {
     protected final FilesystemMonitor monitor;
     protected final File directory;
@@ -107,15 +107,16 @@ class PollingFilesystemMonitor implements Runnable
         }
     }
 
-    File[] nullSafeFileList(File[] input){
-        return input != null ? input : new File[] {};
+    File[] nullSafeFileList(File[] input)
+    {
+        return input != null ? input : new File[]{};
     }
 
 
     /**
      * The hash is computed based on the modification times, file size and file names of all files recursively.
      * The order in which the files are listed doesn't matter.
-     *
+     * <p/>
      * If the returned hash changed between calls, this means that something in the subdirectory has changed.
      *
      * @return a hashcode representing the subdirectory state.

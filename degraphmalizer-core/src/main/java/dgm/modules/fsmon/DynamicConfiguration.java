@@ -11,9 +11,9 @@ class LoggingConfigurationMonitor implements ConfigurationMonitor
     Logger log;
 
     @Override
-    public void configurationChanged(String index)
+    public void configurationChanged(String change)
     {
-        log.info("Configuration change for index {}", index);
+        log.info("Configuration change for index {}", change);
     }
 }
 
