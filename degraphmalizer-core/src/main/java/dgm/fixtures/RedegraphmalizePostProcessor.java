@@ -1,4 +1,4 @@
-package dgm.fixutures;
+package dgm.fixtures;
 
 import com.google.common.collect.Iterables;
 import com.google.inject.Provider;

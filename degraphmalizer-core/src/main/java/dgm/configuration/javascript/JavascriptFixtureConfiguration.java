@@ -1,21 +1,21 @@
- package dgm.configuration.javascript;
+package dgm.configuration.javascript;
 
- import com.fasterxml.jackson.core.JsonProcessingException;
- import com.fasterxml.jackson.databind.JsonNode;
- import com.fasterxml.jackson.databind.ObjectMapper;
- import dgm.configuration.FixtureConfiguration;
- import dgm.configuration.FixtureIndexConfiguration;
- import dgm.configuration.FixtureTypeConfiguration;
- import org.apache.commons.io.FileUtils;
- import org.slf4j.Logger;
- import org.slf4j.LoggerFactory;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dgm.configuration.FixtureConfiguration;
+import dgm.configuration.FixtureIndexConfiguration;
+import dgm.configuration.FixtureTypeConfiguration;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
- import java.io.File;
- import java.io.FileFilter;
- import java.io.FilenameFilter;
- import java.io.IOException;
- import java.util.LinkedHashMap;
- import java.util.Map;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * A Fixture config contains a number of mappings of index names to index configurations.
@@ -37,19 +37,40 @@
 public class JavascriptFixtureConfiguration implements FixtureConfiguration
 {
     public static final String MAPPING_FILE_NAME = "mapping.json";
+
+    public static final String DATA_DIR = "data";
+    public static final String RESULTS_DIR = "results";
+    public static final String EXPECTED_DIR = "expected";
+
     private Map<String, JavascriptFixtureIndexConfiguration> indexConfigs = new LinkedHashMap<String, JavascriptFixtureIndexConfiguration>();
+    private Map<String, JavascriptFixtureIndexConfiguration> expectedConfigs = new LinkedHashMap<String, JavascriptFixtureIndexConfiguration>();
+    private File resultsDir = null;
+
     private static final Logger log = LoggerFactory.getLogger(JavascriptFixtureConfiguration.class);
 
     public JavascriptFixtureConfiguration(File configDir) throws IOException
     {
         try
         {
-            for (File indexDir : configDir.listFiles(FixtureUtil.onlyDirsFilter()))
+            resultsDir = new File(configDir, RESULTS_DIR);
+            for (File directory : configDir.listFiles(FixtureUtil.onlyDirsFilter()))
             {
-                indexConfigs.put(indexDir.getName(), new JavascriptFixtureIndexConfiguration(indexDir));
+                if (DATA_DIR.equals(directory.getName()))
+                {
+                    for (File indexDir : directory.listFiles(FixtureUtil.onlyDirsFilter()))
+                    {
+                        indexConfigs.put(indexDir.getName(), new JavascriptFixtureIndexConfiguration(indexDir));
+                    }
+                }
+                if (EXPECTED_DIR.equals(directory.getName()))
+                {
+                    for (File expectedDir : directory.listFiles(FixtureUtil.onlyDirsFilter()))
+                    {
+                        expectedConfigs.put(expectedDir.getName(), new JavascriptFixtureIndexConfiguration(expectedDir));
+                    }
+                }
             }
-        }
-        catch (FixtureConfigurationException e)
+        } catch (FixtureConfigurationException e)
         {
             log.error("Could not parse fixture data. Illegal json: " + e.getMessage());
             throw e.getJpe();
@@ -64,6 +85,20 @@ public class JavascriptFixtureConfiguration implements FixtureConfiguration
     public FixtureIndexConfiguration getIndexConfig(String name)
     {
         return indexConfigs.get(name);
+    }
+
+    public Iterable<String> getExpectedIndexNames()
+    {
+        return expectedConfigs.keySet();
+    }
+
+    public FixtureIndexConfiguration getExpectedIndexConfig(String name)
+    {
+        return expectedConfigs.get(name);
+    }
+
+    public File getResultsDirectory() {
+        return resultsDir;
     }
 
     @Override
@@ -131,11 +166,13 @@ class JavascriptFixtureTypeConfiguration implements FixtureTypeConfiguration
         return mapping;
     }
 
-    public Iterable<JsonNode> getDocuments(){
+    public Iterable<JsonNode> getDocuments()
+    {
         return documentsById.values();
     }
 
-    public Iterable<String>getDocumentIds(){
+    public Iterable<String> getDocumentIds()
+    {
         return documentsById.keySet();
     }
 
@@ -173,8 +210,7 @@ class JavascriptFixtureTypeConfiguration implements FixtureTypeConfiguration
                         file.getName().replaceFirst(".json", ""),
                         FixtureUtil.mapper.readTree(FileUtils.readFileToString(file))
                 );
-            }
-            catch (JsonProcessingException e)
+            } catch (JsonProcessingException e)
             {
                 throw new FixtureConfigurationException(e, file);
             }
@@ -228,7 +264,9 @@ class FixtureConfigurationException extends RuntimeException
 
 class FixtureUtil
 {
-    private FixtureUtil() {}
+    private FixtureUtil()
+    {
+    }
 
     public static FileFilter onlyDirsFilter()
     {

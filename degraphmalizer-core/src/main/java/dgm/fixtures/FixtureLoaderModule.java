@@ -1,4 +1,4 @@
-package dgm.fixutures;
+package dgm.fixtures;
 
 import com.google.inject.AbstractModule;
 import dgm.driver.RunMode;

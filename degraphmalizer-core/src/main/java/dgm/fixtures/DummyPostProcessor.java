@@ -1,4 +1,4 @@
-package dgm.fixutures;
+package dgm.fixtures;
 
 /**
  * @author Ernst Bunders

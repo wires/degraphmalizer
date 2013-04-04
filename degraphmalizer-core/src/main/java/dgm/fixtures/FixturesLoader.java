@@ -1,4 +1,4 @@
-package dgm.fixutures;
+package dgm.fixtures;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -145,7 +145,7 @@ public class FixturesLoader implements ConfigurationMonitor
     }
 
     @Override
-    public void configurationChanged(String index)
+    public void configurationChanged(ConfigurationChange change)
     {
         //when the index that was just reloaded is the source index for one of the index configurations, we reinsert the
         //fixtures.
