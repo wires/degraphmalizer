@@ -1,13 +1,12 @@
-package dgm.modules.elasticsearch;
+package dgm.modules.elasticsearch.nodes;
 
-import com.google.common.io.Files;
-import com.google.inject.*;
-import org.elasticsearch.client.Client;
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
-
-import java.io.File;
 
 /**
  * Configure ES node that joins the cluster, no data etc.
@@ -31,11 +30,8 @@ public class NodeES extends AbstractModule
 
     @Provides
     @Singleton
-    final Client provideElasticInterface()
+    final Node provideElasticInterface()
     {
-        // create temporary directory and use this as ES datadir
-        final File dataDir = Files.createTempDir();
-
         // otherwise run as much as possible in memory
         final Settings.Builder settings = ImmutableSettings.settingsBuilder()
                 .put("node.name", "Degraphmalizer")
@@ -49,6 +45,6 @@ public class NodeES extends AbstractModule
                 .put("discovery.zen.ping.unicast.hosts", host + ":" + port)
                 .put("client.transport.sniff", true);
 
-        return NodeBuilder.nodeBuilder().settings(settings).node().client();
+        return NodeBuilder.nodeBuilder().settings(settings).build();
     }
 }

@@ -32,6 +32,8 @@ public class ConfigExtractMergingTest
 	public void setUp()
 	{
         ln = LocalNode.localNode();
+        ln.serviceRunner.startServices();
+
         for(Vertex v: ln.G.getVertices())
             ln.G.removeVertex(v);
         ((TransactionalGraph)ln.G).stopTransaction(TransactionalGraph.Conclusion.SUCCESS);

@@ -8,7 +8,6 @@
         <version>0.1-SNAPSHOT</version>
     </parent>
 	
-    <groupId>nl.vpro</groupId>
     <artifactId>degraphmalizer-core</artifactId>
     <version>0.1-SNAPSHOT</version>
 
@@ -36,6 +35,10 @@
         <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.inject.extensions</groupId>
+            <artifactId>guice-multibindings</artifactId>
         </dependency>
         <dependency>
             <groupId>com.sun.jersey</groupId>

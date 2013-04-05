@@ -25,8 +25,7 @@ public class DegraphmalizerException extends RuntimeException
 
     protected DegraphmalizerException(String msg)
     {
-        super(msg);
-        this.severity = Severity.ERROR;
+        this(msg, Severity.ERROR);
     }
 
     public Severity severity()

@@ -17,8 +17,7 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -127,8 +126,7 @@ public class FixturesLoader implements ConfigurationMonitor
                 put("number_of_shards", 2).
                 put("number_of_replicas", 1);
 
-        Settings settings = ImmutableSettings.settingsBuilder().loadFromSource(indexConfigSettingsNode.toString()).build();
-        return settings;
+        return ImmutableSettings.settingsBuilder().loadFromSource(indexConfigSettingsNode.toString()).build();
     }
 
     CreateIndexRequest buildCreateIndexRequest(String indexName, FixtureIndexConfiguration indexConfig) throws IOException
@@ -151,24 +149,26 @@ public class FixturesLoader implements ConfigurationMonitor
     {
         //when the index that was just reloaded is the source index for one of the index configurations, we reinsert the
         //fixtures.
-        List<String> fixtureIndexs = Arrays.asList(Iterables.toArray(cfgProvider.get().getFixtureConfiguration().getIndexNames(), String.class));
+        final Configuration cfg = cfgProvider.get();
 
-        for(IndexConfig indexConfig: cfgProvider.get().indices().values())
-        {
+        // for quick lookup of the index name
+        final HashSet<String> names = new HashSet<String>();
+        Iterables.addAll(names, cfg.getFixtureConfiguration().getIndexNames());
+
+        for(IndexConfig indexConfig: cfg.indices().values())
             for (TypeConfig typeConfig : indexConfig.types().values())
             {
-                if (fixtureIndexs.contains(typeConfig.sourceIndex()))
+                if (! names.contains(typeConfig.sourceIndex()))
+                    continue;
+                try
                 {
-                    try
-                    {
-                        loadFixtures();
-                        return;
-                    } catch (Exception e)
-                    {
-                        log.error("Something went wrong inserting the fixtures after a configurationChanged event.", e);
-                    }
+                    loadFixtures();
+                    return;
+                }
+                catch (Exception e)
+                {
+                    log.error("Something went wrong inserting the fixtures after a configurationChanged event.", e);
                 }
             }
-        }
     }
 }

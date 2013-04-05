@@ -12,5 +12,6 @@ public class DegraphmalizerModule extends AbstractModule
     {
         bind(Degraphmalizr.class).to(Degraphmalizer.class).asEagerSingleton();
         bind(Recomputer.class).to(RecomputerFactoryImpl.class).asEagerSingleton();
+        bind(ServiceRunner.class).asEagerSingleton();
     }
 }

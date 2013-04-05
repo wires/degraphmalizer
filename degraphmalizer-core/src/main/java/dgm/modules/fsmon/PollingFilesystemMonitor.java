@@ -1,4 +1,4 @@
-package dgm.configuration.javascript;
+package dgm.modules.fsmon;
 
 import com.google.common.collect.MapDifference;
 import com.google.common.collect.Maps;
@@ -6,7 +6,6 @@ import com.google.common.hash.HashCode;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hasher;
 import com.google.common.hash.Hashing;
-import dgm.configuration.ConfigurationMonitor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 
@@ -19,15 +18,15 @@ import java.util.Map;
 /**
  * Monitor the configuration directory for changes in the index configurations.
  */
-public class PollingConfigurationMonitor implements Runnable
+class PollingFilesystemMonitor implements Runnable
 {
-    protected final ConfigurationMonitor monitor;
+    protected final FilesystemMonitor monitor;
     protected final File directory;
     protected final int interval;
 
     protected final Thread poller = new Thread(this);
 
-    public PollingConfigurationMonitor(String directory, int interval, ConfigurationMonitor monitor)
+    public PollingFilesystemMonitor(String directory, int interval, FilesystemMonitor monitor)
     {
         this.directory = new File(directory);
         this.interval = interval;
@@ -96,15 +95,15 @@ public class PollingConfigurationMonitor implements Runnable
 
             // directory contents have changed
             for(Map.Entry<String,MapDifference.ValueDifference<HashCode>> index : diff.entriesDiffering().entrySet())
-                monitor.configurationChanged(index.getKey());
+                monitor.directoryChanged(index.getKey());
 
             // directory added
             for(Map.Entry<String, HashCode> index : diff.entriesOnlyOnRight().entrySet())
-                monitor.configurationChanged(index.getKey());
+                monitor.directoryChanged(index.getKey());
 
             // directory removed
             for(Map.Entry<String, HashCode> index : diff.entriesOnlyOnLeft().entrySet())
-                monitor.configurationChanged(index.getKey());
+                monitor.directoryChanged(index.getKey());
         }
     }
 

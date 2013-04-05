@@ -1,20 +1,51 @@
 package dgm.modules.neo4j;
 
-import com.google.inject.*;
-import com.tinkerpop.blueprints.*;
+import com.google.inject.Inject;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
+import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.TransactionalGraph;
+import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
 import dgm.GraphUtilities;
+import dgm.Service;
+import dgm.modules.ServiceModule;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 
-public class CommonNeo4j extends AbstractModule
+class Neo4jService implements Service
+{
+    final Graph graph;
+
+    @Inject
+    Neo4jService(Graph graph)
+    {
+        this.graph = graph;
+    }
+
+    @Override
+    public void start()
+    {}
+
+    @Override
+    public void stop()
+    {
+        graph.shutdown();
+    }
+}
+
+
+public class CommonNeo4j extends ServiceModule
 {
     @Override
     protected void configure()
-    {}
+    {
+        bindService(Neo4jService.class);
+    }
 
     @Provides @Singleton
     final TransactionalGraph provideGraph(@Neo4jDataDir String dataDir) throws IOException

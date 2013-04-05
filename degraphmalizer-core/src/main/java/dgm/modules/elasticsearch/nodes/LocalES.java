@@ -1,7 +1,8 @@
-package dgm.modules.elasticsearch;
+package dgm.modules.elasticsearch.nodes;
 
-import com.google.inject.*;
-import org.elasticsearch.client.Client;
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
@@ -18,16 +19,16 @@ public class LocalES extends AbstractModule
 
     @Provides
     @Singleton
-    final Client provideElasticInterface()
+    final Node provideElasticInterface()
     {
         final Settings.Builder settings = ImmutableSettings.settingsBuilder()
                 .put("node.http.enabled", true)
+                .put("node.local", true)
+                .put("node.data", true)
                 .put("index.store.type", "memory")
                 .put("index.number_of_shards", 1)
                 .put("index.number_of_replicas", 0);
 
-        final Node node = NodeBuilder.nodeBuilder().local(true).settings(settings).node();
-
-        return node.client();
+        return NodeBuilder.nodeBuilder().settings(settings).build();
     }
 }

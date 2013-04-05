@@ -47,8 +47,6 @@ public class Options
 
     /**
      * You can pass the system properties here, this will then be used as defaults that can be overridden using the CLI.
-     *
-     * @param properties
      */
     public Options(Properties properties)
     {
@@ -64,5 +62,13 @@ public class Options
 
         config = properties.getProperty("paths.config", "conf");
         graphdb = properties.getProperty("paths.graphdb", "data/graphdb");
+    }
+
+    /**
+     * Get array of javascript library file names.
+     */
+    public String[] libraries()
+    {
+        return libraries.toArray(new String[libraries.size()]);
     }
 }

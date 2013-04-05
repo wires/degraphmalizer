@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Level;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Module;
@@ -15,11 +16,10 @@ import dgm.ID;
 import dgm.degraphmalizr.degraphmalize.*;
 import dgm.degraphmalizr.recompute.RecomputeResult;
 import dgm.exceptions.DegraphmalizerException;
-import dgm.modules.BlueprintsSubgraphManagerModule;
-import dgm.modules.DegraphmalizerModule;
-import dgm.modules.StaticJSConfModule;
-import dgm.modules.ThreadpoolModule;
-import dgm.modules.elasticsearch.EmphemeralES;
+import dgm.modules.*;
+import dgm.modules.elasticsearch.CommonElasticSearchModule;
+import dgm.modules.elasticsearch.nodes.EphemeralES;
+import dgm.modules.fsmon.StaticConfiguration;
 import dgm.modules.neo4j.CommonNeo4j;
 import dgm.modules.neo4j.EphemeralEmbeddedNeo4J;
 import org.elasticsearch.action.admin.indices.create.CreateIndexResponse;
@@ -60,10 +60,11 @@ class LocalNode
         modules.add(new BlueprintsSubgraphManagerModule());
         modules.add(new DegraphmalizerModule());
         modules.add(new ThreadpoolModule());
-        modules.add(new EmphemeralES());
+        modules.add(new EphemeralES());
+        modules.add(new CommonElasticSearchModule());
         modules.add(new CommonNeo4j());
         modules.add(new EphemeralEmbeddedNeo4J());
-        modules.add(new StaticJSConfModule("src/test/resources/conf/"));
+        modules.add(new StaticConfiguration("src/test/resources/conf/"));
         modules.add(new Slf4jLoggingModule());
 
         // the injector
@@ -83,6 +84,9 @@ class LocalNode
 
     @Inject
     Graph G;
+
+    @Inject
+    ServiceRunner serviceRunner;
 
     final DegraphmalizeCallback callback = new Fixme();
 
@@ -117,12 +121,13 @@ public class DegraphmalizerTest
 	public void setUp()
 	{
         ln = LocalNode.localNode();
+        ln.serviceRunner.startServices();
 	}
 
     @AfterTest
-    public void shutDown() {
-        ln.es.close();
-        ln.G.shutdown();
+    public void shutDown()
+    {
+        ln.serviceRunner.stopServices();
     }
 
     @Test
@@ -269,7 +274,7 @@ public class DegraphmalizerTest
 
         // Only the vertex of the othertp type should be present.
         Iterable<Vertex> iterable = GraphUtilities.findVerticesInIndex(ln.G, idx);
-        assertThat(countIterator(iterable)).isEqualTo(1);
+        assertThat(Iterables.size(iterable)).isEqualTo(1);
 
         actions.clear();
         actions.add(ln.d.degraphmalize(DegraphmalizeRequestType.DELETE, DegraphmalizeRequestScope.INDEX, new ID(idx, null, null, 0), ln.callback));
@@ -281,23 +286,13 @@ public class DegraphmalizerTest
 
         // No more vertices
         Iterable<Vertex> iterable2 = GraphUtilities.findVerticesInIndex(ln.G, idx);
-        assertThat(countIterator(iterable2)).isEqualTo(0);
+        assertThat(Iterables.size(iterable2)).isEqualTo(0);
 
         // Cleanup index
         if (!ln.es.admin().indices().delete(new DeleteIndexRequest(idx)).actionGet().acknowledged()) {
             throw new RuntimeException("failed to delete index " + target);
         }
     }
-
-    private int countIterator(Iterable<Vertex> iterable)
-    {
-        int count=0;
-        for (Vertex vertex : iterable) {
-            count++;
-        }
-        return count;
-    }
-
 
     private int numberOfChildren(JsonNode result, String property)
     {

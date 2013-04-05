@@ -6,16 +6,16 @@ import java.util.*;
  * Compose multiple {@link ConfigurationMonitor}s
  *
  */
-public class CompositeMonitor implements ConfigurationMonitor
+public class CompositeConfigurationMonitor implements ConfigurationMonitor
 {
     private final List<ConfigurationMonitor> monitors = new ArrayList<ConfigurationMonitor>();
 
-    public CompositeMonitor(ConfigurationMonitor... monitors)
+    public CompositeConfigurationMonitor(ConfigurationMonitor... monitors)
     {
         this(Arrays.asList(monitors));
     }
 
-    public CompositeMonitor(Iterable<? extends ConfigurationMonitor> watchers)
+    public CompositeConfigurationMonitor(Iterable<? extends ConfigurationMonitor> watchers)
     {
         for(ConfigurationMonitor w : watchers)
             this.monitors.add(w);
