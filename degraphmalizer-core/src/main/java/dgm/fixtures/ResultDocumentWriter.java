@@ -70,7 +70,10 @@ public class ResultDocumentWriter implements PostProcessor
             File resultsDirectory = cfgProvider.get().getFixtureConfiguration().getResultsDirectory();
             if (!resultsDirectory.exists())
             {
-                resultsDirectory.mkdir();
+                if (!resultsDirectory.mkdir()) {
+                    log.error("Can't create results directory");
+                    throw new RuntimeException("Results directory can not be created");
+                }
             }
             if (!resultsDirectory.isDirectory())
             {
@@ -112,7 +115,10 @@ public class ResultDocumentWriter implements PostProcessor
             File dir = new File(directory, id.index() + File.separator + id.type());
             if (!dir.exists())
             {
-                dir.mkdirs();
+                if (!dir.mkdirs()) {
+                    log.error("Can't create directory: {} "+dir.getName());
+                    throw new RuntimeException("Can't create directory: "+dir.getName());
+                }
             }
             FileUtils.writeStringToFile(new File(dir, id.id()), document, Charset.forName("UTF-8"));
         }

@@ -94,7 +94,7 @@ public class ExpectedDocumentVerifier implements PostProcessor
             return false;
         }
         JsonNode documentExpected = typeConfig.getDocumentById(id.id());
-        if (documentExpected!=null) {
+        if (documentExpected==null) {
             log.debug("No expected document found for : {}/{}/{} "+id.index(),id.type(),id.id());
             return false;
         }
