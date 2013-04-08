@@ -7,8 +7,8 @@ import com.google.inject.Module;
 import dgm.driver.handler.HandlerModule;
 import dgm.driver.server.Server;
 import dgm.driver.server.ServerModule;
-import dgm.fixtures.FixtureLoaderModule;
-import dgm.fixtures.FixturesLoader;
+import dgm.fixtures.FixturesModule;
+import dgm.fixtures.FixturesRunner;
 import dgm.jmx.GraphBuilder;
 import dgm.modules.BlueprintsSubgraphManagerModule;
 import dgm.modules.DegraphmalizerModule;
@@ -47,7 +47,7 @@ public final class Main
         final JCommander jcommander = new JCommander(opt, args);
 
         // print help and exit
-        if(opt.help)
+        if (opt.help)
         {
             jcommander.usage();
             System.exit(1);
@@ -58,7 +58,7 @@ public final class Main
             System.setProperty(LOGBACK_CFG, opt.logbackConf);
 
         // check if script directory exists
-        if(!new File(opt.config).isDirectory())
+        if (!new File(opt.config).isDirectory())
             exit("Cannot find configuration directory " + opt.config + " Exiting.");
 
         System.out.println("Automatic configuration reloading: " + (opt.reloading ? "enabled" : "disabled"));
@@ -93,7 +93,7 @@ public final class Main
         injector.injectMembers(this);
 
         // start JMX?
-        if(opt.jmx)
+        if (opt.jmx)
         {
             // setup our JMX bean
             try
@@ -104,24 +104,10 @@ public final class Main
                 final GraphBuilder gb = injector.getInstance(GraphBuilder.class);
                 mbs.registerMBean(gb, name);
                 log.info("JMX bean {} started", name);
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
                 // TODO log errors
                 e.printStackTrace();
-            }
-        }
-
-        // start fixtures
-        if (opt.fixtures)
-        {
-            FixturesLoader fl = injector.getInstance(FixturesLoader.class);
-            try
-            {
-                fl.loadFixtures();
-            } catch (Exception e)
-            {
-                log.error("Could not load fixtures. reason: {}", e.getMessage());
             }
         }
 
@@ -144,6 +130,20 @@ public final class Main
         // start services and then the main netty server
         runner.startServices();
 
+        // start fixtures
+        if (opt.fixtures)
+        {
+            FixturesRunner fl = injector.getInstance(FixturesRunner.class);
+            try
+            {
+                fl.runFixtures();
+            } catch (Exception e)
+            {
+                log.error("Could not load fixtures. reason: {}", e.getMessage());
+            }
+        }
+
+
         log.info("Starting server on port {}", opt.port);
         server.startAndWait();
     }
@@ -153,14 +153,14 @@ public final class Main
         modules.add(new CommonElasticSearchModule());
 
         // setup local node
-        if(opt.development)
+        if (opt.development)
         {
             modules.add(new LocalES());
             return;
         }
 
         // setup node that connects to remote host
-        if(opt.transport.size() != 3)
+        if (opt.transport.size() != 3)
             exit("You need to specify either the local or transport ES config. Exiting.");
 
         final String cluster = opt.transport.get(2);
@@ -174,14 +174,14 @@ public final class Main
     private void setupConfiguration(Options opt, List<Module> modules)
     {
         // automatic reloading
-        if(opt.reloading)
+        if (opt.reloading)
             modules.add(new DynamicConfiguration(opt.config, opt.libraries()));
         else
             modules.add(new StaticConfiguration(opt.config, opt.libraries()));
 
         // fixtures
-        if(opt.fixtures)
-            modules.add(new FixtureLoaderModule(createRunMode(opt)));
+        if (opt.fixtures)
+            modules.add(new FixturesModule(createRunMode(opt)));
     }
 
     public static void main(String[] args)
@@ -197,9 +197,11 @@ public final class Main
 
     private static RunMode createRunMode(Options options)
     {
-        if(options.reloading && options.fixtures){
+        if (options.development && options.reloading && options.fixtures)
+        {
             return RunMode.DEVELOPMENT;
-        }else if(options.reloading){
+        } else if (options.reloading && options.fixtures)
+        {
             return RunMode.TEST;
         }
         return RunMode.PRODUCTION;

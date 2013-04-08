@@ -4,6 +4,9 @@
  */
 package dgm.fixtures;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.google.inject.Provider;
 import dgm.ID;
 import dgm.configuration.Configuration;
@@ -26,29 +29,34 @@ import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 /**
  * User: rico
  * Date: 03/04/2013
  */
-public class ResultDocumentWriter implements PostProcessor
+public class WriteResultDocumentsCommand implements Command<List<ID>>
 {
     private final Client client;
     private final Provider<Configuration> cfgProvider;
+    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectWriter objectWriter = objectMapper.writerWithDefaultPrettyPrinter();
 
-    private static final Logger log = LoggerFactory.getLogger(ResultDocumentWriter.class);
+    private static final Logger log = LoggerFactory.getLogger(WriteResultDocumentsCommand.class);
 
     @Inject
-    public ResultDocumentWriter(Client client, Provider<Configuration> cfgProvider)
+    public WriteResultDocumentsCommand(Client client, Provider<Configuration> cfgProvider)
     {
         this.client = client;
         this.cfgProvider = cfgProvider;
     }
 
     @Override
-    public void run()
+    public List<ID> execute()
     {
+        List<ID> ids = new ArrayList<ID>();
         FixtureConfiguration fixtureConfiguration = cfgProvider.get().getFixtureConfiguration();
         for (String index : fixtureConfiguration.getIndexNames())
         {
@@ -57,20 +65,23 @@ public class ResultDocumentWriter implements PostProcessor
                 final Iterable<TypeConfig> configs = Configurations.configsFor(cfgProvider.get(), index, type);
                 for (TypeConfig typeConfig : configs)
                 {
-                    writeDocuments(typeConfig.targetIndex(), typeConfig.targetType());
+                    ids.addAll(writeDocuments(typeConfig.targetIndex(), typeConfig.targetType()));
                 }
             }
         }
+        return ids;
     }
 
-    private void writeDocuments(String index, String type)
+    private List<ID> writeDocuments(String index, String type)
     {
+        List<ID> ids = new ArrayList<ID>();
         try
         {
             File resultsDirectory = cfgProvider.get().getFixtureConfiguration().getResultsDirectory();
             if (!resultsDirectory.exists())
             {
-                if (!resultsDirectory.mkdir()) {
+                if (!resultsDirectory.mkdir())
+                {
                     log.error("Can't create results directory");
                     throw new RuntimeException("Results directory can not be created");
                 }
@@ -99,12 +110,14 @@ public class ResultDocumentWriter implements PostProcessor
                 ID id = new ID(hit.getIndex(), hit.getType(), hit.getId(), hit.version());
                 log.debug("Writing document:  {}", id);
                 writeDocument(resultsDirectory, id);
+                ids.add(id);
             }
 
         } catch (Exception e)
         {
             log.error("Something went wrong writing fixture result documents.", e);
         }
+        return ids;
     }
 
     private void writeDocument(File directory, ID id) throws IOException, ExecutionException, InterruptedException
@@ -115,12 +128,13 @@ public class ResultDocumentWriter implements PostProcessor
             File dir = new File(directory, id.index() + File.separator + id.type());
             if (!dir.exists())
             {
-                if (!dir.mkdirs()) {
-                    log.error("Can't create directory: {} "+dir.getName());
-                    throw new RuntimeException("Can't create directory: "+dir.getName());
+                if (!dir.mkdirs())
+                {
+                    log.error("Can't create directory: {} " + dir.getName());
+                    throw new RuntimeException("Can't create directory: " + dir.getName());
                 }
             }
-            FileUtils.writeStringToFile(new File(dir, id.id()), document, Charset.forName("UTF-8"));
+            FileUtils.writeStringToFile(new File(dir, id.id()+".json"), document, Charset.forName("UTF-8"));
         }
     }
 
@@ -131,6 +145,8 @@ public class ResultDocumentWriter implements PostProcessor
         if (!response.exists())
             return null;
 
-        return response.getSourceAsString();
+        JsonNode node = objectMapper.readTree(response.getSourceAsString());
+        objectWriter.writeValueAsString(node);
+        return objectWriter.writeValueAsString(node);
     }
 }
