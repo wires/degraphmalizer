@@ -133,7 +133,16 @@ public class Degraphmalizer implements Degraphmalizr
                     // collect all recompute states.
                     for (Future<RecomputeResult> recomputeResultFuture : result.results())
                     {
-                        recomputeResultFuture.get();
+                        try {
+                            recomputeResultFuture.get();
+                        } catch (ExecutionException e) {
+                            if (e.getCause() instanceof DegraphmalizerException) {
+                                DegraphmalizerException de = (DegraphmalizerException)(e.getCause());
+                                if (de.severity()== DegraphmalizerException.Severity.ERROR) {
+                                    throw(de);
+                                }
+                            }
+                        }
                     }
                     callback.complete(result);
                     return result;

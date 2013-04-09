@@ -242,8 +242,11 @@ public class RecomputerFactoryImpl implements Recomputer
         {
             return recomputer.recompute();
         }
-        catch (Exception e)
+        catch (DegraphmalizerException e)
         {
+            throw e;
+        }
+        catch (Exception e) {
             throw new WrappedException(e);
         }
     }
