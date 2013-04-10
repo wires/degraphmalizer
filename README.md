@@ -209,6 +209,8 @@ If you start the degraphmalizer with `--help` it will show you the command line 
 ```
 -c, --config        Specify configuration directory
                     Default: conf
+-b, --bind          Binds the listening ports and Elastic Search transport to this host/ip
+                    Default: []
 -d, --development   Run in development mode
                     Default: false
 -f, --fixtures      Load fixtures on startup

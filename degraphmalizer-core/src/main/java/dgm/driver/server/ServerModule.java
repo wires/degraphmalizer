@@ -1,12 +1,17 @@
 package dgm.driver.server;
 
 import com.google.inject.*;
+import org.apache.commons.lang3.StringUtils;
 import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.*;
+import org.jboss.netty.channel.ChannelFactory;
+import org.jboss.netty.channel.ChannelPipeline;
+import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.net.UnknownHostException;
 import java.util.concurrent.Executors;
 
 /**
@@ -15,16 +20,26 @@ import java.util.concurrent.Executors;
 public class ServerModule extends AbstractModule
 {
     final int port;
+    final String host;
 
-    public ServerModule(int port)
+    public ServerModule(String host, int port)
     {
+        this.host = host;
         this.port = port;
     }
 
     @Override
     protected final void configure()
     {
-        bind(SocketAddress.class).toInstance(new InetSocketAddress(port));
+        if (StringUtils.isEmpty(host)) {
+            bind(SocketAddress.class).toInstance(new InetSocketAddress(port));
+        } else {
+            try {
+                bind(SocketAddress.class).toInstance(new InetSocketAddress(InetAddress.getByName(host), port));
+            } catch (UnknownHostException e) {
+                throw new RuntimeException("Can't find address: "+host,e);
+            }
+        }
     }
 
     @Provides

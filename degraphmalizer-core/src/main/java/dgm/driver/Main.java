@@ -73,7 +73,7 @@ public final class Main
         modules.add(new ThreadpoolModule());
 
         // netty part
-        modules.add(new ServerModule(opt.port));
+        modules.add(new ServerModule(opt.bindhost, opt.port));
         modules.add(new HandlerModule());
 
         // we always run an embedded local graph database
@@ -166,8 +166,9 @@ public final class Main
         final String cluster = opt.transport.get(2);
         final String host = opt.transport.get(0);
         final int port = Integer.parseInt(opt.transport.get(1));
+        final String bindhost = opt.bindhost;
 
-        modules.add(new NodeES(cluster, host, port));
+        modules.add(new NodeES(cluster, bindhost, host, port));
     }
 
     private void setupConfiguration(Options opt, List<Module> modules)

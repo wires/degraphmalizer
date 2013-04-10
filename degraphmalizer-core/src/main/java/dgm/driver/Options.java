@@ -13,6 +13,9 @@ public class Options
     @Parameter(names = {"-d", "--development"}, description = "Run in development mode")
     boolean development = false;
 
+    @Parameter(names = {"-b", "--bind"}, description = "Host/IP to bind the listening ports to")
+    String bindhost = null;
+
     @Parameter(names = {"-p", "--port"}, description = "Listening port")
     int port;
 
@@ -51,6 +54,8 @@ public class Options
     public Options(Properties properties)
     {
         port = Integer.parseInt(properties.getProperty("degraphmalizer.port", "9821"));
+        bindhost = properties.getProperty("degraphmalizer.host");
+
         jmx = Boolean.parseBoolean(properties.getProperty("degraphmalizer.jmx.enabled"));
         reloading = Boolean.parseBoolean(properties.getProperty("degraphmalizer.autoreload"));
         fixtures = Boolean.parseBoolean(properties.getProperty("degraphmalizer.fixtures"));
