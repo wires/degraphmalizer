@@ -31,7 +31,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- Keep in sync with version of your ElasticSearch production deployment -->
-        <elasticsearch.version>0.19.8</elasticsearch.version>
+        <elasticsearch.version>0.19.11</elasticsearch.version>
 
         <slf4j.version>1.6.5</slf4j.version>
         <logback.version>1.0.7</logback.version>
