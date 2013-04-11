@@ -141,6 +141,8 @@ public class Degraphmalizer implements Degraphmalizr
                                 if (de.severity()== DegraphmalizerException.Severity.ERROR) {
                                     throw(de);
                                 }
+                            } else {
+                                throw e;
                             }
                         }
                     }
