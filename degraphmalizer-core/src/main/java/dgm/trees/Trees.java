@@ -229,7 +229,7 @@ public final class Trees
 		
 		return node;
 	}
-	
+
 	/** Helper method to directly walk a TreeNode instance */
 	public static <T> Iterable<T> bfsWalk(Tree<T> root)
 	{
@@ -242,7 +242,7 @@ public final class Trees
 					return node.children();
 				}
 			};
-		
+
 		// get value from a tree
 		final Function<Tree<T>,T> getValue = new Function<Tree<T>,T>()
 			{
@@ -252,12 +252,12 @@ public final class Trees
 					return node.value();
 				}
 			};
-		
+
 		final Iterable<Tree<T>> ti = bfsWalk(root, viewer);
-		
+
 		return Iterables.transform(ti, getValue);
 	}
-	
+
 	public static <A> Iterable<A> bfsWalk(final A root, final TreeViewer<A> viewer)
 	{
 		return new Iterable<A>()
@@ -268,30 +268,30 @@ public final class Trees
 					return new Iterator<A>()
 						{
 							final Queue<A> q = new LinkedList<A>(Collections.singleton(root));
-							
+
 							@Override
 							public boolean hasNext()
 							{
 								return !q.isEmpty();
 							}
-							
+
 							@Override
 							public A next()
 							{
 								final A a = q.poll();
-								
+
 								// add children to end of the queue
 								for (A c : viewer.children(a))
 									if(!q.offer(c))
                                         throw new UnreachableCodeReachedException();
-								
+
 								return a;
 							}
-							
+
 							@Override
 							public void remove()
 							{
-								// TODO use some sort of standard
+                                // TODO use some sort of standard
 								// "NotImplemented" exception (how does guava do
 								// this?)
 								throw new RuntimeException("Not Implemented");
@@ -300,91 +300,4 @@ public final class Trees
 				}
 			};
 	}
-	
-	enum EventType
-	{
-		VISIT_NODE, BEGIN_CHILDREN, END_CHILDREN
-	}
-	
-	/**
-	 * BFS visit tree
-	 */
-	public static <A> void bfsVisit(final A root, final TreeViewer<A> viewer, final TreeVisitor<A> visitor)
-	{
-		class VisitEvent
-		{
-			public final A node;
-			public final EventType eventType;
-			public final VisitEvent otherSide;
-			
-			public VisitEvent(EventType eventType, A node, VisitEvent other)
-			{
-				this.node = node;
-				this.eventType = eventType;
-				this.otherSide = other;
-			}
-			
-			// return true if event type == BEGIN_NODE/END_NODE
-			public boolean callVisitor(TreeVisitor<A> visitor)
-			{
-				switch (eventType)
-				{
-					case BEGIN_CHILDREN:
-						visitor.beginChildren(node, viewer);
-						return true;
-					case END_CHILDREN:
-						visitor.endChildren(node, viewer);
-						return true;
-					case VISIT_NODE:
-						visitor.visitNode(node, viewer);
-						return false;
-					default:
-						throw new RuntimeException("OMGWTF Unreachable code reached...");
-				}
-			}
-		}
-		
-		final LinkedList<VisitEvent> q = new LinkedList<VisitEvent>();
-		q.offer(new VisitEvent(EventType.VISIT_NODE, root, null));
-		
-		VisitEvent insertionPt = null;
-		
-		while (!q.isEmpty())
-		{
-			final VisitEvent a = q.poll();
-			
-			// update the insertion point to the END_CHILDREN node
-			if (a.eventType == EventType.BEGIN_CHILDREN)
-				insertionPt = a.otherSide;
-			
-			// call visitor interface
-			if (a.callVisitor(visitor))
-				// nothing further to be done for marker event (BEGIN/END)
-				continue;
-			
-			
-			final VisitEvent end = new VisitEvent(EventType.END_CHILDREN, a.node, null);
-			final VisitEvent start = new VisitEvent(EventType.BEGIN_CHILDREN, a.node, end);
-			
-			insertBefore(q, start, insertionPt);
-			
-			// add children to end of the queue
-			for (A c : viewer.children(a.node))
-				insertBefore(q, new VisitEvent(EventType.VISIT_NODE, c, null), insertionPt);
-			
-			insertBefore(q, end, insertionPt);
-		}
-	}
-	
-	private static <A> void insertBefore(LinkedList<A> ll, A value, A before)
-	{
-		if (before == null)
-			ll.offer(value);
-		else
-		{
-			final int i = ll.indexOf(before);
-			ll.add(i, value);
-		}
-	}
-	
 }

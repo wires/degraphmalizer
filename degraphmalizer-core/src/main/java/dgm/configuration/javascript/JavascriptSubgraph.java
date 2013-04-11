@@ -2,15 +2,12 @@ package dgm.configuration.javascript;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dgm.ID;
-import dgm.JSONUtilities;
+import dgm.*;
 import dgm.graphs.MutableSubgraph;
-import dgm.Subgraph;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -35,7 +32,6 @@ public class JavascriptSubgraph
     public final void addEdge(String label, String index, String type, String id, boolean inwards, Map<String, Object> properties) throws IOException
     {
         final ID other = new ID(index, type, id, 0);
-        final Map<String,JsonNode> props = new HashMap<String, JsonNode>();
 
         // call subgraph method
         final Subgraph.Direction d;
