@@ -81,7 +81,7 @@ public class RecomputerFactoryImpl implements Recomputer
             {
                 // walk graph, and fetch all the children in the opposite direction of the walk
                 final Tree<Pair<Edge, Vertex>> tree =
-                        GraphUtilities.childrenFrom(graph, request.root.vertex(), walkCfg.getValue().direction());
+                        GraphUtilities.childrenFrom(request.root.vertex(), walkCfg.getValue().direction());
 
                 // write size information to log
                 if (log.isDebugEnabled())

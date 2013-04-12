@@ -36,10 +36,13 @@ public class Pair<A,B>
 	// TODO it's a hack...
 	private static String getStringRepresentation(Object x)
 	{
+        if(x == null)
+            return "null";
+
 		if (x instanceof Vertex)
 		{
 			final Object value = ((Vertex)x).getProperty(GraphUtilities.IDENTIFIER);
-			return value != null ? value.toString().trim() : "null";
+			return value != null ? value.toString().trim() : x.toString();
 		}
 
 		if (x instanceof Edge)
@@ -54,6 +57,6 @@ public class Pair<A,B>
 			return sb.toString().trim();
 		}
 
-		return x != null ? x.toString().trim() : "null";
+		return x.toString().trim();
 	}
 }

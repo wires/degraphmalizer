@@ -77,7 +77,7 @@ public class Degraphmalizer implements Degraphmalizr
                           ObjectMapper objectMapper,
                           Recomputer recomputer,
                           Provider<Configuration> configProvider)
-    {
+	{
         this.fetchQueue = fetchQueue;
         this.recomputeQueue = recomputeQueue;
         this.degraphmalizeQueue = degraphmalizeQueue;
@@ -88,7 +88,7 @@ public class Degraphmalizer implements Degraphmalizr
         this.cfgProvider = configProvider;
         this.queryFn = queryFunction;
         this.objectMapper = objectMapper;
-    }
+	}
 
     @Override
     public final Future<DegraphmalizeResult> degraphmalize(DegraphmalizeRequestType requestType, DegraphmalizeRequestScope requestScope, ID id, DegraphmalizeCallback callback)
@@ -97,7 +97,7 @@ public class Degraphmalizer implements Degraphmalizr
         final Iterable<TypeConfig> configs = Configurations.configsFor(cfgProvider.get(), id.index(), id.type());
 
         // we cannot handle this request!
-        if (Iterables.isEmpty(configs))
+        if(Iterables.isEmpty(configs))
             throw new NoConfiguration(id);
 
         // construct the action object
@@ -164,12 +164,12 @@ public class Degraphmalizer implements Degraphmalizr
 
     private boolean inList(RecomputeRequest r, List<RecomputeRequest> rs)
     {
-        for (RecomputeRequest q : rs)
+        for(RecomputeRequest q : rs)
         {
             final boolean equalId = q.root.id().equals(r.root.id());
             final boolean equalIndexConfig = q.config.targetIndex().equals(r.config.targetIndex());
             final boolean equalTypeConfig = q.config.targetType().equals(r.config.targetType());
-            if (equalId && equalIndexConfig && equalTypeConfig)
+            if(equalId && equalIndexConfig && equalTypeConfig)
                 return true;
         }
 
@@ -181,7 +181,8 @@ public class Degraphmalizer implements Degraphmalizr
         try
         {
             return determineRecomputeActions(action);
-        } catch (NotFoundInGraphException e)
+        }
+        catch(NotFoundInGraphException e)
         {
             return Collections.emptyList();
         }
@@ -264,9 +265,7 @@ public class Degraphmalizer implements Degraphmalizr
         // fn = toString . id . root
         final Function<RecomputeRequest, String> fn = new Function<RecomputeRequest, String>()
         {
-            @Override
-            public String apply(@Nullable RecomputeRequest input)
-            {
+            @Override public String apply(@Nullable RecomputeRequest input) {
                 return "\n\t" + input.root.id().toString();
             }
         };
@@ -284,7 +283,7 @@ public class Degraphmalizer implements Degraphmalizr
         return new DegraphmalizeRequest(degraphmalizeRequestType, DOCUMENT, id, typeConfigs);
     }
 
-    // TODO refactor (dubbeling met doUpdate)
+    // TODO refactor (dubbeling met doUpdate DGM-44)
     private DegraphmalizeResult doDelete(DegraphmalizeRequest action) throws Exception
     {
         log.info("Processing delete request for id {} scope {} ", action.id(), action.scope());
@@ -438,10 +437,10 @@ public class Degraphmalizer implements Degraphmalizr
 
         // traverse graph in both direction, starting at the root
         log.debug("Computing tree in direction IN, starting at {}", root);
-        final Tree<Pair<Edge, Vertex>> up = GraphUtilities.childrenFrom(graph, root, Direction.IN);
+        final Tree<Pair<Edge,Vertex>> up = GraphUtilities.childrenFrom(root, Direction.IN);
 
         log.debug("Computing tree in direction OUT, starting at {}", root);
-        final Tree<Pair<Edge, Vertex>> down = GraphUtilities.childrenFrom(graph, root, Direction.OUT);
+        final Tree<Pair<Edge,Vertex>> down = GraphUtilities.childrenFrom(root, Direction.OUT);
 
         if (log.isDebugEnabled())
         {

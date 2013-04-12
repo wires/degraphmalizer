@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterables;
 import dgm.exceptions.UnreachableCodeReachedException;
 
@@ -65,6 +64,11 @@ public final class Trees
         }
     }
 
+    public static final <_> boolean isLeaf(final Tree<_> tree)
+    {
+        return Iterables.isEmpty(tree.children());
+    }
+
     /**
 	 * Map a function over a tree
 	 * 
@@ -74,10 +78,11 @@ public final class Trees
 	 */
 	public static <A,B> Tree<B> map(final Function<A,B> fn, Tree<A> tree)
 	{
-		final B value = fn.apply(tree.value);
+		final B value = fn.apply(tree.value());
 		
-		if (tree.isLeaf())
-			return new Tree<B>(value);
+		if (isLeaf(tree))
+            return new ImmutableTree<B>(value);
+
 		else
 		{
 			final Function<Tree<A>,Tree<B>> tmap = new Function<Tree<A>,Tree<B>>()
@@ -87,9 +92,8 @@ public final class Trees
 						return map(fn, tree);
 					}
 				};
-			
-			final Collection<Tree<B>> tb = Collections2.transform(tree.children, tmap);
-			return new Tree<B>(value, tb);
+			final Iterable<Tree<B>> tb = Iterables.transform(tree.children(), tmap);
+			return new ImmutableTree<B>(value, tb);
 		}
 	}
 	
@@ -229,7 +233,7 @@ public final class Trees
 		
 		return node;
 	}
-
+	
 	/** Helper method to directly walk a TreeNode instance */
 	public static <T> Iterable<T> bfsWalk(Tree<T> root)
 	{
@@ -242,7 +246,7 @@ public final class Trees
 					return node.children();
 				}
 			};
-
+		
 		// get value from a tree
 		final Function<Tree<T>,T> getValue = new Function<Tree<T>,T>()
 			{
@@ -252,12 +256,12 @@ public final class Trees
 					return node.value();
 				}
 			};
-
+		
 		final Iterable<Tree<T>> ti = bfsWalk(root, viewer);
-
+		
 		return Iterables.transform(ti, getValue);
 	}
-
+	
 	public static <A> Iterable<A> bfsWalk(final A root, final TreeViewer<A> viewer)
 	{
 		return new Iterable<A>()
@@ -268,30 +272,30 @@ public final class Trees
 					return new Iterator<A>()
 						{
 							final Queue<A> q = new LinkedList<A>(Collections.singleton(root));
-
+							
 							@Override
 							public boolean hasNext()
 							{
 								return !q.isEmpty();
 							}
-
+							
 							@Override
 							public A next()
 							{
 								final A a = q.poll();
-
+								
 								// add children to end of the queue
 								for (A c : viewer.children(a))
 									if(!q.offer(c))
                                         throw new UnreachableCodeReachedException();
-
+								
 								return a;
 							}
-
+							
 							@Override
 							public void remove()
 							{
-                                // TODO use some sort of standard
+								// TODO use some sort of standard
 								// "NotImplemented" exception (how does guava do
 								// this?)
 								throw new RuntimeException("Not Implemented");
@@ -300,4 +304,6 @@ public final class Trees
 				}
 			};
 	}
+	
+
 }

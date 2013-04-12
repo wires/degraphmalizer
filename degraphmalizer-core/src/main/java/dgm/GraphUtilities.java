@@ -7,8 +7,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.tinkerpop.blueprints.*;
 import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
 import com.tinkerpop.blueprints.impls.neo4j.Neo4jVertexIterable;
-import dgm.trees.Pair;
-import dgm.trees.Tree;
+import dgm.trees.*;
+import dgm.trees2.Trees2;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.index.ReadableIndex;
@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -42,39 +41,56 @@ public final class GraphUtilities
 	/**
 	 * Compute the vertices reached from <code>s</code> in one step in direction <code>d</code>.
 	 *
-	 * @param g the graph to operate on
 	 * @param s Initial vertex
 	 * @param d Direction to follow edges
 	 *
 	 * @return Tree with value (null, s) and then all children as specified
+     *
 	 */
-    // TODO non-recursive
-    public static Tree<Pair<Edge, Vertex>> childrenFrom(Graph g, Vertex s, Direction d)
-	{
-		return childrenFrom(g, null, s, d, 1);
-	}
-
-    // TODO non-recursive
-    private static Tree<Pair<Edge, Vertex>> childrenFrom(Graph g, Edge e, Vertex s, Direction d, int depth)
+    public static Tree<Pair<Edge,Vertex>> childrenFrom(Vertex s, Direction d)
     {
-        // TODO handle cycles in the graph
-        if (depth > 100)
-            throw new RuntimeException("Found a graph with a path longer that 100 nodes, this probably indicated a cyclic walk");
+        // view the graph as a tree
+        final TreeViewer<Pair<Edge,Vertex>> tv = new GraphTreeViewer(d);
 
-        final ArrayList<Tree<Pair<Edge, Vertex>>> children = new ArrayList<Tree<Pair<Edge, Vertex>>>();
+        // build a copy of that tree by BFS visiting it
+        final TreeBuilder<Pair<Edge,Vertex>> tb = new TreeBuilder<Pair<Edge, Vertex>>();
 
-        for(Edge ed : s.getEdges(d))
-            children.add(childrenFrom(g, ed, ed.getVertex(d.opposite()), d, depth + 1));
+        // but don't visit same node twice, ie. kill cycles
+        final OccurrenceTracker<Pair<Edge,Vertex>> ot = new NodeAlreadyVisitedTracker();
+        final CycleKiller<Pair<Edge,Vertex>> cktb = new CycleKiller<Pair<Edge, Vertex>>(tb, ot);
 
-        return new Tree<Pair<Edge,Vertex>>(new Pair<Edge,Vertex>(e, s), children);
+        Trees2.bfsVisit(new Pair<Edge, Vertex>(null, s), tv, cktb);
+
+        return tb.tree();
     }
 
-    public static Iterable<Vertex> findVerticesInIndex(Graph graph, String index) {
+    public static Iterable<Vertex> findVerticesInIndex(Graph graph, String index)
+    {
         return graph.getVertices(KEY_INDEX,index);
     }
+    private static <_,A> boolean inTree(Tree<Pair<_,A>> tree, A thing)
+    {
+        if(tree.value() != null)
+        {
+            if(tree.value().b == null && thing == null)
+                return true;
 
-    public static Iterable<Vertex> findVerticesInIndex(Graph graph, String index, String type) {
-        if (graph instanceof MetaGraph && graph instanceof Neo4jGraph) {
+            if(tree.value().b.equals(thing))
+                return true;
+        }
+
+        for(Tree<Pair<_,A>> c : tree.children())
+            if(inTree(c, thing))
+                return true;
+
+        return false;
+    }
+
+
+    public static Iterable<Vertex> findVerticesInIndex(Graph graph, String index, String type)
+    {
+        if (graph instanceof MetaGraph && graph instanceof Neo4jGraph)
+        {
             GraphDatabaseService graphDatabaseService = ((MetaGraph<GraphDatabaseService>)graph).getRawGraph();
             ReadableIndex<Node> indexer = graphDatabaseService.index().getNodeAutoIndexer().getAutoIndex();
             Iterable<Node> itty = indexer.query(KEY_INDEX+":"+index+" AND "+KEY_TYPE+":"+type);
